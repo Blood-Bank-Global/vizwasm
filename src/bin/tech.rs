@@ -45,6 +45,17 @@ impl GlobalNameAccessors for TechNameAccessors {
                     .hardware_decode(true)
                     .build(),
                 Vid::builder()
+                    .name("blood")
+                    .path(&format!(
+                        "{}/streams/blank.mp4",
+                        TechNameAccessors::asset_path()
+                    ))
+                    .resolution((720, 480))
+                    .repeat(true)
+                    .realtime(false)
+                    .hardware_decode(true)
+                    .build(),
+                Vid::builder()
                     .name("blob")
                     .path(&format!(
                         "{}/streams/blob.mp4",
@@ -61,20 +72,6 @@ impl GlobalNameAccessors for TechNameAccessors {
                     .name("blur_lights")
                     .path(&format!(
                         "{}/streams/blur_lights.mp4",
-                        TechNameAccessors::asset_path()
-                    ))
-                    .resolution((720, 480))
-                    .tbq((1, 12800))
-                    .pix_fmt("yuv420p")
-                    .repeat(true)
-                    .realtime(false)
-                    .hardware_decode(true)
-                    .build()
-                    .into(),
-                Vid::builder()
-                    .name("bootleg_liberty")
-                    .path(&format!(
-                        "{}/streams/bootleg_liberty.mp4",
                         TechNameAccessors::asset_path()
                     ))
                     .resolution((720, 480))
@@ -240,20 +237,6 @@ impl GlobalNameAccessors for TechNameAccessors {
                     .build()
                     .into(),
                 Vid::builder()
-                    .name("fall")
-                    .path(&format!(
-                        "{}/streams/fall.mp4",
-                        TechNameAccessors::asset_path()
-                    ))
-                    .resolution((720, 480))
-                    .tbq((1, 12800))
-                    .pix_fmt("yuv420p")
-                    .repeat(true)
-                    .realtime(false)
-                    .hardware_decode(true)
-                    .build()
-                    .into(),
-                Vid::builder()
                     .name("fluffy_clouds")
                     .path(&format!(
                         "{}/streams/fluffy_clouds.mp4",
@@ -268,37 +251,9 @@ impl GlobalNameAccessors for TechNameAccessors {
                     .build()
                     .into(),
                 Vid::builder()
-                    .name("ground_ctl")
-                    .path(&format!(
-                        "{}/streams/ground_ctl.mp4",
-                        TechNameAccessors::asset_path()
-                    ))
-                    .resolution((720, 480))
-                    .tbq((1, 12800))
-                    .pix_fmt("yuv420p")
-                    .repeat(true)
-                    .realtime(false)
-                    .hardware_decode(true)
-                    .build()
-                    .into(),
-                Vid::builder()
                     .name("holo_city")
                     .path(&format!(
                         "{}/streams/holo_city.mp4",
-                        TechNameAccessors::asset_path()
-                    ))
-                    .resolution((720, 480))
-                    .tbq((1, 12800))
-                    .pix_fmt("yuv420p")
-                    .repeat(true)
-                    .realtime(false)
-                    .hardware_decode(true)
-                    .build()
-                    .into(),
-                Vid::builder()
-                    .name("horizon")
-                    .path(&format!(
-                        "{}/streams/horizon.mp4",
                         TechNameAccessors::asset_path()
                     ))
                     .resolution((720, 480))
@@ -408,20 +363,6 @@ impl GlobalNameAccessors for TechNameAccessors {
                     .build()
                     .into(),
                 Vid::builder()
-                    .name("smoke")
-                    .path(&format!(
-                        "{}/streams/smoke.mp4",
-                        TechNameAccessors::asset_path()
-                    ))
-                    .resolution((720, 480))
-                    .tbq((1, 12800))
-                    .pix_fmt("yuv420p")
-                    .repeat(true)
-                    .realtime(false)
-                    .hardware_decode(true)
-                    .build()
-                    .into(),
-                Vid::builder()
                     .name("stars")
                     .path(&format!(
                         "{}/streams/stars.mp4",
@@ -436,37 +377,9 @@ impl GlobalNameAccessors for TechNameAccessors {
                     .build()
                     .into(),
                 Vid::builder()
-                    .name("subway")
-                    .path(&format!(
-                        "{}/streams/subway.mp4",
-                        TechNameAccessors::asset_path()
-                    ))
-                    .resolution((720, 480))
-                    .tbq((1, 12800))
-                    .pix_fmt("yuv420p")
-                    .repeat(true)
-                    .realtime(false)
-                    .hardware_decode(true)
-                    .build()
-                    .into(),
-                Vid::builder()
                     .name("target")
                     .path(&format!(
                         "{}/streams/target.mp4",
-                        TechNameAccessors::asset_path()
-                    ))
-                    .resolution((720, 480))
-                    .tbq((1, 12800))
-                    .pix_fmt("yuv420p")
-                    .repeat(true)
-                    .realtime(false)
-                    .hardware_decode(true)
-                    .build()
-                    .into(),
-                Vid::builder()
-                    .name("tube")
-                    .path(&format!(
-                        "{}/streams/tube.mp4",
                         TechNameAccessors::asset_path()
                     ))
                     .resolution((720, 480))
@@ -548,37 +461,9 @@ impl GlobalNameAccessors for TechNameAccessors {
                     .build()
                     .into(),
                 Vid::builder()
-                    .name("liquid_purple")
+                    .name("tube")
                     .path(&format!(
-                        "{}/streams/liquid_purple.mp4",
-                        TechNameAccessors::asset_path()
-                    ))
-                    .resolution((720, 480))
-                    .tbq((1, 12800))
-                    .pix_fmt("yuv420p")
-                    .repeat(true)
-                    .realtime(false)
-                    .hardware_decode(true)
-                    .build()
-                    .into(),
-                Vid::builder()
-                    .name("liquid_gold")
-                    .path(&format!(
-                        "{}/streams/liquid_gold.mp4",
-                        TechNameAccessors::asset_path()
-                    ))
-                    .resolution((720, 480))
-                    .tbq((1, 12800))
-                    .pix_fmt("yuv420p")
-                    .repeat(true)
-                    .realtime(false)
-                    .hardware_decode(true)
-                    .build()
-                    .into(),
-                Vid::builder()
-                    .name("liquid_lava")
-                    .path(&format!(
-                        "{}/streams/liquid_lava.mp4",
+                        "{}/streams/tube.mp4",
                         TechNameAccessors::asset_path()
                     ))
                     .resolution((720, 480))
@@ -606,6 +491,118 @@ impl GlobalNameAccessors for TechNameAccessors {
                     .hardware_decode(false)
                     .build()
                     .into(),
+                // Vid::builder()
+                //     .name("liquid_purple")
+                //     .path(&format!(
+                //         "{}/streams/liquid_purple.mp4",
+                //         TechNameAccessors::asset_path()
+                //     ))
+                //     .resolution((720, 480))
+                //     .tbq((1, 12800))
+                //     .pix_fmt("yuv420p")
+                //     .repeat(true)
+                //     .realtime(false)
+                //     .hardware_decode(true)
+                //     .build()
+                //     .into(),
+                // Vid::builder()
+                //     .name("liquid_gold")
+                //     .path(&format!(
+                //         "{}/streams/liquid_gold.mp4",
+                //         TechNameAccessors::asset_path()
+                //     ))
+                //     .resolution((720, 480))
+                //     .tbq((1, 12800))
+                //     .pix_fmt("yuv420p")
+                //     .repeat(true)
+                //     .realtime(false)
+                //     .hardware_decode(true)
+                //     .build()
+                //     .into(),
+                // Vid::builder()
+                //     .name("liquid_lava")
+                //     .path(&format!(
+                //         "{}/streams/liquid_lava.mp4",
+                //         TechNameAccessors::asset_path()
+                //     ))
+                //     .resolution((720, 480))
+                //     .tbq((1, 12800))
+                //     .pix_fmt("yuv420p")
+                //     .repeat(true)
+                //     .realtime(false)
+                //     .hardware_decode(true)
+                //     .build()
+                //     .into(),
+                // Vid::builder()
+                //     .name("bootleg_liberty")
+                //     .path(&format!(
+                //         "{}/streams/bootleg_liberty.mp4",
+                //         TechNameAccessors::asset_path()
+                //     ))
+                //     .resolution((720, 480))
+                //     .tbq((1, 12800))
+                //     .pix_fmt("yuv420p")
+                //     .repeat(true)
+                //     .realtime(false)
+                //     .hardware_decode(true)
+                //     .build()
+                //     .into(),
+                // Vid::builder()
+                //     .name("smoke")
+                //     .path(&format!(
+                //         "{}/streams/smoke.mp4",
+                //         TechNameAccessors::asset_path()
+                //     ))
+                //     .resolution((720, 480))
+                //     .tbq((1, 12800))
+                //     .pix_fmt("yuv420p")
+                //     .repeat(true)
+                //     .realtime(false)
+                //     .hardware_decode(true)
+                //     .build()
+                //     .into(),
+                // Vid::builder()
+                //     .name("ground_ctl")
+                //     .path(&format!(
+                //         "{}/streams/ground_ctl.mp4",
+                //         TechNameAccessors::asset_path()
+                //     ))
+                //     .resolution((720, 480))
+                //     .tbq((1, 12800))
+                //     .pix_fmt("yuv420p")
+                //     .repeat(true)
+                //     .realtime(false)
+                //     .hardware_decode(true)
+                //     .build()
+                //     .into(),
+                // Vid::builder()
+                //     .name("fall")
+                //     .path(&format!(
+                //         "{}/streams/fall.mp4",
+                //         TechNameAccessors::asset_path()
+                //     ))
+                //     .resolution((720, 480))
+                //     .tbq((1, 12800))
+                //     .pix_fmt("yuv420p")
+                //     .repeat(true)
+                //     .realtime(false)
+                //     .hardware_decode(true)
+                //     .build()
+                //     .into(),
+                // Vid::builder()
+                //     .name("horizon")
+                //     .path(&format!(
+                //         "{}/streams/horizon.mp4",
+                //         TechNameAccessors::asset_path()
+                //     ))
+                //     .resolution((720, 480))
+                //     .tbq((1, 12800))
+                //     .pix_fmt("yuv420p")
+                //     .repeat(true)
+                //     .realtime(false)
+                //     .hardware_decode(true)
+                //     .build()
+                //     .into(),
                 // Vid::builder()
                 //     .name("capture")
                 //     .path("USB3 Video")

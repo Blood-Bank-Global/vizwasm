@@ -950,6 +950,7 @@ loops: [{}], loop capture: {}
         for playback in &self.playback {
             let stream = &playback.stream;
             let mut vid_def = T::stream_defs()[stream.idx].clone();
+            let orig_name = vid_def.name.clone();
             vid_def.name = stream.base_stream();
 
             assets.push(vid_def.clone().into());
@@ -959,11 +960,19 @@ loops: [{}], loop capture: {}
                 .width(vid_def.resolution.0)
                 .height(vid_def.resolution.1);
 
-            if stream.idx == 1 {
+            if orig_name == "generate" {
                 cache_mix_builder = cache_mix_builder
                     .header(include_str!("glsl/utils.glsl"))
                     .body(include_str!("glsl/generate.glsl"));
                 eprintln!("Adding generate shader");
+            } else if orig_name == "blood" {
+                cache_mix_builder = cache_mix_builder
+                    .header(concat!(
+                        include_str!("glsl/utils.glsl"),
+                        include_str!("glsl/blood_funcs.glsl")
+                    ))
+                    .body(include_str!("glsl/blood.glsl"));
+                eprintln!("Adding blood shader");
             }
 
             assets.push(cache_mix_builder.build().into());

@@ -1,3 +1,5 @@
+#define M_PI 3.1415926535897932384626433832795
+
 #define BLEND_ADDITION 1
 #define BLEND_AND 2
 #define BLEND_AVERAGE 3
@@ -179,4 +181,41 @@ vec2 skew(in vec2 p, in mat4x2 corners) {
 // Helper function to get luminance (brightness) of a color
 float get_luminance(vec3 color_val) {
     return dot(color_val, vec3(0.299, 0.587, 0.114));
+}
+
+// Helper function for 2D cross product (z-component)
+// Returns > 0 if p is to the left of segment v_start -> v_end
+// Returns < 0 if p is to the right
+// Returns = 0 if p is collinear
+float cross_product_z(in vec2 v_start, in vec2 v_end, in vec2 p) {
+    return (v_end.x - v_start.x) * (p.y - v_start.y) - (v_end.y - v_start.y) * (p.x - v_start.x);
+}
+
+
+// PCG-based hash function to generate a pseudo-random uint from a uint seed.
+// Adapted from: https://www.reedbeta.com/blog/hash-functions-for-gpu-rendering/
+uint pcg(uint v) {
+    v = v * 747796405u + 2891336453u; // LCG step
+    uint state = v;
+    // XSH RR (xorshift and random rotate)
+    uint word = ((state >> ((state >> 28u) + 4u)) ^ state) * 277803737u;
+    return (word >> 22u) ^ word; // Output mixing
+}
+
+// Converts a uint hash to a float in [0, 1)
+// Using 2^32 as the divisor for [0,1) range.
+float uint_to_float01(uint h) {
+    return float(h) * (1.0 / 4294967296.0);
+}
+
+// Generates a pseudo-random float uniformly distributed between -1.0 and 1.0.
+float randf(uint seed) {
+    // Generate a uniform random number in [0,1) from the seed
+    uint hash1 = pcg(seed);
+    float u1 = uint_to_float01(hash1); // u1 is in [0, 1)
+
+    // Scale and shift to [-1.0, 1.0)
+    // (u1 * 2.0) maps [0, 1) to [0, 2)
+    // (u1 * 2.0 - 1.0) maps [0, 2) to [-1.0, 1.0)
+    return u1 * 2.0 - 1.0;
 }

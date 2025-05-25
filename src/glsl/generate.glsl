@@ -1,5 +1,3 @@
-#define M_PI 3.1415926535897932384626433832795
-
 #define border_max 0.1
 #define border_min -0.025
 float amp_horizontal = border_max + border_min + border_max
