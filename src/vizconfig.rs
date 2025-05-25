@@ -62,8 +62,16 @@ pub struct PlaybackSettings<T: GlobalNameAccessors> {
     pub loops: LoopSettings,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[repr(C)]
+pub struct VidConfig {
+    pub vid: Vid,
+    pub cache_shader_header: Option<&'static str>,
+    pub cache_shader_body: Option<&'static str>,
+}
+
 pub trait GlobalNameAccessors {
-    fn stream_defs() -> &'static [Vid];
+    fn stream_defs() -> &'static [VidConfig];
     fn overlay_names() -> &'static [&'static str];
     fn distort_names() -> &'static [(&'static str, &'static str)];
     fn distort_edge_types() -> &'static [&'static str];
@@ -866,19 +874,19 @@ loops: [{}], loop capture: {}
                 ""
             },
             //STREAM
-            T::stream_defs()[self.active_idx as usize].name,
+            T::stream_defs()[self.active_idx as usize].vid.name,
             if self.scan_idx >= 1 {
-                &T::stream_defs()[self.scan_idx - 1].name
+                &T::stream_defs()[self.scan_idx - 1].vid.name
             } else {
                 ""
             },
-            T::stream_defs()[self.scan_idx].name,
+            T::stream_defs()[self.scan_idx].vid.name,
             if (self.scan_idx as i64) < T::stream_defs().len() as i64 - 1 {
-                &T::stream_defs()[self.scan_idx + 1].name
+                &T::stream_defs()[self.scan_idx + 1].vid.name
             } else {
                 ""
             },
-            T::stream_defs()[self.display_idx].name,
+            T::stream_defs()[self.display_idx].vid.name,
             get!(feedback_style_selected),
             get!(feedback_style_scan),
             //SCANLINES MODES
@@ -950,37 +958,29 @@ loops: [{}], loop capture: {}
         for playback in &self.playback {
             let stream = &playback.stream;
             let mut vid_def = T::stream_defs()[stream.idx].clone();
-            let orig_name = vid_def.name.clone();
-            vid_def.name = stream.base_stream();
+            vid_def.vid.name = stream.base_stream();
 
-            assets.push(vid_def.clone().into());
+            assets.push(vid_def.vid.clone().into());
 
             let mut cache_mix_builder = VidMixer::builder()
                 .name(&stream.base_cache())
-                .width(vid_def.resolution.0)
-                .height(vid_def.resolution.1);
+                .width(vid_def.vid.resolution.0)
+                .height(vid_def.vid.resolution.1);
 
-            if orig_name == "generate" {
-                cache_mix_builder = cache_mix_builder
-                    .header(include_str!("glsl/utils.glsl"))
-                    .body(include_str!("glsl/generate.glsl"));
-                eprintln!("Adding generate shader");
-            } else if orig_name == "blood" {
-                cache_mix_builder = cache_mix_builder
-                    .header(concat!(
-                        include_str!("glsl/utils.glsl"),
-                        include_str!("glsl/blood_funcs.glsl")
-                    ))
-                    .body(include_str!("glsl/blood.glsl"));
-                eprintln!("Adding blood shader");
+            if let Some(header) = vid_def.cache_shader_header {
+                cache_mix_builder = cache_mix_builder.header(header);
+            }
+
+            if let Some(body) = vid_def.cache_shader_body {
+                cache_mix_builder = cache_mix_builder.body(body);
             }
 
             assets.push(cache_mix_builder.build().into());
             assets.push(
                 VidMixer::builder()
                     .name(&stream.main_mix())
-                    .width(vid_def.resolution.0)
-                    .height(vid_def.resolution.1)
+                    .width(vid_def.vid.resolution.0)
+                    .height(vid_def.vid.resolution.1)
                     .header(include_str!("glsl/utils.glsl"))
                     .body(include_str!("glsl/mixer.glsl"))
                     .build()
@@ -989,16 +989,16 @@ loops: [{}], loop capture: {}
             assets.push(
                 VidMixer::builder()
                     .name(&stream.feedback_cache())
-                    .width(vid_def.resolution.0)
-                    .height(vid_def.resolution.1)
+                    .width(vid_def.vid.resolution.0)
+                    .height(vid_def.vid.resolution.1)
                     .build()
                     .into(),
             );
             assets.push(
                 VidMixer::builder()
                     .name(&stream.overlay_layer())
-                    .width(vid_def.resolution.0)
-                    .height(vid_def.resolution.1)
+                    .width(vid_def.vid.resolution.0)
+                    .height(vid_def.vid.resolution.1)
                     .header(include_str!("glsl/utils.glsl"))
                     .body(include_str!("glsl/overlay.glsl"))
                     .build()
