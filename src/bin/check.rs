@@ -21,7 +21,7 @@ impl GlobalNameAccessors for TechNameAccessors {
         static STREAM_DEFS: LazyLock<Vec<VidConfig>> = LazyLock::new(|| {
             vec![VidConfig {
                 vid: Vid::builder()
-                    .name("generate")
+                    .name("toy")
                     .path(&format!(
                         "{}/streams/blank.mp4",
                         TechNameAccessors::asset_path()
@@ -31,8 +31,14 @@ impl GlobalNameAccessors for TechNameAccessors {
                     .realtime(false)
                     .hardware_decode(true)
                     .build(),
-                cache_shader_header: Some(include_str!("../glsl/utils.glsl")),
-                cache_shader_body: Some(include_str!("../glsl/generate.glsl")),
+                cache_shader_header: Some(concat!(
+                    include_str!("../glsl/utils.glsl"),
+                    "\n",
+                    include_str!("../glsl/toy.glsl")
+                )),
+                cache_shader_body: Some(
+                    "mainImage(color, iResolution.xy * vec2(src_coord0.x, 1.0 - src_coord0.y));",
+                ),
                 ..Default::default()
             }]
         });

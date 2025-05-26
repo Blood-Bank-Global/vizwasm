@@ -1,3 +1,21 @@
+
+/* Shader toy compatibility inputs */
+//!VAR vec3 iResolution 1.0 1.0 1.0
+//!VAR float iTime 0.0
+//!VAR float iTimeDelta 0.0
+//!VAR float iFrame 0.0
+//!VAR float iSampleRate 0.0
+
+//unimplimented //!VAR vec4 iChannelTime 0.0 0.0 0.0 0.0
+//unimplimented //!VAR vec4 iMouse 0.0 0.0 0.0 0.0
+//unimplimented //!VAR vec4 iDate 0.0 0.0 0.0 0.0
+//unimplimented //!VAR mat4x3 iChannelResolution 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+
+#define iChannel0 src_tex0
+#define iChannel1 src_tex1
+#define iChannel2 src_tex2
+#define iChannel3 src_tex3
+
 #define M_PI 3.1415926535897932384626433832795
 
 #define BLEND_ADDITION 1
