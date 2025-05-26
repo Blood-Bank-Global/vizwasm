@@ -42,7 +42,16 @@
 vec2 base_coord = src_coord0.xy;
 
 // Scroll as needed
-base_coord = vec2(mod((base_coord.x + scrolled_h), 1.0), mod((base_coord.y + scrolled_v), 1.0));
+base_coord = vec2(fract(base_coord.x + scrolled_h), fract(base_coord.y + scrolled_v));
+
+if ((int(floor(src_coord0.x +scrolled_h)) & 1) == 1) {
+    // If the x coordinate is odd, flip the x coordinate
+    base_coord.x = 1.0 - base_coord.x;
+}
+if ((int(floor(src_coord0.y + scrolled_v)) & 1) == 1) {
+    // If the y coordinate is odd, flip the y coordinate
+    base_coord.y = 1.0 - base_coord.y;
+}
 
 //skew
 base_coord = skew(base_coord, new_corners);
