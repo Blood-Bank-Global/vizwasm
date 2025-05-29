@@ -5,44 +5,63 @@ use std::{
 };
 
 use sdlrig::{
-    gfxinfo::{Asset, GfxEvent, GfxInfo, Vid, VidInfo},
+    gfxinfo::{Asset, GfxEvent, GfxInfo, Vid, VidInfo, VidMixer},
     hud_text,
     renderspec::{CopyEx, Mix, RenderSpec},
     reset,
 };
 use serde::{Deserialize, Serialize};
-use vizwasm::vizconfig::{AllSettings, GlobalNameAccessors, LoopEvent, StreamSettings, VidConfig};
+use vizwasm::vizconfig::{AllSettings, GlobalNameAccessors, LoopEvent, MixConfig, StreamSettings};
 fn main() {}
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct TechNameAccessors {}
 
 impl GlobalNameAccessors for TechNameAccessors {
-    fn stream_defs() -> &'static [VidConfig] {
-        static STREAM_DEFS: LazyLock<Vec<VidConfig>> = LazyLock::new(|| {
-            vec![VidConfig {
-                vid: Vid::builder()
-                    .name("toy")
-                    .path(&format!(
-                        "{}/streams/blank.mp4",
-                        TechNameAccessors::asset_path()
-                    ))
-                    .resolution((720, 480))
-                    .repeat(true)
-                    .realtime(false)
-                    .hardware_decode(true)
-                    .build(),
-                cache_shader_header: Some(concat!(
-                    include_str!("../glsl/utils.glsl"),
-                    "\n",
-                    include_str!("../glsl/toy.glsl")
-                )),
-                cache_shader_body: Some(
-                    "mainImage(color, iResolution.xy * vec2(src_coord0.x, 1.0 - src_coord0.y));",
-                ),
-                ..Default::default()
-            }]
+    fn stream_defs() -> &'static [Vid] {
+        static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
+            vec![Vid::builder()
+                .name("blank")
+                .path(&format!(
+                    "{}/streams/blank.mp4",
+                    TechNameAccessors::asset_path()
+                ))
+                .resolution((720, 480))
+                .repeat(true)
+                .realtime(false)
+                .hardware_decode(true)
+                .build()
+                .into()]
         });
         &STREAM_DEFS
+    }
+
+    fn mix_configs() -> &'static [vizwasm::vizconfig::MixConfig] {
+        static MIX_DEFS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
+            vec![MixConfig {
+                def: VidMixer::builder()
+                    .name("blood")
+                    .header(concat!(
+                        include_str!("../glsl/utils.glsl"),
+                        "\n",
+                        include_str!("../glsl/blood_funcs.glsl")
+                    ))
+                    .body(include_str!("../glsl/blood.glsl"))
+                    .width(720)
+                    .height(480)
+                    .build(),
+                mix: Mix::builder()
+                    .name(String::from("blood"))
+                    .video(String::from("blank"))
+                    .no_display(true)
+                    .build(),
+            }]
+        });
+        &MIX_DEFS
+    }
+
+    fn playback_mixes() -> &'static [&'static str] {
+        static PLAYBACK_MIXES: LazyLock<Vec<&'static str>> = LazyLock::new(|| vec!["blood"]);
+        &PLAYBACK_MIXES
     }
 
     fn overlay_names() -> &'static [&'static str] {
@@ -285,19 +304,15 @@ pub fn calculate(
     specs.extend(videos.values().map(|s| s.clone().into()));
 
     // LHS
-    let vid_info = if let Some(GfxInfo::VidInfo(vid_info)) = gfx_info.get(
-        &settings.playback[settings.active_idx]
-            .stream
-            .base_stream()
-            .to_string(),
-    ) {
-        vid_info
-    } else {
-        &VidInfo::default()
-    };
+    let mix_name = TechNameAccessors::playback_mixes()[settings.display_idx];
+    let mix_def = TechNameAccessors::mix_configs()
+        .iter()
+        .find(|m| m.def.name == mix_name)
+        .map(|c| c.def.clone())
+        .expect("Mix config not found for display index");
 
-    let iw = vid_info.size.0 as i32;
-    let ih = vid_info.size.1 as i32;
+    let iw = mix_def.width as i32;
+    let ih = mix_def.height as i32;
     let mut ow = iw;
     let mut oh = ih;
     let mut ix = 0;
@@ -342,21 +357,42 @@ where
         || stream_settings.scrub() != 0.0
         || stream_settings.delta_sec() != 0.0
     {
-        let mut builder = Mix::builder()
-            .name(stream_settings.base_cache())
-            .video(stream_settings.base_stream())
-            .no_display(true);
+        //currently assume only videos in the mix we find...
+
+        // find the selected playback mix
+        let playback_mix =
+            match TechNameAccessors::playback_mixes().get(stream_settings.idx as usize) {
+                Some(playback_mix) => playback_mix,
+                None => {
+                    eprintln!("Invalid playback mix selected: {}", stream_settings.idx);
+                    return videos;
+                }
+            };
+        // find the mix config for the playback mix
+        let mix_config = match TechNameAccessors::mix_configs()
+            .iter()
+            .find(|m| m.def.name == *playback_mix)
+        {
+            Some(mix_config) => mix_config,
+            None => {
+                eprintln!("No mix config found for playback mix: {}", playback_mix);
+                return videos;
+            }
+        };
+
+        // clone the mix config to create a new Mix
+        let mut mix = mix_config.mix.clone();
 
         let lut = TechNameAccessors::lut_names()[stream_settings.lut_selected() as usize];
         if lut != "none" {
-            builder = builder.lut(format!(
+            mix.lut = Some(format!(
                 "{}/luts/{}.cube",
                 TechNameAccessors::asset_path(),
                 lut
             ));
         }
 
-        videos.push((stream_settings.base_cache(), builder.build()));
+        videos.push((mix.name.clone(), mix));
     }
 
     let dx = TechNameAccessors::distort_names()[stream_settings.distort_selected() as usize].0;
@@ -438,10 +474,18 @@ where
     let (warp_x, warp_y) =
         TechNameAccessors::distort_names()[stream_settings.warp_selected() as usize];
 
+    let playback_mix = match TechNameAccessors::playback_mixes().get(stream_settings.idx as usize) {
+        Some(playback_mix) => playback_mix,
+        None => {
+            eprintln!("Invalid playback mix selected: {}", stream_settings.idx);
+            return specs;
+        }
+    };
+
     let mut builder = Mix::builder()
         .name(stream_settings.main_mix())
         .mixed(stream_settings.feedback_cache())
-        .mixed(stream_settings.base_cache())
+        .mixed(String::from(*playback_mix))
         .no_display(true);
 
     if distort_x != "none" && distort_y != "none" {

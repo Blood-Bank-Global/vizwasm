@@ -1,0 +1,1 @@
+mainImage(color, iResolution.xy * vec2(src_coord0.x, 1.0 - src_coord0.y));

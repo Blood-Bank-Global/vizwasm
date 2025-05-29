@@ -1,4 +1,4 @@
-use sdlrig::renderspec::{SendCmd, SendValue};
+use sdlrig::renderspec::{Mix, SendCmd, SendValue};
 use sdlrig::Adjustable;
 use sdlrig::{
     gfxinfo::{Asset, GfxEvent, KeyCode, KeyEvent, Knob, Vid, VidInfo, VidMixer},
@@ -64,14 +64,15 @@ pub struct PlaybackSettings<T: GlobalNameAccessors> {
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[repr(C)]
-pub struct VidConfig {
-    pub vid: Vid,
-    pub cache_shader_header: Option<&'static str>,
-    pub cache_shader_body: Option<&'static str>,
+pub struct MixConfig {
+    pub def: VidMixer,
+    pub mix: Mix,
 }
 
 pub trait GlobalNameAccessors {
-    fn stream_defs() -> &'static [VidConfig];
+    fn stream_defs() -> &'static [Vid];
+    fn mix_configs() -> &'static [MixConfig];
+    fn playback_mixes() -> &'static [&'static str];
     fn overlay_names() -> &'static [&'static str];
     fn distort_names() -> &'static [(&'static str, &'static str)];
     fn distort_edge_types() -> &'static [&'static str];
@@ -100,7 +101,7 @@ impl<T: GlobalNameAccessors + Clone + std::fmt::Debug + Serialize + DeserializeO
         Self {
             clipboard: StreamSettings::<T>::new(0),
             selected_knobs: 1,
-            playback: T::stream_defs()
+            playback: T::playback_mixes()
                 .iter()
                 .enumerate()
                 .map(|(i, _)| PlaybackSettings {
@@ -874,19 +875,19 @@ loops: [{}], loop capture: {}
                 ""
             },
             //STREAM
-            T::stream_defs()[self.active_idx as usize].vid.name,
+            T::stream_defs()[self.active_idx as usize].name,
             if self.scan_idx >= 1 {
-                &T::stream_defs()[self.scan_idx - 1].vid.name
+                &T::stream_defs()[self.scan_idx - 1].name
             } else {
                 ""
             },
-            T::stream_defs()[self.scan_idx].vid.name,
+            T::stream_defs()[self.scan_idx].name,
             if (self.scan_idx as i64) < T::stream_defs().len() as i64 - 1 {
-                &T::stream_defs()[self.scan_idx + 1].vid.name
+                &T::stream_defs()[self.scan_idx + 1].name
             } else {
                 ""
             },
-            T::stream_defs()[self.display_idx].vid.name,
+            T::stream_defs()[self.display_idx].name,
             get!(feedback_style_selected),
             get!(feedback_style_scan),
             //SCANLINES MODES
@@ -955,32 +956,40 @@ loops: [{}], loop capture: {}
     pub fn asset_list(&self, _app_fps: i64) -> Vec<Asset> {
         let mut assets = vec![];
 
-        for playback in &self.playback {
+        for vid_def in T::stream_defs() {
+            assets.push(vid_def.clone().into());
+        }
+
+        for (i, playback) in self.playback.iter().enumerate() {
             let stream = &playback.stream;
-            let mut vid_def = T::stream_defs()[stream.idx].clone();
-            vid_def.vid.name = stream.base_stream();
+            let input_name = T::playback_mixes()[i];
 
-            assets.push(vid_def.vid.clone().into());
+            //find the associated input mix
+            let vid_mix = match T::mix_configs().iter().find(|m| m.def.name == input_name) {
+                Some(m) => {
+                    assets.push(m.def.clone().into());
+                    m
+                }
+                None => {
+                    eprintln!("Could not find mix config for {}", input_name);
+                    continue;
+                }
+            };
 
-            let mut cache_mix_builder = VidMixer::builder()
-                .name(&stream.base_cache())
-                .width(vid_def.vid.resolution.0)
-                .height(vid_def.vid.resolution.1);
+            // assets.push(
+            //     VidMixer::builder()
+            //         .name(&stream.base_cache())
+            //         .width(vid_mix.def.width)
+            //         .height(vid_mix.def.height)
+            //         .build()
+            //         .into(),
+            // );
 
-            if let Some(header) = vid_def.cache_shader_header {
-                cache_mix_builder = cache_mix_builder.header(header);
-            }
-
-            if let Some(body) = vid_def.cache_shader_body {
-                cache_mix_builder = cache_mix_builder.body(body);
-            }
-
-            assets.push(cache_mix_builder.build().into());
             assets.push(
                 VidMixer::builder()
                     .name(&stream.main_mix())
-                    .width(vid_def.vid.resolution.0)
-                    .height(vid_def.vid.resolution.1)
+                    .width(vid_mix.def.width)
+                    .height(vid_mix.def.height)
                     .header(include_str!("glsl/utils.glsl"))
                     .body(include_str!("glsl/mixer.glsl"))
                     .build()
@@ -989,16 +998,16 @@ loops: [{}], loop capture: {}
             assets.push(
                 VidMixer::builder()
                     .name(&stream.feedback_cache())
-                    .width(vid_def.vid.resolution.0)
-                    .height(vid_def.vid.resolution.1)
+                    .width(vid_mix.def.width)
+                    .height(vid_mix.def.height)
                     .build()
                     .into(),
             );
             assets.push(
                 VidMixer::builder()
                     .name(&stream.overlay_layer())
-                    .width(vid_def.vid.resolution.0)
-                    .height(vid_def.vid.resolution.1)
+                    .width(vid_mix.def.width)
+                    .height(vid_mix.def.height)
                     .header(include_str!("glsl/utils.glsl"))
                     .body(include_str!("glsl/overlay.glsl"))
                     .build()

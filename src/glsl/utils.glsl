@@ -1,4 +1,3 @@
-
 /* Shader toy compatibility inputs */
 //!VAR vec3 iResolution 1.0 1.0 1.0
 //!VAR float iTime 0.0
