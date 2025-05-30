@@ -1,4 +1,4 @@
-use sdlrig::renderspec::{Mix, SendCmd, SendValue};
+use sdlrig::renderspec::{Mix, MixInput, SendCmd, SendValue};
 use sdlrig::Adjustable;
 use sdlrig::{
     gfxinfo::{Asset, GfxEvent, KeyCode, KeyEvent, Knob, Vid, VidInfo, VidMixer},
@@ -945,8 +945,8 @@ loops: [{}], loop capture: {}
     }
 
     pub fn lookup_stream(&self, name: &str) -> Option<usize> {
-        for i in 0..self.playback.len() {
-            if name == self.playback[i].stream.base_stream() {
+        for i in 0..T::stream_defs().len() {
+            if name == T::stream_defs()[i].name {
                 return Some(i);
             }
         }
@@ -975,15 +975,6 @@ loops: [{}], loop capture: {}
                     continue;
                 }
             };
-
-            // assets.push(
-            //     VidMixer::builder()
-            //         .name(&stream.base_cache())
-            //         .width(vid_mix.def.width)
-            //         .height(vid_mix.def.height)
-            //         .build()
-            //         .into(),
-            // );
 
             assets.push(
                 VidMixer::builder()
@@ -1617,28 +1608,60 @@ impl<T: GlobalNameAccessors> StreamSettings<T> {
             .into()]
     }
 
+    pub fn mix_config(&self) -> &MixConfig {
+        &T::mix_configs()[self.idx]
+    }
+
+    pub fn find_first_video(&self) -> Option<String> {
+        let mix_config = self.mix_config();
+        let mut stack = vec![&mix_config.mix];
+        while !stack.is_empty() {
+            let mix = stack.pop().unwrap();
+            for i in 0..mix.inputs.len() {
+                match &mix.inputs[i] {
+                    MixInput::Video(v) => return Some(v.clone()),
+                    MixInput::Mixed(m) => {
+                        for j in 0..T::mix_configs().len() {
+                            if &T::mix_configs()[j].def.name == m {
+                                stack.push(&T::mix_configs()[j].mix);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        None
+    }
+
     fn delta_sec_update(&self) -> Vec<RenderSpec> {
-        vec![seek!(self.base_stream() => self.delta_sec, false)]
+        if let Some(first_video) = self.find_first_video() {
+            vec![seek!(first_video => self.delta_sec, false)]
+        } else {
+            vec![]
+        }
     }
 
     fn scrub_update(&self) -> Vec<RenderSpec> {
-        if self.scrub >= 0.0 {
-            vec![seek!(self.base_stream() => self.scrub, false)]
+        if let Some(first_video) = self.find_first_video() {
+            if self.scrub >= 0.0 {
+                vec![seek!(first_video => self.scrub, false)]
+            } else {
+                vec![seek!(first_video => self.scrub - 0.1, false)]
+            }
         } else {
-            vec![seek!(self.base_stream() => self.scrub - 0.1, false)]
+            vec![]
         }
     }
 
     fn exact_sec_update(&self) -> Vec<RenderSpec> {
-        vec![seek!(self.base_stream() => self.exact_sec, true)]
+        if let Some(first_video) = self.find_first_video() {
+            return vec![seek!(first_video => self.exact_sec, true)];
+        }
+        vec![]
     }
 
-    pub fn base_stream(&self) -> String {
-        format!("base_stream_{}", self.idx)
-    }
-    pub fn base_cache(&self) -> String {
-        format!("base_cache_{}", self.idx)
-    }
     pub fn main_mix(&self) -> String {
         format!("main_mix_{}", self.idx)
     }

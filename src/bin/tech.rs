@@ -906,13 +906,15 @@ pub fn calculate(
         }
     }
 
-    let vid_info = if let Some(GfxInfo::VidInfo(vid_info)) = gfx_info.get(
-        &settings.playback[settings.display_idx]
-            .stream
-            .base_stream()
-            .to_string(),
-    ) {
-        vid_info
+    let vid_info = if let Some(vid_name) = settings.playback[settings.active_idx]
+        .stream
+        .find_first_video()
+    {
+        if let Some(GfxInfo::VidInfo(vid_info)) = gfx_info.get(&vid_name) {
+            vid_info
+        } else {
+            &VidInfo::default()
+        }
     } else {
         &VidInfo::default()
     };
