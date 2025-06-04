@@ -1,5 +1,5 @@
 use std::{
-    collections::HashMap,
+    collections::{HashMap, HashSet},
     error::Error,
     sync::{LazyLock, Mutex},
 };
@@ -7,776 +7,510 @@ use std::{
 use sdlrig::{
     gfxinfo::{Asset, GfxEvent, GfxInfo, Vid, VidInfo, VidMixer},
     hud_text,
-    renderspec::{CopyEx, Mix, RenderSpec},
+    renderspec::{Mix, RenderSpec},
     reset,
 };
-use serde::{Deserialize, Serialize};
-use vizwasm::vizconfig::{AllSettings, GlobalNameAccessors, LoopEvent, StreamSettings};
+use vizwasm::vizconfig::{AllSettings, LoopEvent, MixConfig, StreamSettings};
 fn main() {}
-#[derive(Debug, Clone, Serialize, Deserialize)]
-struct TechNameAccessors {}
 
-impl GlobalNameAccessors for TechNameAccessors {
-    fn stream_defs() -> &'static [Vid] {
-        static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
-            vec![
-                Vid::builder()
-                    .name("blank")
-                    .path(&format!(
-                        "{}/streams/blank.mp4",
-                        TechNameAccessors::asset_path()
-                    ))
-                    .resolution((720, 480))
-                    .tbq((1, 12800))
-                    .pix_fmt("yuv420p")
-                    .repeat(true)
-                    .realtime(false)
-                    .hardware_decode(true)
-                    .build(),
-                Vid::builder()
-                    .name("generate")
-                    .path(&format!(
-                        "{}/streams/blank.mp4",
-                        TechNameAccessors::asset_path()
-                    ))
-                    .resolution((720, 480))
-                    .repeat(true)
-                    .realtime(false)
-                    .hardware_decode(true)
-                    .build(),
-                Vid::builder()
-                    .name("blood")
-                    .path(&format!(
-                        "{}/streams/blank.mp4",
-                        TechNameAccessors::asset_path()
-                    ))
-                    .resolution((720, 480))
-                    .repeat(true)
-                    .realtime(false)
-                    .hardware_decode(true)
-                    .build(),
-                Vid::builder()
-                    .name("blob")
-                    .path(&format!(
-                        "{}/streams/blob.mp4",
-                        TechNameAccessors::asset_path()
-                    ))
-                    .resolution((720, 480))
-                    .tbq((1, 12800))
-                    .pix_fmt("yuv420p")
-                    .repeat(true)
-                    .realtime(false)
-                    .hardware_decode(true)
-                    .build(),
-                Vid::builder()
-                    .name("blur_lights")
-                    .path(&format!(
-                        "{}/streams/blur_lights.mp4",
-                        TechNameAccessors::asset_path()
-                    ))
-                    .resolution((720, 480))
-                    .tbq((1, 12800))
-                    .pix_fmt("yuv420p")
-                    .repeat(true)
-                    .realtime(false)
-                    .hardware_decode(true)
-                    .build()
-                    .into(),
-                Vid::builder()
-                    .name("burns")
-                    .path(&format!(
-                        "{}/streams/burns.mp4",
-                        TechNameAccessors::asset_path()
-                    ))
-                    .resolution((720, 480))
-                    .tbq((1, 12800))
-                    .pix_fmt("yuv420p")
-                    .repeat(true)
-                    .realtime(false)
-                    .hardware_decode(true)
-                    .build()
-                    .into(),
-                Vid::builder()
-                    .name("circles")
-                    .path(&format!(
-                        "{}/streams/circles.mp4",
-                        TechNameAccessors::asset_path()
-                    ))
-                    .resolution((720, 480))
-                    .tbq((1, 12800))
-                    .pix_fmt("yuv420p")
-                    .repeat(true)
-                    .realtime(false)
-                    .hardware_decode(true)
-                    .build()
-                    .into(),
-                Vid::builder()
-                    .name("circuit1")
-                    .path(&format!(
-                        "{}/streams/circuit1.mp4",
-                        TechNameAccessors::asset_path()
-                    ))
-                    .resolution((720, 480))
-                    .tbq((1, 12800))
-                    .pix_fmt("yuv420p")
-                    .repeat(true)
-                    .realtime(false)
-                    .hardware_decode(true)
-                    .build()
-                    .into(),
-                Vid::builder()
-                    .name("circuit2")
-                    .path(&format!(
-                        "{}/streams/circuit2.mp4",
-                        TechNameAccessors::asset_path()
-                    ))
-                    .resolution((720, 480))
-                    .tbq((1, 12800))
-                    .pix_fmt("yuv420p")
-                    .repeat(true)
-                    .realtime(false)
-                    .hardware_decode(true)
-                    .build()
-                    .into(),
-                Vid::builder()
-                    .name("clock")
-                    .path(&format!(
-                        "{}/streams/clock.mp4",
-                        TechNameAccessors::asset_path()
-                    ))
-                    .resolution((720, 480))
-                    .tbq((1, 12800))
-                    .pix_fmt("yuv420p")
-                    .repeat(true)
-                    .realtime(false)
-                    .hardware_decode(true)
-                    .build()
-                    .into(),
-                Vid::builder()
-                    .name("corp")
-                    .path(&format!(
-                        "{}/streams/corp.mp4",
-                        TechNameAccessors::asset_path()
-                    ))
-                    .resolution((720, 480))
-                    .tbq((1, 12800))
-                    .pix_fmt("yuv420p")
-                    .repeat(true)
-                    .realtime(false)
-                    .hardware_decode(true)
-                    .build()
-                    .into(),
-                Vid::builder()
-                    .name("cube")
-                    .path(&format!(
-                        "{}/streams/cube.mp4",
-                        TechNameAccessors::asset_path()
-                    ))
-                    .resolution((720, 480))
-                    .tbq((1, 12800))
-                    .pix_fmt("yuv420p")
-                    .repeat(true)
-                    .realtime(false)
-                    .hardware_decode(true)
-                    .build()
-                    .into(),
-                Vid::builder()
-                    .name("dna")
-                    .path(&format!(
-                        "{}/streams/dna.mp4",
-                        TechNameAccessors::asset_path()
-                    ))
-                    .resolution((720, 480))
-                    .tbq((1, 12800))
-                    .pix_fmt("yuv420p")
-                    .repeat(true)
-                    .realtime(false)
-                    .hardware_decode(true)
-                    .build()
-                    .into(),
-                Vid::builder()
-                    .name("epic")
-                    .path(&format!(
-                        "{}/streams/epic.mp4",
-                        TechNameAccessors::asset_path()
-                    ))
-                    .resolution((720, 480))
-                    .tbq((1, 12800))
-                    .pix_fmt("yuv420p")
-                    .repeat(true)
-                    .realtime(false)
-                    .hardware_decode(true)
-                    .build()
-                    .into(),
-                Vid::builder()
-                    .name("ether")
-                    .path(&format!(
-                        "{}/streams/ether.mp4",
-                        TechNameAccessors::asset_path()
-                    ))
-                    .resolution((720, 480))
-                    .tbq((1, 12800))
-                    .pix_fmt("yuv420p")
-                    .repeat(true)
-                    .realtime(false)
-                    .hardware_decode(true)
-                    .build()
-                    .into(),
-                Vid::builder()
-                    .name("volume")
-                    .path(&format!(
-                        "{}/streams/volume.mp4",
-                        TechNameAccessors::asset_path()
-                    ))
-                    .resolution((720, 480))
-                    .tbq((1, 12800))
-                    .pix_fmt("yuv420p")
-                    .repeat(true)
-                    .realtime(false)
-                    .hardware_decode(true)
-                    .build()
-                    .into(),
-                Vid::builder()
-                    .name("fluffy_clouds")
-                    .path(&format!(
-                        "{}/streams/fluffy_clouds.mp4",
-                        TechNameAccessors::asset_path()
-                    ))
-                    .resolution((720, 480))
-                    .tbq((1, 12800))
-                    .pix_fmt("yuv420p")
-                    .repeat(true)
-                    .realtime(false)
-                    .hardware_decode(true)
-                    .build()
-                    .into(),
-                Vid::builder()
-                    .name("holo_city")
-                    .path(&format!(
-                        "{}/streams/holo_city.mp4",
-                        TechNameAccessors::asset_path()
-                    ))
-                    .resolution((720, 480))
-                    .tbq((1, 12800))
-                    .pix_fmt("yuv420p")
-                    .repeat(true)
-                    .realtime(false)
-                    .hardware_decode(true)
-                    .build()
-                    .into(),
-                Vid::builder()
-                    .name("masque")
-                    .path(&format!(
-                        "{}/streams/masque.mp4",
-                        TechNameAccessors::asset_path()
-                    ))
-                    .resolution((720, 480))
-                    .tbq((1, 12800))
-                    .pix_fmt("yuv420p")
-                    .repeat(true)
-                    .realtime(false)
-                    .hardware_decode(true)
-                    .build()
-                    .into(),
-                Vid::builder()
-                    .name("night_sky")
-                    .path(&format!(
-                        "{}/streams/night_sky.mp4",
-                        TechNameAccessors::asset_path()
-                    ))
-                    .resolution((720, 480))
-                    .tbq((1, 12800))
-                    .pix_fmt("yuv420p")
-                    .repeat(true)
-                    .realtime(false)
-                    .hardware_decode(true)
-                    .build()
-                    .into(),
-                Vid::builder()
-                    .name("nyc")
-                    .path(&format!(
-                        "{}/streams/nyc.mp4",
-                        TechNameAccessors::asset_path()
-                    ))
-                    .resolution((720, 480))
-                    .tbq((1, 12800))
-                    .pix_fmt("yuv420p")
-                    .repeat(true)
-                    .realtime(false)
-                    .hardware_decode(true)
-                    .build()
-                    .into(),
-                Vid::builder()
-                    .name("old_clouds")
-                    .path(&format!(
-                        "{}/streams/old_clouds.mp4",
-                        TechNameAccessors::asset_path()
-                    ))
-                    .resolution((720, 480))
-                    .tbq((1, 12800))
-                    .pix_fmt("yuv420p")
-                    .repeat(true)
-                    .realtime(false)
-                    .hardware_decode(true)
-                    .build()
-                    .into(),
-                Vid::builder()
-                    .name("oldny")
-                    .path(&format!(
-                        "{}/streams/oldny.mp4",
-                        TechNameAccessors::asset_path()
-                    ))
-                    .resolution((720, 480))
-                    .tbq((1, 12800))
-                    .pix_fmt("yuv420p")
-                    .repeat(true)
-                    .realtime(false)
-                    .hardware_decode(true)
-                    .build()
-                    .into(),
-                Vid::builder()
-                    .name("phone")
-                    .path(&format!(
-                        "{}/streams/phone.mp4",
-                        TechNameAccessors::asset_path()
-                    ))
-                    .resolution((720, 480))
-                    .tbq((1, 12800))
-                    .pix_fmt("yuv420p")
-                    .repeat(true)
-                    .realtime(false)
-                    .hardware_decode(true)
-                    .build()
-                    .into(),
-                Vid::builder()
-                    .name("silver_lining")
-                    .path(&format!(
-                        "{}/streams/silver_lining.mp4",
-                        TechNameAccessors::asset_path()
-                    ))
-                    .resolution((720, 480))
-                    .tbq((1, 12800))
-                    .pix_fmt("yuv420p")
-                    .repeat(true)
-                    .realtime(false)
-                    .hardware_decode(true)
-                    .build()
-                    .into(),
-                Vid::builder()
-                    .name("stars")
-                    .path(&format!(
-                        "{}/streams/stars.mp4",
-                        TechNameAccessors::asset_path()
-                    ))
-                    .resolution((720, 480))
-                    .tbq((1, 12800))
-                    .pix_fmt("yuv420p")
-                    .repeat(true)
-                    .realtime(false)
-                    .hardware_decode(true)
-                    .build()
-                    .into(),
-                Vid::builder()
-                    .name("target")
-                    .path(&format!(
-                        "{}/streams/target.mp4",
-                        TechNameAccessors::asset_path()
-                    ))
-                    .resolution((720, 480))
-                    .tbq((1, 12800))
-                    .pix_fmt("yuv420p")
-                    .repeat(true)
-                    .realtime(false)
-                    .hardware_decode(true)
-                    .build()
-                    .into(),
-                Vid::builder()
-                    .name("tv")
-                    .path(&format!(
-                        "{}/streams/tv.mp4",
-                        TechNameAccessors::asset_path()
-                    ))
-                    .resolution((720, 480))
-                    .tbq((1, 12800))
-                    .pix_fmt("yuv420p")
-                    .repeat(true)
-                    .realtime(false)
-                    .hardware_decode(true)
-                    .build()
-                    .into(),
-                Vid::builder()
-                    .name("vestial1")
-                    .path(&format!(
-                        "{}/streams/vestial1.mp4",
-                        TechNameAccessors::asset_path()
-                    ))
-                    .resolution((720, 480))
-                    .tbq((1, 12800))
-                    .pix_fmt("yuv420p")
-                    .repeat(true)
-                    .realtime(false)
-                    .hardware_decode(true)
-                    .build()
-                    .into(),
-                Vid::builder()
-                    .name("vestial2")
-                    .path(&format!(
-                        "{}/streams/vestial2.mp4",
-                        TechNameAccessors::asset_path()
-                    ))
-                    .resolution((720, 480))
-                    .tbq((1, 12800))
-                    .pix_fmt("yuv420p")
-                    .repeat(true)
-                    .realtime(false)
-                    .hardware_decode(true)
-                    .build()
-                    .into(),
-                Vid::builder()
-                    .name("world_grid")
-                    .path(&format!(
-                        "{}/streams/world_grid.mp4",
-                        TechNameAccessors::asset_path()
-                    ))
-                    .resolution((720, 480))
-                    .tbq((1, 12800))
-                    .pix_fmt("yuv420p")
-                    .repeat(true)
-                    .realtime(false)
-                    .hardware_decode(true)
-                    .build()
-                    .into(),
-                Vid::builder()
-                    .name("the_moon")
-                    .path(&format!(
-                        "{}/streams/the_moon.mp4",
-                        TechNameAccessors::asset_path()
-                    ))
-                    .resolution((720, 480))
-                    .tbq((1, 12800))
-                    .pix_fmt("yuv420p")
-                    .repeat(true)
-                    .realtime(false)
-                    .hardware_decode(true)
-                    .build()
-                    .into(),
-                Vid::builder()
-                    .name("tube")
-                    .path(&format!(
-                        "{}/streams/tube.mp4",
-                        TechNameAccessors::asset_path()
-                    ))
-                    .resolution((720, 480))
-                    .tbq((1, 12800))
-                    .pix_fmt("yuv420p")
-                    .repeat(true)
-                    .realtime(false)
-                    .hardware_decode(true)
-                    .build()
-                    .into(),
-                Vid::builder()
-                    .name("front cam")
-                    .path("MacBook Pro Camera")
-                    .format("avfoundation")
-                    .opts(&vec![
-                        ("pixel_format", "bgr0"),
-                        ("framerate", "30.0"),
-                        ("video_size", "1280x720"),
-                    ])
-                    .resolution((1280, 720))
-                    .tbq((1, 1000000))
-                    .pix_fmt("bgr0")
-                    .repeat(false)
-                    .realtime(true)
-                    .hardware_decode(false)
-                    .build()
-                    .into(),
-                //   Vid::builder()
-                //     .name("liquid_purple")
-                //     .path(&format!(
-                //         "{}/streams/liquid_purple.mp4",
-                //         TechNameAccessors::asset_path()
-                //     ))
-                //     .resolution((720, 480))
-                //     .tbq((1, 12800))
-                //     .pix_fmt("yuv420p")
-                //     .repeat(true)
-                //     .realtime(false)
-                //     .hardware_decode(true)
-                //     .build()
-                //     .into(),
-                //   Vid::builder()
-                //     .name("liquid_gold")
-                //     .path(&format!(
-                //         "{}/streams/liquid_gold.mp4",
-                //         TechNameAccessors::asset_path()
-                //     ))
-                //     .resolution((720, 480))
-                //     .tbq((1, 12800))
-                //     .pix_fmt("yuv420p")
-                //     .repeat(true)
-                //     .realtime(false)
-                //     .hardware_decode(true)
-                //     .build()
-                //     .into(),
-                //   Vid::builder()
-                //     .name("liquid_lava")
-                //     .path(&format!(
-                //         "{}/streams/liquid_lava.mp4",
-                //         TechNameAccessors::asset_path()
-                //     ))
-                //     .resolution((720, 480))
-                //     .tbq((1, 12800))
-                //     .pix_fmt("yuv420p")
-                //     .repeat(true)
-                //     .realtime(false)
-                //     .hardware_decode(true)
-                //     .build()
-                //     .into(),
-                //   Vid::builder()
-                //     .name("bootleg_liberty")
-                //     .path(&format!(
-                //         "{}/streams/bootleg_liberty.mp4",
-                //         TechNameAccessors::asset_path()
-                //     ))
-                //     .resolution((720, 480))
-                //     .tbq((1, 12800))
-                //     .pix_fmt("yuv420p")
-                //     .repeat(true)
-                //     .realtime(false)
-                //     .hardware_decode(true)
-                //     .build()
-                //     .into(),
-                //   Vid::builder()
-                //     .name("smoke")
-                //     .path(&format!(
-                //         "{}/streams/smoke.mp4",
-                //         TechNameAccessors::asset_path()
-                //     ))
-                //     .resolution((720, 480))
-                //     .tbq((1, 12800))
-                //     .pix_fmt("yuv420p")
-                //     .repeat(true)
-                //     .realtime(false)
-                //     .hardware_decode(true)
-                //     .build()
-                //     .into(),
-                //   Vid::builder()
-                //     .name("ground_ctl")
-                //     .path(&format!(
-                //         "{}/streams/ground_ctl.mp4",
-                //         TechNameAccessors::asset_path()
-                //     ))
-                //     .resolution((720, 480))
-                //     .tbq((1, 12800))
-                //     .pix_fmt("yuv420p")
-                //     .repeat(true)
-                //     .realtime(false)
-                //     .hardware_decode(true)
-                //     .build()
-                //     .into(),
-                //   Vid::builder()
-                //     .name("fall")
-                //     .path(&format!(
-                //         "{}/streams/fall.mp4",
-                //         TechNameAccessors::asset_path()
-                //     ))
-                //     .resolution((720, 480))
-                //     .tbq((1, 12800))
-                //     .pix_fmt("yuv420p")
-                //     .repeat(true)
-                //     .realtime(false)
-                //     .hardware_decode(true)
-                //     .build()
-                //     .into(),
-                //   Vid::builder()
-                //     .name("horizon")
-                //     .path(&format!(
-                //         "{}/streams/horizon.mp4",
-                //         TechNameAccessors::asset_path()
-                //     ))
-                //     .resolution((720, 480))
-                //     .tbq((1, 12800))
-                //     .pix_fmt("yuv420p")
-                //     .repeat(true)
-                //     .realtime(false)
-                //     .hardware_decode(true)
-                //     .build()
-                //     .into(),
-                //   Vid::builder()
-                //     .name("capture")
-                //     .path("USB3 Video")
-                //     .format("avfoundation")
-                //     .resolution((1280, 720))
-                //     .tbq((1, 1000000))
-                //     .pix_fmt("bgr0")
-                //     .opts(&vec![
-                //         ("pixel_format", "bgr0"),
-                //         ("framerate", "30.0"),
-                //         ("video_size", "1280x720"),
-                //     ])
-                //     .realtime(true)
-                //     .repeat(false)
-                //     .build(),
-                //   Vid::builder()
-                //     .name("StreamCam")
-                //     .path("Logitech StreamCam")
-                //     .format("avfoundation")
-                //     .resolution((848, 480))
-                //     .tbq((1, 1000000))
-                //     .pix_fmt("bgr0")
-                //     .opts(&vec![
-                //         ("pixel_format", "bgr0"),
-                //         ("framerate", "30.0"),
-                //         ("video_size", "848,480"),
-                //     ])
-                //     .realtime(true)
-                //     .repeat(false)
-                //     .build(),
-            ]
+static ASSET_PATH: &'static str = "/Users/ttie/Desktop/tech";
+
+static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
+    vec![
+        Vid::builder()
+            .name("blank")
+            .path(format!("{ASSET_PATH}/streams/blank.mp4"))
+            .resolution((720, 480))
+            .tbq((1, 12800))
+            .pix_fmt("yuv420p")
+            .repeat(true)
+            .realtime(false)
+            .hardware_decode(true)
+            .build(),
+        Vid::builder()
+            .name("blob")
+            .path(&format!("{ASSET_PATH}/streams/blob.mp4"))
+            .resolution((720, 480))
+            .tbq((1, 12800))
+            .pix_fmt("yuv420p")
+            .repeat(true)
+            .realtime(false)
+            .hardware_decode(true)
+            .build(),
+        Vid::builder()
+            .name("blur_lights")
+            .path(&format!("{ASSET_PATH}/streams/blur_lights.mp4"))
+            .resolution((720, 480))
+            .tbq((1, 12800))
+            .pix_fmt("yuv420p")
+            .repeat(true)
+            .realtime(false)
+            .hardware_decode(true)
+            .build()
+            .into(),
+        Vid::builder()
+            .name("burns")
+            .path(&format!("{ASSET_PATH}/streams/burns.mp4"))
+            .resolution((720, 480))
+            .tbq((1, 12800))
+            .pix_fmt("yuv420p")
+            .repeat(true)
+            .realtime(false)
+            .hardware_decode(true)
+            .build()
+            .into(),
+        Vid::builder()
+            .name("circles")
+            .path(&format!("{ASSET_PATH}/streams/circles.mp4"))
+            .resolution((720, 480))
+            .tbq((1, 12800))
+            .pix_fmt("yuv420p")
+            .repeat(true)
+            .realtime(false)
+            .hardware_decode(true)
+            .build()
+            .into(),
+        Vid::builder()
+            .name("circuit1")
+            .path(&format!("{ASSET_PATH}/streams/circuit1.mp4"))
+            .resolution((720, 480))
+            .tbq((1, 12800))
+            .pix_fmt("yuv420p")
+            .repeat(true)
+            .realtime(false)
+            .hardware_decode(true)
+            .build()
+            .into(),
+        Vid::builder()
+            .name("circuit2")
+            .path(&format!("{ASSET_PATH}/streams/circuit2.mp4"))
+            .resolution((720, 480))
+            .tbq((1, 12800))
+            .pix_fmt("yuv420p")
+            .repeat(true)
+            .realtime(false)
+            .hardware_decode(true)
+            .build()
+            .into(),
+        Vid::builder()
+            .name("clock")
+            .path(&format!("{ASSET_PATH}/streams/clock.mp4"))
+            .resolution((720, 480))
+            .tbq((1, 12800))
+            .pix_fmt("yuv420p")
+            .repeat(true)
+            .realtime(false)
+            .hardware_decode(true)
+            .build()
+            .into(),
+        Vid::builder()
+            .name("corp")
+            .path(&format!("{ASSET_PATH}/streams/corp.mp4"))
+            .resolution((720, 480))
+            .tbq((1, 12800))
+            .pix_fmt("yuv420p")
+            .repeat(true)
+            .realtime(false)
+            .hardware_decode(true)
+            .build()
+            .into(),
+        Vid::builder()
+            .name("cube")
+            .path(&format!("{ASSET_PATH}/streams/cube.mp4"))
+            .resolution((720, 480))
+            .tbq((1, 12800))
+            .pix_fmt("yuv420p")
+            .repeat(true)
+            .realtime(false)
+            .hardware_decode(true)
+            .build()
+            .into(),
+        Vid::builder()
+            .name("dna")
+            .path(&format!("{ASSET_PATH}/streams/dna.mp4"))
+            .resolution((720, 480))
+            .tbq((1, 12800))
+            .pix_fmt("yuv420p")
+            .repeat(true)
+            .realtime(false)
+            .hardware_decode(true)
+            .build()
+            .into(),
+        Vid::builder()
+            .name("epic")
+            .path(&format!("{ASSET_PATH}/streams/epic.mp4"))
+            .resolution((720, 480))
+            .tbq((1, 12800))
+            .pix_fmt("yuv420p")
+            .repeat(true)
+            .realtime(false)
+            .hardware_decode(true)
+            .build()
+            .into(),
+        Vid::builder()
+            .name("ether")
+            .path(&format!("{ASSET_PATH}/streams/ether.mp4"))
+            .resolution((720, 480))
+            .tbq((1, 12800))
+            .pix_fmt("yuv420p")
+            .repeat(true)
+            .realtime(false)
+            .hardware_decode(true)
+            .build()
+            .into(),
+        Vid::builder()
+            .name("volume")
+            .path(&format!("{ASSET_PATH}/streams/volume.mp4"))
+            .resolution((720, 480))
+            .tbq((1, 12800))
+            .pix_fmt("yuv420p")
+            .repeat(true)
+            .realtime(false)
+            .hardware_decode(true)
+            .build()
+            .into(),
+        Vid::builder()
+            .name("fluffy_clouds")
+            .path(&format!("{ASSET_PATH}/streams/fluffy_clouds.mp4"))
+            .resolution((720, 480))
+            .tbq((1, 12800))
+            .pix_fmt("yuv420p")
+            .repeat(true)
+            .realtime(false)
+            .hardware_decode(true)
+            .build()
+            .into(),
+        Vid::builder()
+            .name("holo_city")
+            .path(&format!("{ASSET_PATH}/streams/holo_city.mp4"))
+            .resolution((720, 480))
+            .tbq((1, 12800))
+            .pix_fmt("yuv420p")
+            .repeat(true)
+            .realtime(false)
+            .hardware_decode(true)
+            .build()
+            .into(),
+        Vid::builder()
+            .name("masque")
+            .path(&format!("{ASSET_PATH}/streams/masque.mp4"))
+            .resolution((720, 480))
+            .tbq((1, 12800))
+            .pix_fmt("yuv420p")
+            .repeat(true)
+            .realtime(false)
+            .hardware_decode(true)
+            .build()
+            .into(),
+        Vid::builder()
+            .name("night_sky")
+            .path(&format!("{ASSET_PATH}/streams/night_sky.mp4"))
+            .resolution((720, 480))
+            .tbq((1, 12800))
+            .pix_fmt("yuv420p")
+            .repeat(true)
+            .realtime(false)
+            .hardware_decode(true)
+            .build()
+            .into(),
+        Vid::builder()
+            .name("nyc")
+            .path(&format!("{ASSET_PATH}/streams/nyc.mp4"))
+            .resolution((720, 480))
+            .tbq((1, 12800))
+            .pix_fmt("yuv420p")
+            .repeat(true)
+            .realtime(false)
+            .hardware_decode(true)
+            .build()
+            .into(),
+        Vid::builder()
+            .name("old_clouds")
+            .path(&format!("{ASSET_PATH}/streams/old_clouds.mp4"))
+            .resolution((720, 480))
+            .tbq((1, 12800))
+            .pix_fmt("yuv420p")
+            .repeat(true)
+            .realtime(false)
+            .hardware_decode(true)
+            .build()
+            .into(),
+        Vid::builder()
+            .name("phone")
+            .path(&format!("{ASSET_PATH}/streams/phone.mp4"))
+            .resolution((720, 480))
+            .tbq((1, 12800))
+            .pix_fmt("yuv420p")
+            .repeat(true)
+            .realtime(false)
+            .hardware_decode(true)
+            .build()
+            .into(),
+        Vid::builder()
+            .name("silver_lining")
+            .path(&format!("{ASSET_PATH}/streams/silver_lining.mp4"))
+            .resolution((720, 480))
+            .tbq((1, 12800))
+            .pix_fmt("yuv420p")
+            .repeat(true)
+            .realtime(false)
+            .hardware_decode(true)
+            .build()
+            .into(),
+        Vid::builder()
+            .name("stars")
+            .path(&format!("{ASSET_PATH}/streams/stars.mp4"))
+            .resolution((720, 480))
+            .tbq((1, 12800))
+            .pix_fmt("yuv420p")
+            .repeat(true)
+            .realtime(false)
+            .hardware_decode(true)
+            .build()
+            .into(),
+        Vid::builder()
+            .name("target")
+            .path(&format!("{ASSET_PATH}/streams/target.mp4"))
+            .resolution((720, 480))
+            .tbq((1, 12800))
+            .pix_fmt("yuv420p")
+            .repeat(true)
+            .realtime(false)
+            .hardware_decode(true)
+            .build()
+            .into(),
+        Vid::builder()
+            .name("tv")
+            .path(&format!("{ASSET_PATH}/streams/tv.mp4"))
+            .resolution((720, 480))
+            .tbq((1, 12800))
+            .pix_fmt("yuv420p")
+            .repeat(true)
+            .realtime(false)
+            .hardware_decode(true)
+            .build()
+            .into(),
+        Vid::builder()
+            .name("vestial1")
+            .path(&format!("{ASSET_PATH}/streams/vestial1.mp4"))
+            .resolution((720, 480))
+            .tbq((1, 12800))
+            .pix_fmt("yuv420p")
+            .repeat(true)
+            .realtime(false)
+            .hardware_decode(true)
+            .build()
+            .into(),
+        Vid::builder()
+            .name("vestial2")
+            .path(&format!("{ASSET_PATH}/streams/vestial2.mp4"))
+            .resolution((720, 480))
+            .tbq((1, 12800))
+            .pix_fmt("yuv420p")
+            .repeat(true)
+            .realtime(false)
+            .hardware_decode(true)
+            .build()
+            .into(),
+        Vid::builder()
+            .name("world_grid")
+            .path(&format!("{ASSET_PATH}/streams/world_grid.mp4"))
+            .resolution((720, 480))
+            .tbq((1, 12800))
+            .pix_fmt("yuv420p")
+            .repeat(true)
+            .realtime(false)
+            .hardware_decode(true)
+            .build()
+            .into(),
+        Vid::builder()
+            .name("the_moon")
+            .path(&format!("{ASSET_PATH}/streams/the_moon.mp4"))
+            .resolution((720, 480))
+            .tbq((1, 12800))
+            .pix_fmt("yuv420p")
+            .repeat(true)
+            .realtime(false)
+            .hardware_decode(true)
+            .build()
+            .into(),
+        Vid::builder()
+            .name("front cam")
+            .path("MacBook Pro Camera")
+            .format("avfoundation")
+            .opts(&vec![
+                ("pixel_format", "bgr0"),
+                ("framerate", "30.0"),
+                ("video_size", "1280x720"),
+            ])
+            .resolution((1280, 720))
+            .tbq((1, 1000000))
+            .pix_fmt("bgr0")
+            .repeat(false)
+            .realtime(true)
+            .hardware_decode(false)
+            .build()
+            .into(),
+        //   Vid::builder()
+        //     .name("capture")
+        //     .path("USB3 Video")
+        //     .format("avfoundation")
+        //     .resolution((1280, 720))
+        //     .tbq((1, 1000000))
+        //     .pix_fmt("bgr0")
+        //     .opts(&vec![
+        //         ("pixel_format", "bgr0"),
+        //         ("framerate", "30.0"),
+        //         ("video_size", "1280x720"),
+        //     ])
+        //     .realtime(true)
+        //     .repeat(false)
+        //     .build(),
+        //   Vid::builder()
+        //     .name("StreamCam")
+        //     .path("Logitech StreamCam")
+        //     .format("avfoundation")
+        //     .resolution((848, 480))
+        //     .tbq((1, 1000000))
+        //     .pix_fmt("bgr0")
+        //     .opts(&vec![
+        //         ("pixel_format", "bgr0"),
+        //         ("framerate", "30.0"),
+        //         ("video_size", "848,480"),
+        //     ])
+        //     .realtime(true)
+        //     .repeat(false)
+        //     .build(),
+    ]
+});
+
+static PLAYBACK_NAMES: LazyLock<Vec<&'static str>> = LazyLock::new(|| {
+    vec![
+        "blank",
+        "generate",
+        "grid",
+        "compose",
+        "blood",
+        "blob",
+        "blur_lights",
+        "burns",
+        "circles",
+        "circuit1",
+        "circuit2",
+        "clock",
+        "corp",
+        "cube",
+        "dna",
+        "epic",
+        "ether",
+        "volume",
+        "fluffy_clouds",
+        "holo_city",
+        "masque",
+        "night_sky",
+        "nyc",
+        "old_clouds",
+        "phone",
+        "silver_lining",
+        "stars",
+        "target",
+        "tv",
+        "vestial1",
+        "vestial2",
+        "world_grid",
+        "the_moon",
+    ]
+});
+
+static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
+    let mut configs = vec![];
+    configs.push(MixConfig {
+        def: VidMixer::builder()
+            .name("generate_mix")
+            .width(720)
+            .height(480)
+            .header(include_str!("../glsl/utils.glsl"))
+            .body(include_str!("../glsl/generate.glsl"))
+            .build(),
+        mix: Mix::builder()
+            .name("generate_mix")
+            .mixed("blank_mix")
+            .no_display(true)
+            .build(),
+    });
+    configs.push(MixConfig {
+        def: VidMixer::builder()
+            .name("blood_mix")
+            .width(720)
+            .height(480)
+            .header(concat!(
+                include_str!("../glsl/utils.glsl"),
+                "\n",
+                include_str!("../glsl/blood_funcs.glsl")
+            ))
+            .body(include_str!("../glsl/blood.glsl"))
+            .build(),
+        mix: Mix::builder()
+            .name("blood_mix")
+            .mixed("blank_mix")
+            .no_display(true)
+            .build(),
+    });
+    configs.push(MixConfig {
+        def: VidMixer::builder()
+            .name("grid_mix")
+            .width(720)
+            .height(480)
+            .build(),
+        mix: Mix::builder()
+            .name("grid_mix")
+            .mixed("generate_feedback")
+            .no_display(true)
+            .build(),
+    });
+    configs.push(MixConfig {
+        def: VidMixer::builder()
+            .name("compose_mix")
+            .header(include_str!("../glsl/utils.glsl"))
+            .body(include_str!("../glsl/compose.glsl"))
+            .width(720)
+            .height(480)
+            .build(),
+        mix: Mix::builder()
+            .name("compose_mix")
+            .mixed("fluffy_clouds_main_mix")
+            .mixed("generate_feedback")
+            .no_display(true)
+            .build(),
+    });
+
+    for vid in STREAM_DEFS.iter() {
+        let mix_name = format!("{}_mix", vid.name);
+        configs.push(MixConfig {
+            def: VidMixer::builder()
+                .name(mix_name.clone())
+                .width(vid.resolution.0 as u32)
+                .height(vid.resolution.1 as u32)
+                .build(),
+            mix: Mix::builder()
+                .name(mix_name.clone())
+                .video(&vid.name)
+                .no_display(true)
+                .build(),
         });
-        &STREAM_DEFS
     }
+    configs
+});
 
-    fn mix_configs() -> &'static [vizwasm::vizconfig::MixConfig] {
-        static MIX_CONFIGS: LazyLock<Vec<vizwasm::vizconfig::MixConfig>> = LazyLock::new(|| {
-            let mut configs = vec![];
-            for vid in TechNameAccessors::stream_defs() {
-                let mix_name = format!("{}_", vid.name);
-                let mut mix_config = vizwasm::vizconfig::MixConfig {
-                    def: VidMixer::builder()
-                        .name(&mix_name)
-                        .width(vid.resolution.0 as u32)
-                        .height(vid.resolution.1 as u32)
-                        .build(),
-                    mix: Mix::builder()
-                        .name(mix_name.clone())
-                        .video(vid.name.clone())
-                        .no_display(true)
-                        .build(),
-                };
-                match vid.name.as_str() {
-                    "generate" => {
-                        mix_config.def.header =
-                            Some(String::from(include_str!("../glsl/utils.glsl")));
-                        mix_config.def.body =
-                            Some(String::from(include_str!("../glsl/generate.glsl")));
-                    }
-                    "blood" => {
-                        mix_config.def.header = Some(String::from(concat!(
-                            include_str!("../glsl/utils.glsl"),
-                            "\n",
-                            include_str!("../glsl/blood_funcs.glsl")
-                        )));
-                        mix_config.def.body =
-                            Some(String::from(include_str!("../glsl/blood.glsl")));
-                    }
-                    _ => (),
-                }
-                configs.push(mix_config);
-            }
-            configs
-        });
-        &MIX_CONFIGS
-    }
-
-    fn playback_mixes() -> &'static [&'static str] {
-        static PLAYBACK_MIXES: LazyLock<Vec<&'static str>> = LazyLock::new(|| {
-            TechNameAccessors::mix_configs()
-                .iter()
-                .map(|config| config.def.name.as_str())
-                .collect()
-        });
-        &PLAYBACK_MIXES
-    }
-
-    fn overlay_names() -> &'static [&'static str] {
-        &[
-            "blank",
-            "vhs_overlay",
-            "film_dust",
-            "tracking",
-            "colorful",
-            "bottom",
-        ]
-    }
-
-    fn distort_names() -> &'static [(&'static str, &'static str)] {
-        &[
-            //("none", "none"), removed to reduce complexity
-            ("neutral", "neutral"),
-            ("caustic_adjusted_dx", "caustic_adjusted_dy"),
-            ("drops_dx", "drops_dy"),
-            ("bend", "neutral"),
-            ("stretch_5_dx", "stretch_5_dy"),
-            ("shrink_5_dx", "shrink_5_dy"),
-            ("digital_color", "digital_color"),
-            ("digital_white", "digital_white"),
-        ]
-    }
-
-    fn distort_edge_types() -> &'static [&'static str] {
-        &["smear", "wrap", "mirror", "blank"]
-    }
-    fn lut_names() -> &'static [&'static str] {
-        &[
-            "none",
-            "rad",
-            "midas",
-            "blackwhite",
-            "blue",
-            "redzone",
-            "riso",
-            "plague",
-            "hyper",
-            "sepia",
-        ]
-    }
-
-    fn blend_modes() -> &'static [&'static str] {
-        &[
-            "disable",
-            "addition",
-            "and",
-            "average",
-            "darken",
-            "difference",
-            "divide",
-            "lighten",
-            "or",
-            "overlay",
-            "screen",
-            "subtract",
-            "xor",
-            "alpha",
-        ]
-    }
-
-    fn colors() -> &'static [(&'static str, &'static str)] {
-        &[
-            ("black", "0x000000"),
-            ("defined", "6e9ea2"),
-            ("white", "0xffffff"),
-            ("lightgray", "0x808080"),
-            ("darkgray", "0x0f0f0f"),
-            ("red", "0xff0000"),
-            ("green", "0x00ff00"),
-            ("blue", "0x00007f"),
-            ("darkred", "0x7f0000"),
-            ("darkgreen", "0x007f00"),
-            ("darkblue", "0x00007f"),
-            ("orange", "0x7f3f00"),
-        ]
-    }
-
-    fn asset_path() -> &'static str {
-        "/Users/ttie/Desktop/tech"
-    }
-}
-
-lazy_static::lazy_static! {
-    static ref SETTINGS: Mutex<Box<AllSettings<TechNameAccessors>>> = Mutex::new(Box::new(AllSettings::new()));
-}
+static SETTINGS: LazyLock<Mutex<Box<AllSettings>>> = LazyLock::new(|| {
+    let settings = AllSettings::new(
+        STREAM_DEFS.clone(),
+        MIX_CONFIGS.clone(),
+        PLAYBACK_NAMES.clone(),
+        ASSET_PATH,
+    );
+    Mutex::new(Box::new(settings))
+});
 
 #[no_mangle]
 #[allow(unused)]
@@ -821,14 +555,19 @@ pub fn calculate(
 
     let mut specs = vec![];
     ONCE.call_once(|| {
-        settings.initial_reset_complete = vec![false; TechNameAccessors::stream_defs().len()];
+        settings.initial_reset_complete = vec![false; settings.playback.len()];
     });
 
     //Update steams for incoming frame events first
     for event in reg_events {
         match event {
             GfxEvent::FrameEvent(fe) => {
-                if let Some(eidx) = settings.lookup_stream(&fe.stream) {
+                if let Some((eidx, _)) = settings
+                    .playback
+                    .iter()
+                    .enumerate()
+                    .find(|(_, s)| s.stream.first_video() == fe.stream)
+                {
                     settings.playback[eidx].stream.real_ts = fe.real_ts;
                     settings.playback[eidx].stream.continuous_ts = fe.continuous_ts;
                 }
@@ -859,7 +598,7 @@ pub fn calculate(
         if let Some(buf) = settings.playback[i].loops.record_buffer.as_mut() {
             let filtered_diffs = diffs
                 .into_iter()
-                .filter(|d| StreamSettings::<TechNameAccessors>::should_record(d))
+                .filter(|d| StreamSettings::should_record(d))
                 .collect::<Vec<_>>();
             // Save the diffs for this frame
             if filtered_diffs.len() > 0 {
@@ -896,8 +635,84 @@ pub fn calculate(
         }
     }
 
-    for i in 0..TechNameAccessors::stream_defs().len() {
-        if !(i == settings.display_idx || i == settings.active_idx)
+    specs.push(hud_text!(settings.hud(&VidInfo::default())));
+
+    // LHS
+    let mix_name = settings.playback[settings.active_idx].stream.overlay_mix();
+    if let Some(mix_config) = settings.mix_configs.get(&mix_name) {
+        let iw = mix_config.def.width as i32;
+        let ih = mix_config.def.height as i32;
+        let mut ow = iw;
+        let mut oh = ih;
+        let mut ix = 0;
+        let mut iy = 0;
+
+        let iaspect = iw as f32 / ih as f32;
+        let oaspect = (canvas_w / 2) as f32 / canvas_h as f32;
+
+        // correct aspect ratio
+        if iaspect > oaspect {
+            let effective_ow = (ih as f32 * oaspect) as i32;
+            ix = (ow - effective_ow) / 2;
+            ow = effective_ow;
+        } else if iaspect < oaspect {
+            let effective_oh = (iw as f32 / oaspect) as i32;
+            iy = (oh - effective_oh) / 2;
+            oh = effective_oh;
+        }
+        let src = (ix, iy, ow as u32, oh as u32);
+        let dst = (0, 0, canvas_w / 2 as u32, canvas_h as u32);
+
+        specs.extend(settings.get_playback_specs(settings.active_idx, src, dst));
+    }
+
+    // RHS
+    let mix_name = settings.playback[settings.display_idx].stream.overlay_mix();
+    if let Some(mix_config) = settings.mix_configs.get(&mix_name) {
+        let iw = mix_config.def.width as i32;
+        let ih = mix_config.def.height as i32;
+        let mut ow = iw;
+        let mut oh = ih;
+        let mut ix = 0;
+        let mut iy = 0;
+
+        let iaspect = iw as f32 / ih as f32;
+        let oaspect = (canvas_w / 2) as f32 / canvas_h as f32;
+
+        // correct aspect ratio
+        if iaspect > oaspect {
+            let effective_ow = (ih as f32 * oaspect) as i32;
+            ix = (ow - effective_ow) / 2;
+            ow = effective_ow;
+        } else if iaspect < oaspect {
+            let effective_oh = (iw as f32 / oaspect) as i32;
+            iy = (oh - effective_oh) / 2;
+            oh = effective_oh;
+        }
+        let src = (ix, iy, ow as u32, oh as u32);
+        let dst = (canvas_w as i32 / 2, 0, canvas_w / 2 as u32, canvas_h as u32);
+        specs.extend(settings.get_playback_specs(settings.display_idx, src, dst));
+    }
+    // RESET SEEK
+    for i in 0..settings.playback.len() {
+        settings.playback[i].stream.set_delta_sec(0.0);
+        settings.playback[i].stream.set_scrub(0.0);
+        settings.playback[i].stream.set_exact_sec(0.0);
+    }
+
+    let referenced = specs
+        .iter()
+        .filter_map(|s| {
+            if let RenderSpec::Mix(mix) = s {
+                Some(mix.name.clone())
+            } else {
+                None
+            }
+        })
+        .collect::<HashSet<_>>();
+
+    for i in 0..settings.playback.len() {
+        if !referenced.contains(&settings.playback[i].stream.main_mix())
             && settings.initial_reset_complete[i] == true
         {
             eprintln!("unloading {i}");
@@ -906,284 +721,5 @@ pub fn calculate(
         }
     }
 
-    let vid_info = if let Some(vid_name) = settings.playback[settings.active_idx]
-        .stream
-        .find_first_video()
-    {
-        if let Some(GfxInfo::VidInfo(vid_info)) = gfx_info.get(&vid_name) {
-            vid_info
-        } else {
-            &VidInfo::default()
-        }
-    } else {
-        &VidInfo::default()
-    };
-
-    specs.push(hud_text!(settings.hud(vid_info)));
-
-    let mut videos = HashMap::new();
-    videos.extend(videos_to_cache(
-        &settings.playback[settings.active_idx].stream,
-    ));
-    videos.extend(videos_to_cache(
-        &settings.playback[settings.display_idx].stream,
-    ));
-
-    specs.extend(videos.values().map(|s| s.clone().into()));
-
-    // LHS
-    let mix_name = TechNameAccessors::playback_mixes()[settings.active_idx];
-    let mix_def = TechNameAccessors::mix_configs()
-        .iter()
-        .find(|m| m.def.name == mix_name)
-        .map(|c| c.def.clone())
-        .expect("Mix config not found for display index");
-
-    let iw = mix_def.width as i32;
-    let ih = mix_def.height as i32;
-    let mut ow = iw;
-    let mut oh = ih;
-    let mut ix = 0;
-    let mut iy = 0;
-
-    let iaspect = iw as f32 / ih as f32;
-    let oaspect = (canvas_w / 2) as f32 / canvas_h as f32;
-
-    // correct aspect ratio
-    if iaspect > oaspect {
-        let effective_ow = (ih as f32 * oaspect) as i32;
-        ix = (ow - effective_ow) / 2;
-        ow = effective_ow;
-    } else if iaspect < oaspect {
-        let effective_oh = (iw as f32 / oaspect) as i32;
-        iy = (oh - effective_oh) / 2;
-        oh = effective_oh;
-    }
-    let target = CopyEx::builder()
-        .src((ix, iy, ow as u32, oh as u32))
-        .dst((0, 0, canvas_w / 2 as u32, canvas_h as u32))
-        .build();
-    specs.extend(show_stream(settings.active_idx, settings, target));
-
-    // RHS
-    let mix_name = TechNameAccessors::playback_mixes()[settings.display_idx];
-    let mix_def = TechNameAccessors::mix_configs()
-        .iter()
-        .find(|m| m.def.name == mix_name)
-        .map(|c| c.def.clone())
-        .expect("Mix config not found for display index");
-
-    let iw = mix_def.width as i32;
-    let ih = mix_def.height as i32;
-    let mut ow = iw;
-    let mut oh = ih;
-    let mut ix = 0;
-    let mut iy = 0;
-
-    let iaspect = iw as f32 / ih as f32;
-    let oaspect = (canvas_w / 2) as f32 / canvas_h as f32;
-
-    // correct aspect ratio
-    if iaspect > oaspect {
-        let effective_ow = (ih as f32 * oaspect) as i32;
-        ix = (ow - effective_ow) / 2;
-        ow = effective_ow;
-    } else if iaspect < oaspect {
-        let effective_oh = (iw as f32 / oaspect) as i32;
-        iy = (oh - effective_oh) / 2;
-        oh = effective_oh;
-    }
-    let target = CopyEx::builder()
-        .src((ix, iy, ow as u32, oh as u32))
-        .dst((canvas_w as i32 / 2, 0, canvas_w / 2 as u32, canvas_h as u32))
-        .build();
-
-    specs.extend(show_stream(settings.display_idx, settings, target));
-
-    // RESET SEEK
-    for i in 0..settings.playback.len() {
-        settings.playback[i].stream.set_delta_sec(0.0);
-        settings.playback[i].stream.set_scrub(0.0);
-        settings.playback[i].stream.set_exact_sec(0.0);
-    }
     Ok(specs)
-}
-
-pub fn videos_to_cache<T>(stream_settings: &StreamSettings<T>) -> Vec<(String, Mix)>
-where
-    T: GlobalNameAccessors,
-{
-    let mut videos = vec![];
-
-    if stream_settings.pause() == 0
-        || stream_settings.exact_sec() != 0.0
-        || stream_settings.scrub() != 0.0
-        || stream_settings.delta_sec() != 0.0
-    {
-        //currently assume only videos in the mix we find...
-
-        // find the selected playback mix
-        let playback_mix =
-            match TechNameAccessors::playback_mixes().get(stream_settings.idx as usize) {
-                Some(playback_mix) => playback_mix,
-                None => {
-                    eprintln!("Invalid playback mix selected: {}", stream_settings.idx);
-                    return videos;
-                }
-            };
-        // find the mix config for the playback mix
-        let mix_config = match TechNameAccessors::mix_configs()
-            .iter()
-            .find(|m| m.def.name == *playback_mix)
-        {
-            Some(mix_config) => mix_config,
-            None => {
-                eprintln!("No mix config found for playback mix: {}", playback_mix);
-                return videos;
-            }
-        };
-
-        // clone the mix config to create a new Mix
-        let mut mix = mix_config.mix.clone();
-
-        let lut = TechNameAccessors::lut_names()[stream_settings.lut_selected() as usize];
-        if lut != "none" {
-            mix.lut = Some(format!(
-                "{}/luts/{}.cube",
-                TechNameAccessors::asset_path(),
-                lut
-            ));
-        }
-
-        videos.push((mix.name.clone(), mix));
-    }
-
-    let dx = TechNameAccessors::distort_names()[stream_settings.distort_selected() as usize].0;
-    if dx != "none" {
-        videos.push((
-            format!("distort_cache_{}", dx),
-            Mix::builder()
-                .name(format!("distort_cache_{}", dx))
-                .video(format!("distort_{}", dx))
-                .no_display(true)
-                .build(),
-        ));
-    }
-    let dy = TechNameAccessors::distort_names()[stream_settings.distort_selected() as usize].1;
-    if dy != "none" {
-        videos.push((
-            format!("distort_cache_{}", dy),
-            Mix::builder()
-                .name(format!("distort_cache_{}", dy))
-                .video(format!("distort_{}", dy))
-                .no_display(true)
-                .build(),
-        ));
-    }
-    let wx = TechNameAccessors::distort_names()[stream_settings.warp_selected() as usize].0;
-    if wx != "none" {
-        videos.push((
-            format!("distort_cache_{}", wx),
-            Mix::builder()
-                .name(format!("distort_cache_{}", wx))
-                .video(format!("distort_{}", wx))
-                .no_display(true)
-                .build(),
-        ));
-    }
-    let wy = TechNameAccessors::distort_names()[stream_settings.warp_selected() as usize].1;
-    if wy != "none" {
-        videos.push((
-            format!("distort_cache_{}", wy),
-            Mix::builder()
-                .name(format!("distort_cache_{}", wy))
-                .video(format!("distort_{}", wy))
-                .no_display(true)
-                .build(),
-        ));
-    }
-    let overlay = TechNameAccessors::overlay_names()[stream_settings.overlay_selected() as usize];
-    videos.push((
-        format!("overlay_{overlay}"),
-        Mix::builder()
-            .name(format!("overlay_cache_{overlay}"))
-            .video(format!("overlay_{overlay}"))
-            .no_display(true)
-            .build(),
-    ));
-    videos
-}
-
-pub fn show_stream<T>(idx: usize, settings: &mut AllSettings<T>, target: CopyEx) -> Vec<RenderSpec>
-where
-    T: GlobalNameAccessors,
-{
-    let mut specs = vec![];
-    if false && settings.initial_reset_complete[idx] == false {
-        settings.initial_reset_complete[idx] = true;
-        specs.extend(
-            (&StreamSettings::<T>::ALL_STREAMSETTINGS_UPDATERS)
-                .iter()
-                .map(|f| f(&settings.playback[idx].stream))
-                .flatten(),
-        );
-    }
-
-    let stream_settings = &settings.playback[idx].stream;
-
-    let _lut = TechNameAccessors::lut_names()[stream_settings.lut_selected() as usize];
-    let (distort_x, distort_y) =
-        TechNameAccessors::distort_names()[stream_settings.distort_selected() as usize];
-    let (warp_x, warp_y) =
-        TechNameAccessors::distort_names()[stream_settings.warp_selected() as usize];
-
-    let playback_mix = match TechNameAccessors::playback_mixes().get(stream_settings.idx as usize) {
-        Some(playback_mix) => playback_mix,
-        None => {
-            eprintln!("Invalid playback mix selected: {}", stream_settings.idx);
-            return specs;
-        }
-    };
-
-    let mut builder = Mix::builder()
-        .name(stream_settings.main_mix())
-        .mixed(stream_settings.feedback_cache())
-        .mixed(String::from(*playback_mix))
-        .no_display(true);
-
-    if distort_x != "none" && distort_y != "none" {
-        builder = builder.mixed(format!("distort_cache_{}", distort_x));
-        builder = builder.mixed(format!("distort_cache_{}", distort_y));
-    }
-    if warp_x != "none" && warp_y != "none" {
-        builder = builder.mixed(format!("distort_cache_{}", warp_x));
-        builder = builder.mixed(format!("distort_cache_{}", warp_y));
-    }
-    specs.push(builder.build().into());
-
-    specs.push(
-        Mix::builder()
-            .name(stream_settings.feedback_cache())
-            .mixed(stream_settings.main_mix())
-            .no_display(true)
-            .build()
-            .into(),
-    );
-
-    let overlay_name =
-        TechNameAccessors::overlay_names()[stream_settings.overlay_selected() as usize];
-    let overlay_cache = format!("overlay_cache_{}", overlay_name);
-
-    specs.push(
-        Mix::builder()
-            .name(stream_settings.overlay_layer())
-            .mixed(stream_settings.feedback_cache())
-            .mixed(overlay_cache)
-            .target(target)
-            .no_display(false)
-            .build()
-            .into(),
-    );
-
-    specs
 }

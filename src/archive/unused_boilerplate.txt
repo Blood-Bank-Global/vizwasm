@@ -1,0 +1,141 @@
+
+                // Vid::builder()
+                //     .name("oldny")
+                //     .path(&format!(
+                //         "{}/streams/oldny.mp4",
+                //         TechNameAccessors::asset_path()
+                //     ))
+                //     .resolution((720, 480))
+                //     .tbq((1, 12800))
+                //     .pix_fmt("yuv420p")
+                //     .repeat(true)
+                //     .realtime(false)
+                //     .hardware_decode(true)
+                //     .build()
+                //     .into(),
+                // Vid::builder()
+                //     .name("tube")
+                //     .path(&format!(
+                //         "{}/streams/tube.mp4",
+                //         TechNameAccessors::asset_path()
+                //     ))
+                //     .resolution((720, 480))
+                //     .tbq((1, 12800))
+                //     .pix_fmt("yuv420p")
+                //     .repeat(true)
+                //     .realtime(false)
+                //     .hardware_decode(true)
+                //     .build()
+                //     .into(),
+                //   Vid::builder()
+                //     .name("liquid_purple")
+                //     .path(&format!(
+                //         "{}/streams/liquid_purple.mp4",
+                //         TechNameAccessors::asset_path()
+                //     ))
+                //     .resolution((720, 480))
+                //     .tbq((1, 12800))
+                //     .pix_fmt("yuv420p")
+                //     .repeat(true)
+                //     .realtime(false)
+                //     .hardware_decode(true)
+                //     .build()
+                //     .into(),
+                //   Vid::builder()
+                //     .name("liquid_gold")
+                //     .path(&format!(
+                //         "{}/streams/liquid_gold.mp4",
+                //         TechNameAccessors::asset_path()
+                //     ))
+                //     .resolution((720, 480))
+                //     .tbq((1, 12800))
+                //     .pix_fmt("yuv420p")
+                //     .repeat(true)
+                //     .realtime(false)
+                //     .hardware_decode(true)
+                //     .build()
+                //     .into(),
+                //   Vid::builder()
+                //     .name("liquid_lava")
+                //     .path(&format!(
+                //         "{}/streams/liquid_lava.mp4",
+                //         TechNameAccessors::asset_path()
+                //     ))
+                //     .resolution((720, 480))
+                //     .tbq((1, 12800))
+                //     .pix_fmt("yuv420p")
+                //     .repeat(true)
+                //     .realtime(false)
+                //     .hardware_decode(true)
+                //     .build()
+                //     .into(),
+                //   Vid::builder()
+                //     .name("bootleg_liberty")
+                //     .path(&format!(
+                //         "{}/streams/bootleg_liberty.mp4",
+                //         TechNameAccessors::asset_path()
+                //     ))
+                //     .resolution((720, 480))
+                //     .tbq((1, 12800))
+                //     .pix_fmt("yuv420p")
+                //     .repeat(true)
+                //     .realtime(false)
+                //     .hardware_decode(true)
+                //     .build()
+                //     .into(),
+                //   Vid::builder()
+                //     .name("smoke")
+                //     .path(&format!(
+                //         "{}/streams/smoke.mp4",
+                //         TechNameAccessors::asset_path()
+                //     ))
+                //     .resolution((720, 480))
+                //     .tbq((1, 12800))
+                //     .pix_fmt("yuv420p")
+                //     .repeat(true)
+                //     .realtime(false)
+                //     .hardware_decode(true)
+                //     .build()
+                //     .into(),
+                //   Vid::builder()
+                //     .name("ground_ctl")
+                //     .path(&format!(
+                //         "{}/streams/ground_ctl.mp4",
+                //         TechNameAccessors::asset_path()
+                //     ))
+                //     .resolution((720, 480))
+                //     .tbq((1, 12800))
+                //     .pix_fmt("yuv420p")
+                //     .repeat(true)
+                //     .realtime(false)
+                //     .hardware_decode(true)
+                //     .build()
+                //     .into(),
+                //   Vid::builder()
+                //     .name("fall")
+                //     .path(&format!(
+                //         "{}/streams/fall.mp4",
+                //         TechNameAccessors::asset_path()
+                //     ))
+                //     .resolution((720, 480))
+                //     .tbq((1, 12800))
+                //     .pix_fmt("yuv420p")
+                //     .repeat(true)
+                //     .realtime(false)
+                //     .hardware_decode(true)
+                //     .build()
+                //     .into(),
+                //   Vid::builder()
+                //     .name("horizon")
+                //     .path(&format!(
+                //         "{}/streams/horizon.mp4",
+                //         TechNameAccessors::asset_path()
+                //     ))
+                //     .resolution((720, 480))
+                //     .tbq((1, 12800))
+                //     .pix_fmt("yuv420p")
+                //     .repeat(true)
+                //     .realtime(false)
+                //     .hardware_decode(true)
+                //     .build()
+                //     .into(),

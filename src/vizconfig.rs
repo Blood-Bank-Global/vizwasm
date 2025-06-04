@@ -1,4 +1,4 @@
-use sdlrig::renderspec::{Mix, MixInput, SendCmd, SendValue};
+use sdlrig::renderspec::{CopyEx, Mix, MixInput, SendCmd, SendValue};
 use sdlrig::Adjustable;
 use sdlrig::{
     gfxinfo::{Asset, GfxEvent, KeyCode, KeyEvent, Knob, Vid, VidInfo, VidMixer},
@@ -6,9 +6,9 @@ use sdlrig::{
     seek,
 };
 
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
+use std::collections::{HashMap, HashSet};
 use std::f64::consts::PI;
-use std::marker::PhantomData;
 use std::{error::Error, i64, io::Write};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -47,8 +47,8 @@ pub struct LoopSettings {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[repr(C)]
-pub struct PresetSettings<T: GlobalNameAccessors> {
-    pub baseline: StreamSettings<T>,
+pub struct PresetSettings {
+    pub baseline: StreamSettings,
     pub saved: [Vec<StreamSettingsAllFieldsEnum>; 10],
     pub original: Vec<StreamSettingsAllFieldsEnum>,
     pub selected_preset: Option<usize>,
@@ -56,9 +56,9 @@ pub struct PresetSettings<T: GlobalNameAccessors> {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[repr(C)]
-pub struct PlaybackSettings<T: GlobalNameAccessors> {
-    pub stream: StreamSettings<T>,
-    pub presets: PresetSettings<T>,
+pub struct PlaybackSettings {
+    pub stream: StreamSettings,
+    pub presets: PresetSettings,
     pub loops: LoopSettings,
 }
 
@@ -69,58 +69,367 @@ pub struct MixConfig {
     pub mix: Mix,
 }
 
-pub trait GlobalNameAccessors {
-    fn stream_defs() -> &'static [Vid];
-    fn mix_configs() -> &'static [MixConfig];
-    fn playback_mixes() -> &'static [&'static str];
-    fn overlay_names() -> &'static [&'static str];
-    fn distort_names() -> &'static [(&'static str, &'static str)];
-    fn distort_edge_types() -> &'static [&'static str];
-    fn lut_names() -> &'static [&'static str];
-    fn blend_modes() -> &'static [&'static str];
-    fn colors() -> &'static [(&'static str, &'static str)];
-    fn asset_path() -> &'static str;
+pub struct MixerGraph {
+    main_mix: MixConfig,
+    feedback: MixConfig,
+    overlay: MixConfig,
+}
+
+impl MixerGraph {
+    pub fn new<S: AsRef<str>>(name: S, width: u32, height: u32) -> Self {
+        Self {
+            main_mix: MixConfig {
+                def: VidMixer::builder()
+                    .name(format!("{}_main_mix", name.as_ref()))
+                    .width(width)
+                    .height(height)
+                    .header(include_str!("glsl/utils.glsl"))
+                    .body(include_str!("glsl/mixer.glsl"))
+                    .build(),
+                mix: Mix::builder()
+                    .name(format!("{}_main_mix", name.as_ref()))
+                    .mixed(format!("{}_feedback", name.as_ref()))
+                    .mixed(format!("{}_mix", name.as_ref()))
+                    .mixed("neutral_mix") // TODO update this in the playback
+                    .mixed("neutral_mix") // TODO update this in the playback
+                    .mixed("neutral_mix") // TODO update this in the playback
+                    .mixed("neutral_mix") // TODO update this in the playback
+                    .no_display(true)
+                    .build(),
+            },
+            feedback: MixConfig {
+                def: VidMixer::builder()
+                    .name(format!("{}_feedback", name.as_ref()))
+                    .width(width)
+                    .height(height)
+                    .build(),
+                mix: Mix::builder()
+                    .name(format!("{}_feedback", name.as_ref()))
+                    .mixed(format!("{}_main_mix", name.as_ref()))
+                    .no_display(true)
+                    .build(),
+            },
+            overlay: MixConfig {
+                def: VidMixer::builder()
+                    .name(format!("{}_overlay", name.as_ref()))
+                    .width(width)
+                    .height(height)
+                    .header(include_str!("glsl/utils.glsl"))
+                    .body(include_str!("glsl/overlay.glsl"))
+                    .build(),
+                mix: Mix::builder()
+                    .name(format!("{}_overlay", name.as_ref()))
+                    .mixed(format!("{}_main_mix", name.as_ref()))
+                    .mixed("blank_mix") // TODO update this in the playback fn
+                    .no_display(false)
+                    .build(),
+            },
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[repr(C)]
-pub struct AllSettings<T: GlobalNameAccessors> {
+pub struct AllSettings {
+    pub stream_defs: Vec<Vid>,
+    pub mix_configs: HashMap<String, MixConfig>,
+    pub playback_names: Vec<String>,
+    pub distort_names: Vec<(String, String)>,
+    pub distort_edge_types: Vec<String>,
+    pub overlay_names: Vec<String>,
+    pub lut_names: Vec<String>,
+    pub blend_modes: Vec<String>,
+    pub colors: Vec<(String, String)>,
+    pub asset_path: String,
     pub active_idx: usize,
     pub display_idx: usize,
     pub scan_idx: usize,
-    pub clipboard: StreamSettings<T>,
+    pub clipboard: StreamSettings,
     pub selected_knobs: usize,
-    pub playback: Vec<PlaybackSettings<T>>,
+    pub playback: Vec<PlaybackSettings>,
     pub initial_reset_complete: Vec<bool>,
 }
 
-impl<T: GlobalNameAccessors + Clone + std::fmt::Debug + Serialize + DeserializeOwned>
-    AllSettings<T>
-{
-    pub fn new() -> Self {
-        Self {
-            clipboard: StreamSettings::<T>::new(0),
-            selected_knobs: 1,
-            playback: T::playback_mixes()
+impl AllSettings {
+    pub fn colors() -> &'static [(&'static str, &'static str)] {
+        &[("black", "0x000000")]
+    }
+
+    pub fn distort_names() -> &'static [(&'static str, &'static str)] {
+        &[
+            //("none", "none"), removed to reduce complexity
+            ("neutral", "neutral"),
+            ("caustic_adjusted_dx", "caustic_adjusted_dy"),
+            ("drops_dx", "drops_dy"),
+            ("bend", "neutral"),
+            ("stretch_5_dx", "stretch_5_dy"),
+            ("shrink_5_dx", "shrink_5_dy"),
+            ("digital_color", "digital_color"),
+            ("digital_white", "digital_white"),
+        ]
+    }
+
+    pub fn distort_edge_types() -> &'static [&'static str] {
+        &["smear", "wrap", "mirror", "blank"]
+    }
+
+    pub fn overlay_names() -> &'static [&'static str] {
+        &[
+            "blank",
+            "vhs_overlay",
+            "film_dust",
+            "tracking",
+            "colorful",
+            "bottom",
+        ]
+    }
+
+    pub fn lut_names() -> &'static [&'static str] {
+        &[
+            "none",
+            "rad",
+            "midas",
+            "blackwhite",
+            "blue",
+            "redzone",
+            "riso",
+            "plague",
+            "hyper",
+            "sepia",
+        ]
+    }
+
+    pub fn blend_modes() -> &'static [&'static str] {
+        &[
+            "disable",
+            "addition",
+            "and",
+            "average",
+            "darken",
+            "difference",
+            "divide",
+            "lighten",
+            "or",
+            "overlay",
+            "screen",
+            "subtract",
+            "xor",
+            "alpha",
+        ]
+    }
+    pub fn new<
+        S: AsRef<str>,
+        SI: IntoIterator,
+        VI: IntoIterator<Item = Vid>,
+        MCI: IntoIterator<Item = MixConfig>,
+    >(
+        stream_defs: VI,
+        mix_configs: MCI,
+        playback_names: SI,
+        asset_path: S,
+    ) -> Self
+    where
+        SI::Item: AsRef<str>,
+    {
+        let playback_names = playback_names
+            .into_iter()
+            .map(|s| s.as_ref().to_string())
+            .collect::<Vec<_>>();
+        let mut stream_defs = stream_defs.into_iter().collect::<Vec<_>>();
+        let mut mix_configs = mix_configs
+            .into_iter()
+            .map(|mc| (mc.def.name.clone(), mc))
+            .collect::<HashMap<_, _>>();
+        let asset_path = asset_path.as_ref().to_string();
+
+        let distort_names = Self::distort_names()
+            .iter()
+            .map(|(k, v)| (k.to_string(), v.to_string()))
+            .collect::<Vec<_>>();
+
+        let distort_set = distort_names
+            .iter()
+            .map(|(x, y)| vec![x, y])
+            .flatten()
+            .cloned()
+            .collect::<HashSet<_>>();
+
+        stream_defs.extend(
+            distort_set
                 .iter()
-                .enumerate()
-                .map(|(i, _)| PlaybackSettings {
-                    stream: StreamSettings::<T>::new(i),
-                    presets: PresetSettings {
-                        baseline: StreamSettings::<T>::new(i),
-                        saved: [const { vec![] }; 10],
-                        original: vec![],
-                        selected_preset: None,
-                    },
-                    loops: LoopSettings {
-                        record_buffer: None,
-                        saved: [Loop::new(), Loop::new(), Loop::new(), Loop::new()],
-                        playing: [false, false, false, false],
-                        selected_loop: 0,
-                    },
+                .map(|s| {
+                    Vid::builder()
+                        .name(s)
+                        .path(&format!("{asset_path}/distorts/{s}.mp4"))
+                        .resolution((720, 480))
+                        .tbq((1, 12800))
+                        .pix_fmt("yuv420p")
+                        .repeat(true)
+                        .realtime(false)
+                        .hardware_decode(true)
+                        .build()
                 })
                 .collect::<Vec<_>>(),
-            initial_reset_complete: vec![false; T::stream_defs().len()],
+        );
+        mix_configs.extend(distort_set.iter().map(|s| {
+            (
+                format!("{s}_mix"),
+                MixConfig {
+                    def: VidMixer::builder()
+                        .name(format!("{s}_mix"))
+                        .width(720)
+                        .height(480)
+                        .build(),
+                    mix: Mix::builder()
+                        .name(format!("{s}_mix"))
+                        .video(s)
+                        .no_display(true)
+                        .build(),
+                },
+            )
+        }));
+        let blend_modes = Self::blend_modes()
+            .iter()
+            .map(|s| s.to_string())
+            .collect::<Vec<_>>();
+
+        let distort_edge_types = Self::distort_edge_types()
+            .iter()
+            .map(|s| s.to_string())
+            .collect::<Vec<_>>();
+
+        let overlay_names = Self::overlay_names()
+            .iter()
+            .map(|s| s.to_string())
+            .collect::<Vec<_>>();
+
+        stream_defs.extend(
+            overlay_names
+                .iter()
+                .map(|s| {
+                    Vid::builder()
+                        .name(s)
+                        .path(&format!("{asset_path}/overlays/{s}.mp4"))
+                        .resolution((720, 480))
+                        .tbq((1, 12800))
+                        .pix_fmt("yuv420p")
+                        .repeat(true)
+                        .realtime(false)
+                        .hardware_decode(true)
+                        .build()
+                })
+                .collect::<Vec<_>>(),
+        );
+        mix_configs.extend(overlay_names.iter().map(|s| {
+            (
+                format!("{s}_mix"),
+                MixConfig {
+                    def: VidMixer::builder()
+                        .name(format!("{s}_mix"))
+                        .width(720)
+                        .height(480)
+                        .build(),
+                    mix: Mix::builder()
+                        .name(format!("{s}_mix"))
+                        .video(s)
+                        .no_display(false)
+                        .build(),
+                },
+            )
+        }));
+        let lut_names = Self::lut_names()
+            .iter()
+            .map(|s| s.to_string())
+            .collect::<Vec<_>>();
+
+        let colors = Self::colors()
+            .iter()
+            .map(|(n, c)| (n.to_string(), c.to_string()))
+            .collect::<Vec<_>>();
+
+        let mut playback = vec![];
+        for (i, name) in playback_names.iter().enumerate() {
+            let input_mix = mix_configs.get_mut(&format!("{name}_mix")).cloned();
+
+            if input_mix.is_none() {
+                panic!(
+                    "Playback mix {} not found in mix_configs, using default",
+                    name
+                );
+            }
+
+            let input_mix = input_mix.unwrap();
+
+            let mixer_graph = MixerGraph::new(name, input_mix.def.width, input_mix.def.height);
+
+            mix_configs.insert(
+                mixer_graph.main_mix.def.name.clone(),
+                mixer_graph.main_mix.clone(),
+            );
+            mix_configs.insert(
+                mixer_graph.feedback.def.name.clone(),
+                mixer_graph.feedback.clone(),
+            );
+            mix_configs.insert(
+                mixer_graph.overlay.def.name.clone(),
+                mixer_graph.overlay.clone(),
+            );
+
+            let first_video = match &input_mix.mix.inputs.get(0) {
+                Some(MixInput::Video(s)) => s.clone(),
+                _ => String::new(),
+            };
+
+            let pb = PlaybackSettings {
+                stream: StreamSettings::new(
+                    i,
+                    first_video.clone(),
+                    input_mix.def.name.clone(),
+                    mixer_graph.main_mix.def.name.clone(),
+                    mixer_graph.feedback.def.name.clone(),
+                    mixer_graph.overlay.def.name.clone(),
+                ),
+                presets: PresetSettings {
+                    baseline: StreamSettings::new(
+                        i,
+                        first_video.clone(),
+                        input_mix.def.name.clone(),
+                        mixer_graph.main_mix.def.name.clone(),
+                        mixer_graph.feedback.def.name.clone(),
+                        mixer_graph.overlay.def.name.clone(),
+                    ),
+                    saved: [const { vec![] }; 10],
+                    original: vec![],
+                    selected_preset: None,
+                },
+                loops: LoopSettings {
+                    record_buffer: None,
+                    saved: [Loop::new(), Loop::new(), Loop::new(), Loop::new()],
+                    playing: [false, false, false, false],
+                    selected_loop: 0,
+                },
+            };
+
+            playback.push(pb);
+        }
+
+        let playback_len = playback.len();
+
+        Self {
+            stream_defs,
+            mix_configs,
+            playback_names,
+            blend_modes,
+            overlay_names,
+            distort_names,
+            distort_edge_types,
+            lut_names,
+            colors,
+            asset_path,
+            clipboard: StreamSettings::new(0, "", "", "", "", ""),
+            selected_knobs: 1,
+            playback,
+            initial_reset_complete: vec![false; playback_len],
             active_idx: 0,
             scan_idx: 0,
             display_idx: 0,
@@ -150,7 +459,24 @@ impl<T: GlobalNameAccessors + Clone + std::fmt::Debug + Serialize + DeserializeO
                                 }
                             } else if *ctl {
                                 match std::fs::File::open("/tmp/viz/playback_dump.json") {
-                                    Ok(f) => self.playback = serde_json::from_reader(f)?,
+                                    Ok(f) => {
+                                        let playback =
+                                            serde_json::from_reader::<_, Vec<PlaybackSettings>>(f)?;
+                                        if playback.len() != self.playback.len() {
+                                            eprintln!(
+                                                "Playback dump length mismatch: expected {}, got {}",
+                                                self.playback.len(),
+                                                playback.len()
+                                            );
+                                            continue;
+                                        }
+
+                                        for (i, pb) in playback.into_iter().enumerate() {
+                                            let ident = self.playback[i].stream.ident.clone();
+                                            self.playback[i] = pb;
+                                            self.playback[i].stream.ident = ident;
+                                        }
+                                    }
                                     Err(e) => eprintln!("{}:{} - {}", file!(), line!(), e),
                                 }
                             } else {
@@ -180,8 +506,9 @@ impl<T: GlobalNameAccessors + Clone + std::fmt::Debug + Serialize + DeserializeO
                             down: true,
                             ..
                         } => {
+                            let ident = self.clipboard.ident.clone();
                             self.playback[selected_idx].stream = self.clipboard.clone();
-                            self.playback[selected_idx].stream.idx = selected_idx;
+                            self.playback[selected_idx].stream.ident = ident;
                         }
                         //UPDATE aka refresh
                         KeyEvent {
@@ -198,10 +525,10 @@ impl<T: GlobalNameAccessors + Clone + std::fmt::Debug + Serialize + DeserializeO
                             ..
                         } => {
                             // swap preserving IDs from before the swap
-                            let mut temp = self.playback[selected_idx].stream.clone();
-                            temp.idx = self.clipboard.idx;
-                            self.clipboard.idx = self.playback[selected_idx].stream.idx;
+                            let ident = self.playback[selected_idx].stream.ident.clone();
+                            let temp = self.playback[selected_idx].stream.clone();
                             self.playback[selected_idx].stream = self.clipboard.clone();
+                            self.playback[selected_idx].stream.ident = ident;
                             self.clipboard = temp;
                         }
                         // Save as baseline for preset creation
@@ -216,7 +543,7 @@ impl<T: GlobalNameAccessors + Clone + std::fmt::Debug + Serialize + DeserializeO
                                     .stream
                                     .diff(&self.playback[selected_idx].presets.baseline)
                                     .into_iter()
-                                    .filter(|d| StreamSettings::<T>::should_record(d))
+                                    .filter(|d| StreamSettings::should_record(d))
                                     .collect::<Vec<_>>();
                                 self.playback[selected_idx].stream.apply_diff(&diffs);
                             } else {
@@ -254,7 +581,7 @@ impl<T: GlobalNameAccessors + Clone + std::fmt::Debug + Serialize + DeserializeO
                                     .baseline
                                     .diff(&self.playback[selected_idx].stream)
                                     .into_iter()
-                                    .filter(|d| StreamSettings::<T>::should_record(d))
+                                    .filter(|d| StreamSettings::should_record(d))
                                     .collect::<Vec<_>>();
                             } else if *alt && *down && !*ctl && !*shift {
                                 // save time
@@ -273,7 +600,6 @@ impl<T: GlobalNameAccessors + Clone + std::fmt::Debug + Serialize + DeserializeO
                             {
                                 // paste preset
                                 self.playback[selected_idx].stream.apply_diff(&saved_diff);
-                                self.playback[selected_idx].stream.idx = selected_idx;
                             } else if !shift && !ctl && !repeat && !alt && *down {
                                 let mut applied = self.playback[selected_idx].stream.clone();
                                 applied.apply_diff(&saved_diff);
@@ -284,7 +610,6 @@ impl<T: GlobalNameAccessors + Clone + std::fmt::Debug + Serialize + DeserializeO
                                     .original
                                     .append(&mut reverse_diff);
                                 self.playback[selected_idx].stream = applied;
-                                self.playback[selected_idx].stream.idx = selected_idx;
                                 self.playback[selected_idx]
                                     .presets
                                     .selected_preset
@@ -301,7 +626,6 @@ impl<T: GlobalNameAccessors + Clone + std::fmt::Debug + Serialize + DeserializeO
                                 self.playback[selected_idx].presets.original.reverse();
                                 let diff = self.playback[selected_idx].presets.original.clone();
                                 self.playback[selected_idx].stream.apply_diff(&diff);
-                                self.playback[selected_idx].stream.idx = selected_idx;
                                 self.playback[selected_idx].presets.selected_preset.take();
                                 self.playback[selected_idx].presets.original.clear();
                             }
@@ -362,6 +686,29 @@ impl<T: GlobalNameAccessors + Clone + std::fmt::Debug + Serialize + DeserializeO
                         } => {
                             self.playback[self.active_idx].stream.toggle_pause();
                         }
+                        KeyEvent {
+                            key: KeyCode::SDLK_h,
+                            down: true,
+                            ..
+                        } => {
+                            self.scan_idx = (self.scan_idx as i64 + 1)
+                                .clamp(0, self.playback.len() as i64 - 1)
+                                as usize;
+                            self.active_idx = self.scan_idx;
+                            self.display_idx = self.scan_idx;
+                        }
+                        KeyEvent {
+                            key: KeyCode::SDLK_g,
+                            down: true,
+                            ..
+                        } => {
+                            self.scan_idx = (self.scan_idx as i64 - 1)
+                                .clamp(0, self.playback.len() as i64 - 1)
+                                as usize;
+                            self.active_idx = self.scan_idx;
+                            self.display_idx = self.scan_idx;
+                        }
+
                         // Adjust Settings
                         KeyEvent {
                             key:
@@ -383,29 +730,6 @@ impl<T: GlobalNameAccessors + Clone + std::fmt::Debug + Serialize + DeserializeO
                             self.selected_knobs =
                                 (ke.key.clone() as u32 - KeyCode::SDLK_F1 as u32) as usize + 1;
                         }
-                        KeyEvent {
-                            key: KeyCode::SDLK_h,
-                            down: true,
-                            ..
-                        } => {
-                            self.scan_idx = (self.scan_idx as i64 + 1)
-                                .clamp(0, T::stream_defs().len() as i64 - 1)
-                                as usize;
-                            self.active_idx = self.scan_idx;
-                            self.display_idx = self.scan_idx;
-                        }
-                        KeyEvent {
-                            key: KeyCode::SDLK_g,
-                            down: true,
-                            ..
-                        } => {
-                            self.scan_idx = (self.scan_idx as i64 - 1)
-                                .clamp(0, T::stream_defs().len() as i64 - 1)
-                                as usize;
-                            self.active_idx = self.scan_idx;
-                            self.display_idx = self.scan_idx;
-                        }
-
                         KeyEvent {
                             key: KeyCode::SDLK_F13 | KeyCode::SDLK_F14 | KeyCode::SDLK_F15,
                             down: true,
@@ -547,7 +871,7 @@ impl<T: GlobalNameAccessors + Clone + std::fmt::Debug + Serialize + DeserializeO
             }
             (Knob::B, 10) => {
                 self.scan_idx = (self.scan_idx as i64 + inc as i64)
-                    .clamp(0, T::stream_defs().len() as i64 - 1)
+                    .clamp(0, self.playback.len() as i64 - 1)
                     as usize;
             }
             (Knob::CB, 10) => {
@@ -758,15 +1082,15 @@ loops: [{}], loop capture: {}
             get!(sim),
             get!(blend),
             get!(video_key_enable) as u8,
-            T::colors()[get!(video_key_color_selected) as usize].0,
+            self.colors[get!(video_key_color_selected) as usize].0,
             if get!(video_key_color_scan) >= 1.0 {
-                T::colors()[(get!(video_key_color_scan) - 1.0) as usize].0
+                &self.colors[(get!(video_key_color_scan) - 1.0) as usize].0
             } else {
                 ""
             },
-            T::colors()[get!(video_key_color_scan) as usize].0,
-            if get!(video_key_color_scan) < T::colors().len() as f64 - 1.0 {
-                T::colors()[(get!(video_key_color_scan) + 1.0) as usize].0
+            &self.colors[get!(video_key_color_scan) as usize].0,
+            if get!(video_key_color_scan) < self.colors.len() as f64 - 1.0 {
+                &self.colors[(get!(video_key_color_scan) + 1.0) as usize].0
             } else {
                 ""
             },
@@ -824,109 +1148,109 @@ loops: [{}], loop capture: {}
             get!(feedback_rotation).to_degrees(),
             //DISTORT METHOD
             if self.selected_knobs == 9 { ">" } else { " " },
-            T::distort_edge_types()[get!(distort_edge_selected) as usize],
+            self.distort_edge_types[get!(distort_edge_selected) as usize],
             if get!(distort_edge_scan) >= 1.0 {
-                T::distort_edge_types()[(get!(distort_edge_scan) - 1.0) as usize]
+                &self.distort_edge_types[(get!(distort_edge_scan) - 1.0) as usize]
             } else {
                 ""
             },
-            T::distort_edge_types()[get!(distort_edge_scan) as usize],
-            if get!(distort_edge_scan) < T::distort_edge_types().len() as f64 - 1.0 {
-                T::distort_edge_types()[(get!(distort_edge_scan) + 1.0) as usize]
+            self.distort_edge_types[get!(distort_edge_scan) as usize],
+            if get!(distort_edge_scan) < self.distort_edge_types.len() as f64 - 1.0 {
+                &self.distort_edge_types[(get!(distort_edge_scan) + 1.0) as usize]
             } else {
                 ""
             },
-            T::distort_names()[get!(warp_selected) as usize].0,
+            self.distort_names[get!(warp_selected) as usize].0,
             if get!(warp_scan) >= 1.0 {
-                T::distort_names()[(get!(warp_scan) - 1.0) as usize].0
+                &self.distort_names[(get!(warp_scan) - 1.0) as usize].0
             } else {
                 ""
             },
-            T::distort_names()[get!(warp_scan) as usize].0,
-            if get!(warp_scan) < T::distort_names().len() as f64 - 1.0 {
-                T::distort_names()[(get!(warp_scan) + 1.0) as usize].0
+            &self.distort_names[get!(warp_scan) as usize].0,
+            if get!(warp_scan) < self.distort_names.len() as f64 - 1.0 {
+                &self.distort_names[(get!(warp_scan) + 1.0) as usize].0
             } else {
                 ""
             },
-            T::distort_names()[get!(distort_selected) as usize].0,
+            &self.distort_names[get!(distort_selected) as usize].0,
             if get!(distort_scan) >= 1.0 {
-                T::distort_names()[(get!(distort_scan) - 1.0) as usize].0
+                &self.distort_names[(get!(distort_scan) - 1.0) as usize].0
             } else {
                 ""
             },
-            T::distort_names()[get!(distort_scan) as usize].0,
-            if get!(distort_scan) < T::distort_names().len() as f64 - 1.0 {
-                T::distort_names()[(get!(distort_scan) + 1.0) as usize].0
+            &self.distort_names[get!(distort_scan) as usize].0,
+            if get!(distort_scan) < self.distort_names.len() as f64 - 1.0 {
+                &self.distort_names[(get!(distort_scan) + 1.0) as usize].0
             } else {
                 ""
             },
             //LUTS
             if self.selected_knobs == 10 { ">" } else { " " },
-            T::lut_names()[get!(lut_selected) as usize],
+            &self.lut_names[get!(lut_selected) as usize],
             if get!(lut_scan) >= 1.0 {
-                T::lut_names()[(get!(lut_scan) - 1.0) as usize]
+                &self.lut_names[(get!(lut_scan) - 1.0) as usize]
             } else {
                 ""
             },
-            T::lut_names()[get!(lut_scan) as usize],
-            if get!(lut_scan) < T::lut_names().len() as f64 - 1.0 {
-                T::lut_names()[(get!(lut_scan) + 1.0) as usize]
+            &self.lut_names[get!(lut_scan) as usize],
+            if get!(lut_scan) < self.lut_names.len() as f64 - 1.0 {
+                &self.lut_names[(get!(lut_scan) + 1.0) as usize]
             } else {
                 ""
             },
             //STREAM
-            T::stream_defs()[self.active_idx as usize].name,
+            self.playback_names[self.active_idx as usize],
             if self.scan_idx >= 1 {
-                &T::stream_defs()[self.scan_idx - 1].name
+                &self.playback_names[self.scan_idx - 1]
             } else {
                 ""
             },
-            T::stream_defs()[self.scan_idx].name,
-            if (self.scan_idx as i64) < T::stream_defs().len() as i64 - 1 {
-                &T::stream_defs()[self.scan_idx + 1].name
+            &self.playback_names[self.scan_idx],
+            if (self.scan_idx as i64) < self.playback_names.len() as i64 - 1 {
+                &self.playback_names[self.scan_idx + 1]
             } else {
                 ""
             },
-            T::stream_defs()[self.display_idx].name,
+            &self.playback_names[self.display_idx],
             get!(feedback_style_selected),
             get!(feedback_style_scan),
             //SCANLINES MODES
             if self.selected_knobs == 11 { ">" } else { " " },
-            T::blend_modes()[get!(scanlines_selected) as usize],
+            &self.blend_modes[get!(scanlines_selected) as usize],
             if get!(scanlines_scan) >= 1.0 {
-                T::blend_modes()[(get!(scanlines_scan) - 1.0) as usize]
+                &self.blend_modes[(get!(scanlines_scan) - 1.0) as usize]
             } else {
                 ""
             },
-            T::blend_modes()[get!(scanlines_scan) as usize],
-            if get!(scanlines_scan) < T::blend_modes().len() as f64 - 1.0 {
-                T::blend_modes()[(get!(scanlines_scan) + 1.0) as usize]
+            &self.blend_modes[get!(scanlines_scan) as usize],
+            if get!(scanlines_scan) < self.blend_modes.len() as f64 - 1.0 {
+                &self.blend_modes[(get!(scanlines_scan) + 1.0) as usize]
             } else {
                 ""
             },
             //BLEND MODES
-            T::blend_modes()[get!(blend_selected) as usize],
+            &self.blend_modes[get!(blend_selected) as usize],
             if get!(blend_scan) >= 1.0 {
-                T::blend_modes()[(get!(blend_scan) - 1.0) as usize]
+                &self.blend_modes[(get!(blend_scan) - 1.0) as usize]
             } else {
                 ""
             },
-            T::blend_modes()[get!(blend_scan) as usize],
-            if get!(blend_scan) < T::blend_modes().len() as f64 - 1.0 {
-                T::blend_modes()[(get!(blend_scan) + 1.0) as usize]
+            &self.blend_modes[get!(blend_scan) as usize],
+            if get!(blend_scan) < self.blend_modes.len() as f64 - 1.0 {
+                &self.blend_modes[(get!(blend_scan) + 1.0) as usize]
             } else {
                 ""
             },
             //OVERLAYS
-            T::overlay_names()[get!(overlay_selected) as usize],
+            &self.overlay_names[get!(overlay_selected) as usize],
             if get!(overlay_scan) >= 1.0 {
-                T::overlay_names()[(get!(overlay_scan) - 1.0) as usize]
+                &self.overlay_names[(get!(overlay_scan) - 1.0) as usize]
             } else {
                 ""
             },
-            T::overlay_names()[get!(overlay_scan) as usize],
-            if get!(overlay_scan) < T::overlay_names().len() as f64 - 1.0 {
-                T::overlay_names()[(get!(overlay_scan) + 1.0) as usize]
+            &self.overlay_names[get!(overlay_scan) as usize],
+            if get!(overlay_scan) < self.overlay_names.len() as f64 - 1.0 {
+                &self.overlay_names[(get!(overlay_scan) + 1.0) as usize]
             } else {
                 ""
             },
@@ -944,131 +1268,138 @@ loops: [{}], loop capture: {}
         )
     }
 
-    pub fn lookup_stream(&self, name: &str) -> Option<usize> {
-        for i in 0..T::stream_defs().len() {
-            if name == T::stream_defs()[i].name {
-                return Some(i);
-            }
-        }
-        None
-    }
-
     pub fn asset_list(&self, _app_fps: i64) -> Vec<Asset> {
         let mut assets = vec![];
 
-        for vid_def in T::stream_defs() {
+        for vid_def in &self.stream_defs {
             assets.push(vid_def.clone().into());
         }
 
-        for (i, playback) in self.playback.iter().enumerate() {
-            let stream = &playback.stream;
-            let input_name = T::playback_mixes()[i];
-
-            //find the associated input mix
-            let vid_mix = match T::mix_configs().iter().find(|m| m.def.name == input_name) {
-                Some(m) => {
-                    assets.push(m.def.clone().into());
-                    m
-                }
-                None => {
-                    eprintln!("Could not find mix config for {}", input_name);
-                    continue;
-                }
-            };
-
-            assets.push(
-                VidMixer::builder()
-                    .name(&stream.main_mix())
-                    .width(vid_mix.def.width)
-                    .height(vid_mix.def.height)
-                    .header(include_str!("glsl/utils.glsl"))
-                    .body(include_str!("glsl/mixer.glsl"))
-                    .build()
-                    .into(),
-            );
-            assets.push(
-                VidMixer::builder()
-                    .name(&stream.feedback_cache())
-                    .width(vid_mix.def.width)
-                    .height(vid_mix.def.height)
-                    .build()
-                    .into(),
-            );
-            assets.push(
-                VidMixer::builder()
-                    .name(&stream.overlay_layer())
-                    .width(vid_mix.def.width)
-                    .height(vid_mix.def.height)
-                    .header(include_str!("glsl/utils.glsl"))
-                    .body(include_str!("glsl/overlay.glsl"))
-                    .build()
-                    .into(),
-            )
-        }
-
-        for overlay in T::overlay_names() {
-            assets.push(
-                Vid::builder()
-                    .name(&format!("overlay_{overlay}"))
-                    .path(&format!("{}/overlays/{}.mp4", T::asset_path(), overlay))
-                    .resolution((720, 480))
-                    .tbq((1, 12800))
-                    .pix_fmt("yuv420p")
-                    .repeat(true)
-                    .realtime(false)
-                    .hardware_decode(true)
-                    .build()
-                    .into(),
-            );
-            assets.push(
-                VidMixer::builder()
-                    .name(&format!("overlay_cache_{overlay}"))
-                    .width(720)
-                    .height(480)
-                    .build()
-                    .into(),
-            );
-        }
-
-        let distort_vids = T::distort_names()
-            .iter()
-            .map(|(dx, dy)| vec![dx, dy])
-            .flatten()
-            .filter(|name| **name != "none")
-            .collect::<Vec<_>>();
-
-        for name in distort_vids {
-            assets.push(
-                Vid::builder()
-                    .name(&format!("distort_{name}"))
-                    .path(&format!("{}/distorts/{name}.mp4", T::asset_path()))
-                    .resolution((720, 480))
-                    .tbq((1, 12800))
-                    .pix_fmt("yuv420p")
-                    .repeat(true)
-                    .realtime(false)
-                    .hardware_decode(true)
-                    .build()
-                    .into(),
-            );
-            assets.push(
-                VidMixer::builder()
-                    .name(&format!("distort_cache_{name}"))
-                    .width(720)
-                    .height(480)
-                    .build()
-                    .into(),
-            );
+        for (_, mix_config) in &self.mix_configs {
+            assets.push(mix_config.def.clone().into());
         }
 
         return assets;
     }
+
+    pub fn get_playback_specs(
+        &mut self,
+        idx: usize,
+        src: (i32, i32, u32, u32),
+        dst: (i32, i32, u32, u32),
+    ) -> Vec<RenderSpec> {
+        let mut mixes = vec![];
+        let mut added = HashSet::new();
+        let mut stack = vec![self.playback[idx].stream.overlay_mix()];
+
+        let mut main_mixes = vec![];
+        //recursively add all the other mixes needed to display the overlay
+        while let Some(mix_name) = stack.pop() {
+            if let Some(mix_config) = self.mix_configs.get(&mix_name) {
+                let mut mix = mix_config.mix.clone();
+                mix.no_display = true; // we will set the top mix to display later
+
+                if let Some((fidx, _)) = self
+                    .playback
+                    .iter()
+                    .enumerate()
+                    .find(|(_, p)| p.stream.input_mix() == mix_name)
+                {
+                    if self.playback[fidx].stream.pause != 0
+                        && self.playback[fidx].stream.delta_sec == 0.0
+                        && self.playback[fidx].stream.exact_sec == 0.0
+                        && self.playback[fidx].stream.scrub == 0.0
+                    {
+                        continue;
+                    }
+
+                    let lut = &self.lut_names[self.playback[fidx].stream.lut_selected as usize];
+                    if lut != "none" {
+                        mix.lut = Some(format!("{}/luts/{}.cube", self.asset_path, lut));
+                    }
+                }
+
+                if let Some((fidx, _)) = self
+                    .playback
+                    .iter()
+                    .enumerate()
+                    .find(|(_, p)| p.stream.main_mix() == mix_name)
+                {
+                    main_mixes.push(fidx);
+                    let (distort_x, distort_y) = self.distort_names
+                        [self.playback[fidx].stream.distort_selected as usize]
+                        .clone();
+                    let (warp_x, warp_y) = self.distort_names
+                        [self.playback[fidx].stream.warp_selected as usize]
+                        .clone();
+                    mix.inputs[2] = MixInput::Mixed(format!("{distort_x}_mix"));
+                    mix.inputs[3] = MixInput::Mixed(format!("{distort_y}_mix"));
+                    mix.inputs[4] = MixInput::Mixed(format!("{warp_x}_mix"));
+                    mix.inputs[5] = MixInput::Mixed(format!("{warp_y}_mix"));
+                }
+
+                if let Some((fidx, _)) = self
+                    .playback
+                    .iter()
+                    .enumerate()
+                    .find(|(_, p)| p.stream.overlay_mix() == mix_name)
+                {
+                    let overly =
+                        &self.overlay_names[self.playback[fidx].stream.overlay_selected as usize];
+                    mix.inputs[1] = MixInput::Mixed(format!("{overly}_mix"));
+                    mix.target = Some(CopyEx::builder().src(src).dst(dst).build());
+                    mix.no_display = false; // this is the top mix we want to display
+                }
+                for input in &mix.inputs {
+                    match input {
+                        MixInput::Mixed(m) => {
+                            if !added.contains(m) {
+                                added.insert(m.clone());
+                                stack.push(m.clone());
+                            }
+                        }
+                        _ => (),
+                    }
+                }
+                mixes.push(mix);
+            } else {
+                eprintln!("No mix found for {mix_name}");
+            }
+        }
+
+        let mut specs = mixes.into_iter().map(RenderSpec::from).collect::<Vec<_>>();
+        for i in main_mixes {
+            if self.initial_reset_complete[i] == false {
+                self.initial_reset_complete[i] = true;
+                specs.extend(
+                    (&StreamSettings::ALL_STREAMSETTINGS_UPDATERS)
+                        .iter()
+                        .map(|f| f(&self.playback[i].stream))
+                        .flatten(),
+                );
+            }
+        }
+
+        specs.reverse(); // reverse to have the bottom layers earlier in the linear access
+        specs
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[repr(C)]
+pub struct StreamIdent {
+    pub idx: usize,
+    pub first_video: String,
+    pub input_mix: String,
+    pub main_mix: String,
+    pub feedback_mix: String,
+    pub overlay_mix: String,
 }
 
 #[derive(Debug, Clone, Adjustable, Serialize, Deserialize)]
 #[repr(C)]
-pub struct StreamSettings<T: GlobalNameAccessors> {
-    phantom: PhantomData<T>,
+pub struct StreamSettings {
+    pub ident: StreamIdent,
     // These are reserved because we catch these inputs and use them to change the
     // All settings config
     #[adjustable(k = B, idx = 1)]
@@ -1085,7 +1416,6 @@ pub struct StreamSettings<T: GlobalNameAccessors> {
 
     pub real_ts: (i32, i32),
     pub continuous_ts: (i32, i32),
-    pub idx: usize,
     // FLASH
     #[adjustable(kind = toggle, k = CB, idx = 1, command_simple = (self.main_mix(), "flash_enable", Unsigned))]
     flash_enable: u8,
@@ -1146,9 +1476,9 @@ pub struct StreamSettings<T: GlobalNameAccessors> {
     distort_or_warp_level: (),
     #[adjustable(k = CL, idx = 4, setter = set_skew_selected, do_not_record = true)]
     skew_selected: f64,
-    #[adjustable(k = L, idx = 4, min = -5.0, max = 5.0, step = 0.01, ty = f64, getter = skew_dx, setter = set_skew_dx)]
+    #[adjustable(k = L, idx = 4, min = -20.0, max = 20.0, step = 0.01, ty = f64, getter = skew_dx, setter = set_skew_dx)]
     skew_dx: (),
-    #[adjustable(k = R, idx = 4, min = -5.0, max = 5.0, step = 0.01, ty = f64, getter = skew_dy, setter = set_skew_dy)]
+    #[adjustable(k = R, idx = 4, min = -20.0, max = 20.0, step = 0.01, ty = f64, getter = skew_dy, setter = set_skew_dy)]
     skew_dy: (),
     #[adjustable(k = B, idx = 4, kind = custom, ty = ((f64, f64), (f64, f64) (f64, f64), (f64, f64)), getter = skew_all, setter = set_skew_all)]
     skew_all: (),
@@ -1178,7 +1508,7 @@ pub struct StreamSettings<T: GlobalNameAccessors> {
     video_key_enable: u8,
 
     // VIDEO KEY COLOR
-    #[adjustable(k = R, idx = 5, min = 0.0, max = (T::colors().len() - 1), step = 1, do_not_record = true)]
+    #[adjustable(k = R, idx = 5, min = 0.0, max = (AllSettings::colors().len() - 1), step = 1, do_not_record = true)]
     video_key_color_scan: f64,
     #[adjustable(kind = assign, k = CR, idx = 5, from = self.video_key_color_scan, command_fn = video_key_color_update)]
     video_key_color_selected: f64,
@@ -1234,39 +1564,39 @@ pub struct StreamSettings<T: GlobalNameAccessors> {
     #[adjustable(k = B, idx = 8, step = 2.0 * std::f64::consts::PI/400.0, setter = set_feedback_rotation, command_simple = (self.main_mix(), "feedback_rotation", Float))]
     feedback_rotation: f64,
 
-    #[adjustable(k = B, idx = 9, min = 0.0, max = (T::distort_names().len() - 1), step = 1.0, do_not_record = true)]
+    #[adjustable(k = B, idx = 9, min = 0.0, max = (AllSettings::distort_names().len() - 1), step = 1.0, do_not_record = true)]
     distort_scan: f64,
     #[adjustable(kind = assign, k = CB, idx = 9, from = self.distort_scan)]
     distort_selected: f64,
-    #[adjustable(k = L, idx = 9, min = 0.0, max = (T::distort_edge_types().len() - 1), step = 1.0, do_not_record = true)]
+    #[adjustable(k = L, idx = 9, min = 0.0, max = (AllSettings::distort_edge_types().len() - 1), step = 1.0, do_not_record = true)]
     distort_edge_scan: f64,
     #[adjustable(kind = assign, k = CL, idx = 9, from = self.distort_edge_scan, command_simple = (self.main_mix(), "distort_edge", Unsigned))]
     distort_edge_selected: f64,
 
     // WARP
-    #[adjustable(k = R, idx = 9, min = 0.0, max = (T::distort_names().len() - 1), step = 1.0, do_not_record = true)]
+    #[adjustable(k = R, idx = 9, min = 0.0, max = (AllSettings::distort_names().len() - 1), step = 1.0, do_not_record = true)]
     warp_scan: f64,
     #[adjustable(kind = assign, k = CR, idx = 9, from = self.warp_scan)]
     warp_selected: f64,
 
     //LUT
-    #[adjustable(k = L, idx = 10, min = 0.0, max = (T::lut_names().len() - 1), step = 1.0, do_not_record = true)]
+    #[adjustable(k = L, idx = 10, min = 0.0, max = (AllSettings::lut_names().len() - 1), step = 1.0, do_not_record = true)]
     lut_scan: f64,
     #[adjustable(kind = assign, k = CL, idx = 10, from = self.lut_scan)]
     lut_selected: f64,
 
     // FOREGROUND
-    #[adjustable(k = R, idx = 11, min = 0.0, max = (T::blend_modes().len() - 1), step = 1.0, do_not_record = true)]
+    #[adjustable(k = R, idx = 11, min = 0.0, max = (AllSettings::blend_modes().len() - 1), step = 1.0, do_not_record = true)]
     blend_scan: f64,
-    #[adjustable(kind = assign, k = CR, idx = 11, from = self.blend_scan, command_simple = (self.overlay_layer(), "overlay_kind", Unsigned))]
+    #[adjustable(kind = assign, k = CR, idx = 11, from = self.blend_scan, command_simple = (self.overlay_mix(), "overlay_kind", Unsigned))]
     blend_selected: f64,
 
-    #[adjustable(k = L, idx = 11, min = 0.0, max = (T::blend_modes().len() - 1), step = 1.0, do_not_record = true)]
+    #[adjustable(k = L, idx = 11, min = 0.0, max = (AllSettings::blend_modes().len() - 1), step = 1.0, do_not_record = true)]
     scanlines_scan: f64,
-    #[adjustable(kind = assign, k = CL, idx = 11, from = self.scanlines_scan, command_simple = (self.overlay_layer(), "scanline_kind", Unsigned))]
+    #[adjustable(kind = assign, k = CL, idx = 11, from = self.scanlines_scan, command_simple = (self.overlay_mix(), "scanline_kind", Unsigned))]
     scanlines_selected: f64,
 
-    #[adjustable(k = B, idx = 11, min = 0.0, max = (T::overlay_names().len() - 1), step = 1.0, do_not_record = true)]
+    #[adjustable(k = B, idx = 11, min = 0.0, max = (AllSettings::overlay_names().len() - 1), step = 1.0, do_not_record = true)]
     overlay_scan: f64,
     #[adjustable(kind = assign, k = CB, idx = 11, from = self.overlay_scan)]
     overlay_selected: f64,
@@ -1289,13 +1619,26 @@ pub struct StreamSettings<T: GlobalNameAccessors> {
     feedback_style_selected: f64,
 }
 
-impl<T: GlobalNameAccessors> StreamSettings<T> {
-    pub const fn new(idx: usize) -> Self {
+impl StreamSettings {
+    pub fn new<S: AsRef<str>>(
+        idx: usize,
+        first_video: S,
+        input_mix: S,
+        main_mix: S,
+        feedback_mix: S,
+        overlay_mix: S,
+    ) -> Self {
         Self {
-            phantom: PhantomData,
+            ident: StreamIdent {
+                idx,
+                first_video: first_video.as_ref().to_string(),
+                input_mix: input_mix.as_ref().to_string(),
+                main_mix: main_mix.as_ref().to_string(),
+                feedback_mix: feedback_mix.as_ref().to_string(),
+                overlay_mix: overlay_mix.as_ref().to_string(),
+            },
             real_ts: (0, 1),
             continuous_ts: (0, 1),
-            idx,
             flash_enable: 0,
             bpm: 135.0,
             offset: 0.0,
@@ -1544,23 +1887,23 @@ impl<T: GlobalNameAccessors> StreamSettings<T> {
     }
 
     pub fn adjust_skew_all(&mut self, inc: f64) {
-        let step = if inc > 0.0 { 0.01 } else { -0.01 };
+        let step = inc * 0.01; //if inc > 0.0 { 0.01 } else { -0.01 };
         self.set_skew_all((
             (
-                (self.skew_x0 + step).clamp(-5.0, 5.0),
-                (self.skew_y0 + step).clamp(-5.0, 5.0),
+                (self.skew_x0 + step).clamp(-20.0, 20.0),
+                (self.skew_y0 + step).clamp(-20.0, 20.0),
             ),
             (
-                (self.skew_x1 - step).clamp(-5.0, 5.0),
-                (self.skew_y1 + step).clamp(-5.0, 5.0),
+                (self.skew_x1 - step).clamp(-20.0, 20.0),
+                (self.skew_y1 + step).clamp(-20.0, 20.0),
             ),
             (
-                (self.skew_x2 + step).clamp(-5.0, 5.0),
-                (self.skew_y2 - step).clamp(-5.0, 5.0),
+                (self.skew_x2 + step).clamp(-20.0, 20.0),
+                (self.skew_y2 - step).clamp(-20.0, 20.0),
             ),
             (
-                (self.skew_x3 - step).clamp(-5.0, 5.0),
-                (self.skew_y3 - step).clamp(-5.0, 5.0),
+                (self.skew_x3 - step).clamp(-20.0, 20.0),
+                (self.skew_y3 - step).clamp(-20.0, 20.0),
             ),
         ));
     }
@@ -1586,7 +1929,7 @@ impl<T: GlobalNameAccessors> StreamSettings<T> {
     }
 
     fn video_key_color_update(&self) -> Vec<RenderSpec> {
-        let _hex = T::colors()[self.video_key_color_selected as usize].1;
+        eprintln!("Unimplemented video key color update");
         vec![]
     }
 
@@ -1608,70 +1951,45 @@ impl<T: GlobalNameAccessors> StreamSettings<T> {
             .into()]
     }
 
-    pub fn mix_config(&self) -> &MixConfig {
-        &T::mix_configs()[self.idx]
-    }
-
-    pub fn find_first_video(&self) -> Option<String> {
-        let mix_config = self.mix_config();
-        let mut stack = vec![&mix_config.mix];
-        while !stack.is_empty() {
-            let mix = stack.pop().unwrap();
-            for i in 0..mix.inputs.len() {
-                match &mix.inputs[i] {
-                    MixInput::Video(v) => return Some(v.clone()),
-                    MixInput::Mixed(m) => {
-                        for j in 0..T::mix_configs().len() {
-                            if &T::mix_configs()[j].def.name == m {
-                                stack.push(&T::mix_configs()[j].mix);
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        None
-    }
-
     fn delta_sec_update(&self) -> Vec<RenderSpec> {
-        if let Some(first_video) = self.find_first_video() {
-            vec![seek!(first_video => self.delta_sec, false)]
-        } else {
-            vec![]
-        }
+        vec![seek!(self.first_video() => self.delta_sec, false)]
     }
 
     fn scrub_update(&self) -> Vec<RenderSpec> {
-        if let Some(first_video) = self.find_first_video() {
-            if self.scrub >= 0.0 {
-                vec![seek!(first_video => self.scrub, false)]
-            } else {
-                vec![seek!(first_video => self.scrub - 0.1, false)]
-            }
+        if self.scrub >= 0.0 {
+            vec![seek!(self.first_video() => self.scrub, false)]
         } else {
-            vec![]
+            vec![seek!(self.first_video() => self.scrub - 0.1, false)]
         }
     }
 
     fn exact_sec_update(&self) -> Vec<RenderSpec> {
-        if let Some(first_video) = self.find_first_video() {
-            return vec![seek!(first_video => self.exact_sec, true)];
-        }
-        vec![]
+        vec![seek!(self.first_video() => self.exact_sec, true)]
     }
 
+    pub fn first_video(&self) -> String {
+        self.ident.first_video.clone()
+    }
+    pub fn input_mix(&self) -> String {
+        self.ident.input_mix.clone()
+    }
     pub fn main_mix(&self) -> String {
-        format!("main_mix_{}", self.idx)
+        self.ident.main_mix.clone()
     }
-    pub fn feedback_cache(&self) -> String {
-        format!("feedback_cache_{}", self.idx)
+    pub fn feedback_mix(&self) -> String {
+        self.ident.feedback_mix.clone()
     }
-    pub fn overlay_layer(&self) -> String {
-        format!("overlay_layer_{}", self.idx)
+    pub fn overlay_mix(&self) -> String {
+        self.ident.overlay_mix.clone()
     }
     pub fn reset(&mut self) {
-        *self = Self::new(self.idx);
+        *self = Self::new(
+            self.ident.idx,
+            self.first_video(),
+            self.input_mix(),
+            self.main_mix(),
+            self.feedback_mix(),
+            self.overlay_mix(),
+        );
     }
 }
