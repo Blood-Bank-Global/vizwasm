@@ -1379,8 +1379,6 @@ loops: [{}], loop capture: {}
                 );
             }
         }
-
-        specs.reverse(); // reverse to have the bottom layers earlier in the linear access
         specs
     }
 }
