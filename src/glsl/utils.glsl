@@ -16,6 +16,7 @@
 #define iChannel3 src_tex3
 
 #define M_PI 3.1415926535897932384626433832795
+#define EPSILON 0.001
 
 #define BLEND_ADDITION 1
 #define BLEND_AND 2
@@ -103,7 +104,6 @@ vec4 blend_by_mode(in vec4 below, in vec4 above, in uint kind) {
 vec3 distort(in vec2 coord, in sampler2D map, in float level) {
     vec3 delta = texture(map, coord).rgb - 0.5;
 
-    #define EPSILON 0.001
     if (abs(delta.r) < EPSILON) {
         delta.r = 0.0;
     }
@@ -122,39 +122,59 @@ vec3 distort(in vec2 coord, in sampler2D map, in float level) {
 #define EDGE_MODE_MIRROR 2
 #define EDGE_MODE_BLANK 3
 
+vec2 coord_smear(in vec2 coord) {
+    // Smear the coordinates to avoid edge artifacts
+    return clamp(coord, EPSILON, 1 - EPSILON);
+}
+
+vec2 coord_wrap(in vec2 coord) {
+    // Wrap the coordinates to stay within [0, 1]
+    if (coord.x < 0.0) {
+        coord.x = 1.0 + fract(coord.x);
+    } else if (coord.x > 1.0) {
+        coord.x = fract(coord.x);
+    }
+    if (coord.y < 0.0) {
+        coord.y = 1.0 + fract(coord.y);
+    } else if (coord.y > 1.0) {
+        coord.y = fract(coord.y);
+    }
+    return fract(coord);
+}
+
+vec2 coord_mirror(in vec2 coord) {
+    vec2 base_coord = vec2(fract(coord.x), fract(coord.y));
+    if (base_coord.x == 0.0 && coord.x != 0.0) {
+        base_coord.x = 1.0;
+    }
+    if (base_coord.y == 0.0 && coord.y != 0.0) {
+        base_coord.y = 1.0;
+    }
+    if ((int(floor(coord.x)) & 1) == 1) {
+        // If the x coordinate is odd, flip the x coordinate
+        base_coord.x = 1.0 - base_coord.x;
+    }
+    if ((int(floor(coord.y)) & 1) == 1) {
+        // If the y coordinate is odd, flip the y coordinate
+        base_coord.y = 1.0 - base_coord.y;
+    }
+    return base_coord;
+}
+
 vec3 handle_edge(sampler2D tex, in vec2 coord, in uint mode) {
     switch (mode) {
         case EDGE_MODE_SMEAR:
-            return texture(tex, clamp(coord, 0.01, 0.99)).rgb;
+            return texture(tex, coord_smear(coord)).rgb;
 
         case EDGE_MODE_WRAP:
-            if (coord.x < 0.0) {
-                coord.x = 1.0 + fract(coord.x);
-            } else if (coord.x > 1.0) {
-                coord.x = fract(coord.x);
-            }
-            if (coord.y < 0.0) {
-                coord.y = 1.0 + fract(coord.y);
-            } else if (coord.y > 1.0) {
-                coord.y = fract(coord.y);
-            }
-            return texture(tex, coord).rgb;
+            return texture(tex, coord_wrap(coord)).rgb;
 
         case EDGE_MODE_MIRROR:
-            if (coord.x < 0.0) {
-                coord.x = -fract(coord.x);
-            } else if (coord.x > 1.0) {
-                coord.x = 1 - fract(coord.x);
-            }
-            if (coord.y < 0.0) {
-                coord.y = -fract(coord.y);
-            } else if (coord.y > 1.0) {
-                coord.y = 1 - fract(coord.y);
-            }
-            return texture(tex, coord).rgb;
+            return texture(tex, coord_mirror(coord)).rgb;
 
         case EDGE_MODE_BLANK:
-            if (coord.x < 0.0 || coord.x > 1.0 || coord.y < 0.0 || coord.y > 1.0) {
+            if (coord.x <= EPSILON || coord.x >= (1.0 - EPSILON) ||
+                coord.y <= EPSILON || coord.y >= (1.0 - EPSILON)) {
                 return vec3(0.0, 0.0, 0.0);
             } else {
                 return texture(tex, coord).rgb;

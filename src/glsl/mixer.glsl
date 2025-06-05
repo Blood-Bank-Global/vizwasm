@@ -42,16 +42,7 @@
 vec2 base_coord = src_coord0.xy;
 
 // Scroll as needed
-base_coord = vec2(fract(base_coord.x + scrolled_h), fract(base_coord.y + scrolled_v));
-
-if ((int(floor(src_coord0.x +scrolled_h)) & 1) == 1) {
-    // If the x coordinate is odd, flip the x coordinate
-    base_coord.x = 1.0 - base_coord.x;
-}
-if ((int(floor(src_coord0.y + scrolled_v)) & 1) == 1) {
-    // If the y coordinate is odd, flip the y coordinate
-    base_coord.y = 1.0 - base_coord.y;
-}
+base_coord = coord_mirror(vec2(base_coord.x + scrolled_h, base_coord.y + scrolled_v));
 
 //skew
 base_coord = skew(base_coord, new_corners);
@@ -150,13 +141,13 @@ distort_coord -= center;
 distort_coord *= rot;
 distort_coord += center;
 
-vec4 distort_dx = vec4(distort_coord.x) + vec4(distort(distort_coord, src_tex2, distort_level), 0.0);
-vec4 distort_dy = vec4(distort_coord.y) + vec4(distort(distort_coord, src_tex3, distort_level), 0.0);
+vec4 distort_dx = vec4(distort_coord.x - dx) + vec4(distort(distort_coord, src_tex2, distort_level), 0.0);
+vec4 distort_dy = vec4(distort_coord.y - dy) + vec4(distort(distort_coord, src_tex3, distort_level), 0.0);
 mat4x2 distort_matrix = mat4x2(
-    distort_dx[0] - dx, distort_dy[0] - dy,
-    distort_dx[1] - dx, distort_dy[1] - dy,
-    distort_dx[2] - dx, distort_dy[2] - dy,
-    distort_dx[3] - dx, distort_dy[3] - dy
+    distort_dx[0], distort_dy[0],
+    distort_dx[1], distort_dy[1],
+    distort_dx[2], distort_dy[2],
+    distort_dx[3], distort_dy[3]
 );
 
 vec4 feedback = vec4(handle_edge(src_tex0, distort_matrix[0], distort_edge).r,
