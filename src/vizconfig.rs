@@ -1,4 +1,4 @@
-use sdlrig::renderspec::{CopyEx, Mix, MixInput, SendCmd, SendValue};
+use sdlrig::renderspec::{CopyEx, HudText, Mix, MixInput, Reset, SendCmd, SendValue};
 use sdlrig::Adjustable;
 use sdlrig::{
     gfxinfo::{Asset, GfxEvent, KeyCode, KeyEvent, Knob, Vid, VidInfo, VidMixer},
@@ -436,10 +436,103 @@ impl AllSettings {
         }
     }
 
+    pub fn update_record_and_get_specs(
+        &mut self,
+        reg_events: &[GfxEvent],
+        frame: i64,
+    ) -> Result<Vec<RenderSpec>, Box<dyn Error>> {
+        static ONCE: std::sync::Once = std::sync::Once::new();
+
+        ONCE.call_once(|| {
+            self.initial_reset_complete = vec![false; self.playback.len()];
+        });
+
+        let orig = if reg_events.contains(&GfxEvent::ReloadEvent()) {
+            let mut tmp = self.playback.clone();
+            for i in 0..tmp.len() {
+                tmp[i].stream.reset();
+            }
+            tmp
+        } else {
+            self.playback.clone()
+        };
+
+        let mut specs = vec![];
+        // Always capture live events even while recording is playing
+        self.update(reg_events, frame)?;
+        for i in 0..self.playback.len() {
+            let diffs = orig[i]
+                .stream
+                .diff(&self.playback[i].stream)
+                .into_iter()
+                .collect::<Vec<_>>();
+            specs.append(&mut self.playback[i].stream.get_commands(&diffs));
+            if let Some(buf) = self.playback[i].loops.record_buffer.as_mut() {
+                let filtered_diffs = diffs
+                    .into_iter()
+                    .filter(|d| StreamSettings::should_record(d))
+                    .collect::<Vec<_>>();
+                // Save the diffs for this frame
+                if filtered_diffs.len() > 0 {
+                    buf.events.push(LoopEvent {
+                        frame,
+                        diffs: filtered_diffs,
+                    });
+                }
+            }
+        }
+
+        for i in 0..self.playback.len() {
+            for j in 0..self.playback[i].loops.saved.len() {
+                if self.playback[i].loops.playing[j] {
+                    //send events for recorded loop at this frame
+                    let lp = &self.playback[i].loops.saved[j];
+                    if lp.events.len() > 0 {
+                        let start = lp.events[0].frame;
+                        let lp_len = lp.end - start;
+                        let curr = (frame % lp_len) + start;
+                        for event in &lp.events {
+                            if event.frame == curr {
+                                let diffs = event.diffs.clone();
+                                if diffs.len() > 0 {
+                                    self.playback[i].stream.apply_diff(&diffs);
+                                    specs.append(&mut self.playback[i].stream.get_commands(&diffs));
+                                }
+
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        specs.push(
+            HudText {
+                text: self.hud(&VidInfo::default()),
+            }
+            .into(),
+        );
+
+        Ok(specs)
+    }
+
     pub fn update(&mut self, reg_events: &[GfxEvent], frame: i64) -> Result<(), Box<dyn Error>> {
+        //Update steams for incoming frame events
         for ge in reg_events {
             match ge {
-                GfxEvent::ReloadEvent() => (),
+                GfxEvent::FrameEvent(fe) => {
+                    if let Some((eidx, _)) = self
+                        .playback
+                        .iter()
+                        .enumerate()
+                        .find(|(_, s)| s.stream.first_video() == fe.stream)
+                    {
+                        self.playback[eidx].stream.real_ts = fe.real_ts;
+                        self.playback[eidx].stream.continuous_ts = fe.continuous_ts;
+                    }
+                }
+                GfxEvent::ReloadEvent() => (), // needs to be handled elsewhere
                 GfxEvent::KeyEvent(ke) => {
                     let selected_idx = self.active_idx;
                     match ke {
@@ -848,7 +941,6 @@ impl AllSettings {
                         _ => (),
                     }
                 }
-                _ => (),
             }
         }
 
@@ -883,6 +975,41 @@ impl AllSettings {
             }
             _ => {
                 playback.stream.adjust(kn, self.selected_knobs, inc);
+            }
+        }
+    }
+
+    pub fn clean_up_by_specs(&mut self, specs: &mut Vec<RenderSpec>) {
+        // RESET SEEK
+        for i in 0..self.playback.len() {
+            self.playback[i].stream.set_delta_sec(0.0);
+            self.playback[i].stream.set_scrub(0.0);
+            self.playback[i].stream.set_exact_sec(0.0);
+        }
+
+        let referenced = specs
+            .iter()
+            .filter_map(|s| {
+                if let RenderSpec::Mix(mix) = s {
+                    Some(mix.name.clone())
+                } else {
+                    None
+                }
+            })
+            .collect::<HashSet<_>>();
+
+        for i in 0..self.playback.len() {
+            if !referenced.contains(&self.playback[i].stream.main_mix())
+                && self.initial_reset_complete[i] == true
+            {
+                eprintln!("unloading {i}");
+                self.initial_reset_complete[i] = false;
+                specs.push(
+                    Reset {
+                        target: self.playback[i].stream.main_mix(),
+                    }
+                    .into(),
+                );
             }
         }
     }

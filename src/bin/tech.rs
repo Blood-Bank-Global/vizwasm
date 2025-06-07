@@ -1,16 +1,14 @@
 use std::{
-    collections::{HashMap, HashSet},
+    collections::HashMap,
     error::Error,
     sync::{LazyLock, Mutex},
 };
 
 use sdlrig::{
-    gfxinfo::{Asset, GfxEvent, GfxInfo, Vid, VidInfo, VidMixer},
-    hud_text,
+    gfxinfo::{Asset, GfxEvent, GfxInfo, Vid, VidMixer},
     renderspec::{Mix, RenderSpec},
-    reset,
 };
-use vizwasm::vizconfig::{AllSettings, LoopEvent, MixConfig, StreamSettings};
+use vizwasm::vizconfig::{AllSettings, MixConfig};
 fn main() {}
 
 static ASSET_PATH: &'static str = "/Users/ttie/Desktop/tech";
@@ -551,91 +549,7 @@ pub fn calculate(
     let mut lock = SETTINGS.lock().expect("Settings mutex corrupted");
     let settings = lock.as_mut();
 
-    static ONCE: std::sync::Once = std::sync::Once::new();
-
-    let mut specs = vec![];
-    ONCE.call_once(|| {
-        settings.initial_reset_complete = vec![false; settings.playback.len()];
-    });
-
-    //Update steams for incoming frame events first
-    for event in reg_events {
-        match event {
-            GfxEvent::FrameEvent(fe) => {
-                if let Some((eidx, _)) = settings
-                    .playback
-                    .iter()
-                    .enumerate()
-                    .find(|(_, s)| s.stream.first_video() == fe.stream)
-                {
-                    settings.playback[eidx].stream.real_ts = fe.real_ts;
-                    settings.playback[eidx].stream.continuous_ts = fe.continuous_ts;
-                }
-            }
-            _ => (),
-        }
-    }
-
-    let orig = if reg_events.contains(&GfxEvent::ReloadEvent()) {
-        let mut tmp = settings.playback.clone();
-        for i in 0..tmp.len() {
-            tmp[i].stream.reset();
-        }
-        tmp
-    } else {
-        settings.playback.clone()
-    };
-
-    // Always capture live events even while recording is playing
-    settings.update(reg_events, frame)?;
-    for i in 0..settings.playback.len() {
-        let diffs = orig[i]
-            .stream
-            .diff(&settings.playback[i].stream)
-            .into_iter()
-            .collect::<Vec<_>>();
-        specs.append(&mut settings.playback[i].stream.get_commands(&diffs));
-        if let Some(buf) = settings.playback[i].loops.record_buffer.as_mut() {
-            let filtered_diffs = diffs
-                .into_iter()
-                .filter(|d| StreamSettings::should_record(d))
-                .collect::<Vec<_>>();
-            // Save the diffs for this frame
-            if filtered_diffs.len() > 0 {
-                buf.events.push(LoopEvent {
-                    frame,
-                    diffs: filtered_diffs,
-                });
-            }
-        }
-    }
-
-    for i in 0..settings.playback.len() {
-        for j in 0..settings.playback[i].loops.saved.len() {
-            if settings.playback[i].loops.playing[j] {
-                //send events for recorded loop at this frame
-                let lp = &settings.playback[i].loops.saved[j];
-                if lp.events.len() > 0 {
-                    let start = lp.events[0].frame;
-                    let lp_len = lp.end - start;
-                    let curr = (frame % lp_len) + start;
-                    for event in &lp.events {
-                        if event.frame == curr {
-                            let diffs = event.diffs.clone();
-                            if diffs.len() > 0 {
-                                settings.playback[i].stream.apply_diff(&diffs);
-                                specs.append(&mut settings.playback[i].stream.get_commands(&diffs));
-                            }
-
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    specs.push(hud_text!(settings.hud(&VidInfo::default())));
+    let mut specs = settings.update_record_and_get_specs(reg_events, frame)?;
 
     // LHS
     let mix_name = settings.playback[settings.active_idx].stream.overlay_mix();
@@ -692,33 +606,6 @@ pub fn calculate(
         let src = (ix, iy, ow as u32, oh as u32);
         let dst = (canvas_w as i32 / 2, 0, canvas_w / 2 as u32, canvas_h as u32);
         specs.extend(settings.get_playback_specs(settings.display_idx, src, dst));
-    }
-    // RESET SEEK
-    for i in 0..settings.playback.len() {
-        settings.playback[i].stream.set_delta_sec(0.0);
-        settings.playback[i].stream.set_scrub(0.0);
-        settings.playback[i].stream.set_exact_sec(0.0);
-    }
-
-    let referenced = specs
-        .iter()
-        .filter_map(|s| {
-            if let RenderSpec::Mix(mix) = s {
-                Some(mix.name.clone())
-            } else {
-                None
-            }
-        })
-        .collect::<HashSet<_>>();
-
-    for i in 0..settings.playback.len() {
-        if !referenced.contains(&settings.playback[i].stream.main_mix())
-            && settings.initial_reset_complete[i] == true
-        {
-            eprintln!("unloading {i}");
-            settings.initial_reset_complete[i] = false;
-            specs.push(reset!(settings.playback[i].stream.main_mix()));
-        }
     }
 
     Ok(specs)
