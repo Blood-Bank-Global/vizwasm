@@ -551,7 +551,7 @@ pub fn calculate(
 
     let mut specs = settings.update_record_and_get_specs(reg_events, frame)?;
 
-    // LHS
+    // TOP
     let mix_name = settings.playback[settings.active_idx].stream.overlay_mix();
     if let Some(mix_config) = settings.mix_configs.get(&mix_name) {
         let iw = mix_config.def.width as i32;
@@ -562,7 +562,7 @@ pub fn calculate(
         let mut iy = 0;
 
         let iaspect = iw as f32 / ih as f32;
-        let oaspect = (canvas_w / 2) as f32 / canvas_h as f32;
+        let oaspect = canvas_w as f32 / (canvas_h as f32 / 2.0);
 
         // correct aspect ratio
         if iaspect > oaspect {
@@ -575,12 +575,12 @@ pub fn calculate(
             oh = effective_oh;
         }
         let src = (ix, iy, ow as u32, oh as u32);
-        let dst = (0, 0, canvas_w / 2 as u32, canvas_h as u32);
+        let dst = (0, 0, canvas_w as u32, canvas_h as u32 / 2);
 
         specs.extend(settings.get_playback_specs(settings.active_idx, src, dst));
     }
 
-    // RHS
+    // BOTTOM
     let mix_name = settings.playback[settings.display_idx].stream.overlay_mix();
     if let Some(mix_config) = settings.mix_configs.get(&mix_name) {
         let iw = mix_config.def.width as i32;
@@ -591,7 +591,7 @@ pub fn calculate(
         let mut iy = 0;
 
         let iaspect = iw as f32 / ih as f32;
-        let oaspect = (canvas_w / 2) as f32 / canvas_h as f32;
+        let oaspect = canvas_w as f32 / (canvas_h as f32 / 2.0);
 
         // correct aspect ratio
         if iaspect > oaspect {
@@ -604,7 +604,7 @@ pub fn calculate(
             oh = effective_oh;
         }
         let src = (ix, iy, ow as u32, oh as u32);
-        let dst = (canvas_w as i32 / 2, 0, canvas_w / 2 as u32, canvas_h as u32);
+        let dst = (0, canvas_h as i32 / 2, canvas_w as u32, canvas_h as u32 / 2);
         specs.extend(settings.get_playback_specs(settings.display_idx, src, dst));
     }
 
