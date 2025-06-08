@@ -638,5 +638,6 @@ pub fn calculate(
         }
     }
 
+    settings.clean_up_by_specs(&mut specs);
     Ok(specs)
 }
