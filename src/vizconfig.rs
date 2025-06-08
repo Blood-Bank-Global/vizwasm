@@ -599,7 +599,7 @@ impl AllSettings {
                             down: true,
                             ..
                         } => {
-                            let ident = self.clipboard.ident.clone();
+                            let ident = self.playback[selected_idx].stream.ident.clone();
                             self.playback[selected_idx].stream = self.clipboard.clone();
                             self.playback[selected_idx].stream.ident = ident;
                         }

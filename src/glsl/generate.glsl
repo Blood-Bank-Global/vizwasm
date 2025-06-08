@@ -24,9 +24,3 @@ if (src_coord0.y < amp_horizontal || src_coord0.y > 1.0 - amp_horizontal || src_
     color = vec4(0.0, 0.0, 0.0, 1.0);
 }
 
-color *= mat4x4(
-    (1 + sin(mod(frame, 100.0)/100 * 2 * M_PI))/2, 0.0, 0.0, 0.0,
-    0.0, 1.0, 0.0, 0.0,
-    0.0, 0.0, 0.0, 0.0,
-    0.0, 0.0, 0.0, 1.0
-);

@@ -1,0 +1,292 @@
+use std::{
+    collections::HashMap,
+    error::Error,
+    sync::{LazyLock, Mutex},
+};
+
+use sdlrig::{
+    gfxinfo::{Asset, GfxEvent, GfxInfo, Vid, VidMixer},
+    renderspec::{Mix, RenderSpec},
+};
+use vizwasm::vizconfig::{AllSettings, MixConfig};
+fn main() {}
+
+static ASSET_PATH: &'static str = "/Users/ttie/Desktop/ninetytwo";
+
+static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
+    vec![
+        Vid::builder()
+            .name("blank")
+            .path(format!("{ASSET_PATH}/streams/blank.mp4"))
+            .resolution((720, 480))
+            .tbq((1, 12800))
+            .pix_fmt("yuv420p")
+            .repeat(true)
+            .realtime(false)
+            .hardware_decode(true)
+            .build(),
+        Vid::builder()
+            .name("intel")
+            .path(format!("{ASSET_PATH}/streams/intel.mp4"))
+            .resolution((640, 480))
+            .tbq((1, 15360))
+            .pix_fmt("yuv420p")
+            .repeat(true)
+            .realtime(false)
+            .hardware_decode(true)
+            .build(),
+        Vid::builder()
+            .name("front cam")
+            .path("MacBook Pro Camera")
+            .format("avfoundation")
+            .opts(&vec![
+                ("pixel_format", "bgr0"),
+                ("framerate", "30.0"),
+                ("video_size", "1280x720"),
+            ])
+            .resolution((1280, 720))
+            .tbq((1, 1000000))
+            .pix_fmt("bgr0")
+            .repeat(false)
+            .realtime(true)
+            .hardware_decode(false)
+            .build()
+            .into(),
+        //   Vid::builder()
+        //     .name("capture")
+        //     .path("USB3 Video")
+        //     .format("avfoundation")
+        //     .resolution((1280, 720))
+        //     .tbq((1, 1000000))
+        //     .pix_fmt("bgr0")
+        //     .opts(&vec![
+        //         ("pixel_format", "bgr0"),
+        //         ("framerate", "30.0"),
+        //         ("video_size", "1280x720"),
+        //     ])
+        //     .realtime(true)
+        //     .repeat(false)
+        //     .build(),
+        //   Vid::builder()
+        //     .name("StreamCam")
+        //     .path("Logitech StreamCam")
+        //     .format("avfoundation")
+        //     .resolution((848, 480))
+        //     .tbq((1, 1000000))
+        //     .pix_fmt("bgr0")
+        //     .opts(&vec![
+        //         ("pixel_format", "bgr0"),
+        //         ("framerate", "30.0"),
+        //         ("video_size", "848,480"),
+        //     ])
+        //     .realtime(true)
+        //     .repeat(false)
+        //     .build(),
+    ]
+});
+
+static PLAYBACK_NAMES: LazyLock<Vec<&'static str>> =
+    LazyLock::new(|| vec!["blank", "generate", "grid", "compose", "intel", "front cam"]);
+
+static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
+    let mut configs = vec![];
+    configs.push(MixConfig {
+        def: VidMixer::builder()
+            .name("generate_mix")
+            .width(720)
+            .height(480)
+            .header(include_str!("../glsl/utils.glsl"))
+            .body(include_str!("../glsl/generate.glsl"))
+            .build(),
+        mix: Mix::builder()
+            .name("generate_mix")
+            .mixed("blank_mix")
+            .no_display(true)
+            .build(),
+    });
+    configs.push(MixConfig {
+        def: VidMixer::builder()
+            .name("grid_mix")
+            .width(720)
+            .height(480)
+            .build(),
+        mix: Mix::builder()
+            .name("grid_mix")
+            .mixed("generate_feedback")
+            .no_display(true)
+            .build(),
+    });
+    configs.push(MixConfig {
+        def: VidMixer::builder()
+            .name("compose_mix")
+            .header(include_str!("../glsl/utils.glsl"))
+            .body(include_str!("../glsl/compose.glsl"))
+            .width(720)
+            .height(480)
+            .build(),
+        mix: Mix::builder()
+            .name("compose_mix")
+            .mixed("intel_main_mix")
+            .mixed("generate_feedback")
+            .no_display(true)
+            .build(),
+    });
+
+    for vid in STREAM_DEFS.iter() {
+        let mix_name = format!("{}_mix", vid.name);
+        configs.push(MixConfig {
+            def: VidMixer::builder()
+                .name(mix_name.clone())
+                .width(vid.resolution.0 as u32)
+                .height(vid.resolution.1 as u32)
+                .build(),
+            mix: Mix::builder()
+                .name(mix_name.clone())
+                .video(&vid.name)
+                .no_display(true)
+                .build(),
+        });
+    }
+    configs
+});
+
+static SETTINGS: LazyLock<Mutex<Box<AllSettings>>> = LazyLock::new(|| {
+    let settings = AllSettings::new(
+        STREAM_DEFS.clone(),
+        MIX_CONFIGS.clone(),
+        PLAYBACK_NAMES.clone(),
+        ASSET_PATH,
+    );
+    Mutex::new(Box::new(settings))
+});
+
+#[no_mangle]
+#[allow(unused)]
+pub fn asset_list(fps: i64) -> Vec<Asset> {
+    let mut lock = if let Ok(lock) = SETTINGS.lock() {
+        lock
+    } else {
+        panic!("Settings object has been corrupted.");
+    };
+
+    let settings = lock.as_mut();
+    settings.asset_list(fps)
+}
+
+#[no_mangle]
+pub fn encode_settings() -> Vec<u8> {
+    let mut lock = SETTINGS.lock().expect("Could not get settings lock.");
+    let settings = lock.as_mut();
+    serde_json::to_vec(settings).unwrap()
+}
+
+#[no_mangle]
+pub fn decode_settings(bytes: &[u8]) {
+    let mut lock = SETTINGS.lock().expect("Could not get settings lock.");
+    let settings = lock.as_mut();
+    *settings = serde_json::from_slice(bytes).unwrap();
+}
+
+#[no_mangle]
+pub fn calculate(
+    #[allow(unused)] canvas_w: u32,
+    #[allow(unused)] canvas_h: u32,
+    #[allow(unused)] frame: i64,
+    #[allow(unused)] fps: i64,
+    #[allow(unused)] gfx_info: &HashMap<String, GfxInfo>,
+    #[allow(unused)] reg_events: &[GfxEvent],
+) -> Result<Vec<RenderSpec>, Box<dyn Error>> {
+    let mut lock = SETTINGS.lock().expect("Settings mutex corrupted");
+    let settings = lock.as_mut();
+
+    let mut specs = settings.update_record_and_get_specs(reg_events, frame)?;
+
+    let mut seen = HashMap::<String, Mix>::new();
+
+    // TOP
+    let mix_name = settings.playback[settings.active_idx].stream.overlay_mix();
+    if let Some(mix_config) = settings.mix_configs.get(&mix_name) {
+        let iw = mix_config.def.width as i32;
+        let ih = mix_config.def.height as i32;
+        let mut ow = iw;
+        let mut oh = ih;
+        let mut ix = 0;
+        let mut iy = 0;
+
+        let iaspect = iw as f32 / ih as f32;
+        let oaspect = canvas_w as f32 / (canvas_h as f32 / 2.0);
+
+        // correct aspect ratio
+        if iaspect > oaspect {
+            let effective_ow = (ih as f32 * oaspect) as i32;
+            ix = (ow - effective_ow) / 2;
+            ow = effective_ow;
+        } else if iaspect < oaspect {
+            let effective_oh = (iw as f32 / oaspect) as i32;
+            iy = (oh - effective_oh) / 2;
+            oh = effective_oh;
+        }
+        let src = (ix, iy, ow as u32, oh as u32);
+        let dst = (0, 0, canvas_w as u32, canvas_h as u32 / 2);
+
+        let playback_specs = settings.get_playback_specs(settings.active_idx, src, dst);
+        for spec in playback_specs {
+            if let RenderSpec::Mix(mix) = &spec {
+                let other = seen.get(&mix.name);
+                if let Some(other) = other {
+                    if other.target == mix.target {
+                        // If the mix already exists, skip adding it again.
+                        continue;
+                    }
+                }
+                seen.insert(mix.name.clone(), mix.clone());
+            }
+            specs.push(spec);
+        }
+    }
+
+    // BOTTOM
+    let mix_name = settings.playback[settings.display_idx].stream.overlay_mix();
+    if let Some(mix_config) = settings.mix_configs.get(&mix_name) {
+        let iw = mix_config.def.width as i32;
+        let ih = mix_config.def.height as i32;
+        let mut ow = iw;
+        let mut oh = ih;
+        let mut ix = 0;
+        let mut iy = 0;
+
+        let iaspect = iw as f32 / ih as f32;
+        let oaspect = canvas_w as f32 / (canvas_h as f32 / 2.0);
+
+        // correct aspect ratio
+        if iaspect > oaspect {
+            let effective_ow = (ih as f32 * oaspect) as i32;
+            ix = (ow - effective_ow) / 2;
+            ow = effective_ow;
+        } else if iaspect < oaspect {
+            let effective_oh = (iw as f32 / oaspect) as i32;
+            iy = (oh - effective_oh) / 2;
+            oh = effective_oh;
+        }
+        let src = (ix, iy, ow as u32, oh as u32);
+        let dst = (0, canvas_h as i32 / 2, canvas_w as u32, canvas_h as u32 / 2);
+
+        let playback_specs = settings.get_playback_specs(settings.display_idx, src, dst);
+        for spec in playback_specs {
+            if let RenderSpec::Mix(mix) = &spec {
+                let other = seen.get(&mix.name);
+                if let Some(other) = other {
+                    if other.target == mix.target {
+                        // If the mix already exists, skip adding it again.
+                        continue;
+                    }
+                }
+                seen.insert(mix.name.clone(), mix.clone());
+            }
+            specs.push(spec);
+        }
+    }
+
+    settings.clean_up_by_specs(&mut specs);
+    Ok(specs)
+}
