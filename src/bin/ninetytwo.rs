@@ -85,8 +85,17 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
     ]
 });
 
-static PLAYBACK_NAMES: LazyLock<Vec<&'static str>> =
-    LazyLock::new(|| vec!["blank", "generate", "grid", "compose", "intel", "front cam"]);
+static PLAYBACK_NAMES: LazyLock<Vec<&'static str>> = LazyLock::new(|| {
+    vec![
+        "blank",
+        "generate",
+        "grid",
+        "compose",
+        "intel2",
+        "intel",
+        "front cam",
+    ]
+});
 
 static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
     let mut configs = vec![];
@@ -131,6 +140,20 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
             .no_display(true)
             .build(),
     });
+    configs.push(MixConfig {
+        def: VidMixer::builder()
+            .name("intel2_mix")
+            .header(include_str!("../glsl/utils.glsl"))
+            .body(include_str!("../glsl/shuffle.glsl"))
+            .width(720)
+            .height(480)
+            .build(),
+        mix: Mix::builder()
+            .name("intel2_mix")
+            .mixed("intel_main_mix")
+            .no_display(true)
+            .build(),
+    });
 
     for vid in STREAM_DEFS.iter() {
         let mix_name = format!("{}_mix", vid.name);
@@ -170,6 +193,34 @@ pub fn asset_list(fps: i64) -> Vec<Asset> {
     };
 
     let settings = lock.as_mut();
+
+    eprintln!("here comes assets");
+    if PLAYBACK_NAMES
+        .iter()
+        .map(|s| s.to_string())
+        .collect::<Vec<_>>()
+        != settings.playback_names
+    {
+        let orig = settings.clone();
+        *settings = AllSettings::new(
+            STREAM_DEFS.clone(),
+            MIX_CONFIGS.clone(),
+            PLAYBACK_NAMES.clone(),
+            ASSET_PATH,
+        );
+        eprintln!("settings playback names: {:?}", settings.playback_names);
+        for i in 0..orig.playback.len() {
+            for j in 0..settings.playback.len() {
+                if settings.playback[j].stream.ident.name == orig.playback[i].stream.ident.name {
+                    // If the playback name matches, copy the stream.
+                    let ident = settings.playback[j].stream.ident.clone();
+                    settings.playback[j].stream = orig.playback[i].stream.clone();
+                    settings.playback[j].stream.ident = ident;
+                }
+            }
+        }
+    }
+
     settings.asset_list(fps)
 }
 
@@ -184,7 +235,19 @@ pub fn encode_settings() -> Vec<u8> {
 pub fn decode_settings(bytes: &[u8]) {
     let mut lock = SETTINGS.lock().expect("Could not get settings lock.");
     let settings = lock.as_mut();
-    *settings = serde_json::from_slice(bytes).unwrap();
+    let decoded =
+        serde_json::from_slice::<AllSettings>(bytes).expect("Failed to decode settings from bytes");
+    settings.scan_idx = decoded.scan_idx;
+    settings.active_idx = decoded.active_idx;
+    settings.display_idx = decoded.display_idx;
+    for i in 0..decoded.playback.len() {
+        if i >= settings.playback.len() {
+            break;
+        }
+        if settings.playback[i].stream.ident == decoded.playback[i].stream.ident {
+            settings.playback[i] = decoded.playback[i].clone();
+        }
+    }
 }
 
 #[no_mangle]

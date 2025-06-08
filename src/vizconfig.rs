@@ -217,6 +217,7 @@ impl AllSettings {
             "alpha",
         ]
     }
+
     pub fn new<
         S: AsRef<str>,
         SI: IntoIterator,
@@ -348,7 +349,7 @@ impl AllSettings {
             .collect::<Vec<_>>();
 
         let mut playback = vec![];
-        for (i, name) in playback_names.iter().enumerate() {
+        for name in &playback_names {
             let input_mix = mix_configs.get_mut(&format!("{name}_mix")).cloned();
 
             if input_mix.is_none() {
@@ -382,7 +383,7 @@ impl AllSettings {
 
             let pb = PlaybackSettings {
                 stream: StreamSettings::new(
-                    i,
+                    name.clone(),
                     first_video.clone(),
                     input_mix.def.name.clone(),
                     mixer_graph.main_mix.def.name.clone(),
@@ -391,7 +392,7 @@ impl AllSettings {
                 ),
                 presets: PresetSettings {
                     baseline: StreamSettings::new(
-                        i,
+                        name.clone(),
                         first_video.clone(),
                         input_mix.def.name.clone(),
                         mixer_graph.main_mix.def.name.clone(),
@@ -426,7 +427,7 @@ impl AllSettings {
             lut_names,
             colors,
             asset_path,
-            clipboard: StreamSettings::new(0, "", "", "", "", ""),
+            clipboard: StreamSettings::new("", "", "", "", "", ""),
             selected_knobs: 1,
             playback,
             initial_reset_complete: vec![false; playback_len],
@@ -1510,10 +1511,10 @@ loops: [{}], loop capture: {}
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[repr(C)]
 pub struct StreamIdent {
-    pub idx: usize,
+    pub name: String,
     pub first_video: String,
     pub input_mix: String,
     pub main_mix: String,
@@ -1746,7 +1747,7 @@ pub struct StreamSettings {
 
 impl StreamSettings {
     pub fn new<S: AsRef<str>>(
-        idx: usize,
+        name: S,
         first_video: S,
         input_mix: S,
         main_mix: S,
@@ -1755,7 +1756,7 @@ impl StreamSettings {
     ) -> Self {
         Self {
             ident: StreamIdent {
-                idx,
+                name: name.as_ref().to_string(),
                 first_video: first_video.as_ref().to_string(),
                 input_mix: input_mix.as_ref().to_string(),
                 main_mix: main_mix.as_ref().to_string(),
@@ -2109,7 +2110,7 @@ impl StreamSettings {
     }
     pub fn reset(&mut self) {
         *self = Self::new(
-            self.ident.idx,
+            self.ident.name.clone(),
             self.first_video(),
             self.input_mix(),
             self.main_mix(),
