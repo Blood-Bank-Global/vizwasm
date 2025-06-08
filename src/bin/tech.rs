@@ -417,6 +417,7 @@ static PLAYBACK_NAMES: LazyLock<Vec<&'static str>> = LazyLock::new(|| {
         "vestial2",
         "world_grid",
         "the_moon",
+        "front cam",
     ]
 });
 
@@ -551,6 +552,8 @@ pub fn calculate(
 
     let mut specs = settings.update_record_and_get_specs(reg_events, frame)?;
 
+    let mut seen = HashMap::<String, Mix>::new();
+
     // TOP
     let mix_name = settings.playback[settings.active_idx].stream.overlay_mix();
     if let Some(mix_config) = settings.mix_configs.get(&mix_name) {
@@ -577,7 +580,20 @@ pub fn calculate(
         let src = (ix, iy, ow as u32, oh as u32);
         let dst = (0, 0, canvas_w as u32, canvas_h as u32 / 2);
 
-        specs.extend(settings.get_playback_specs(settings.active_idx, src, dst));
+        let playback_specs = settings.get_playback_specs(settings.active_idx, src, dst);
+        for spec in playback_specs {
+            if let RenderSpec::Mix(mix) = &spec {
+                let other = seen.get(&mix.name);
+                if let Some(other) = other {
+                    if other.target == mix.target {
+                        // If the mix already exists, skip adding it again.
+                        continue;
+                    }
+                }
+                seen.insert(mix.name.clone(), mix.clone());
+            }
+            specs.push(spec);
+        }
     }
 
     // BOTTOM
@@ -605,7 +621,21 @@ pub fn calculate(
         }
         let src = (ix, iy, ow as u32, oh as u32);
         let dst = (0, canvas_h as i32 / 2, canvas_w as u32, canvas_h as u32 / 2);
-        specs.extend(settings.get_playback_specs(settings.display_idx, src, dst));
+
+        let playback_specs = settings.get_playback_specs(settings.display_idx, src, dst);
+        for spec in playback_specs {
+            if let RenderSpec::Mix(mix) = &spec {
+                let other = seen.get(&mix.name);
+                if let Some(other) = other {
+                    if other.target == mix.target {
+                        // If the mix already exists, skip adding it again.
+                        continue;
+                    }
+                }
+                seen.insert(mix.name.clone(), mix.clone());
+            }
+            specs.push(spec);
+        }
     }
 
     Ok(specs)
