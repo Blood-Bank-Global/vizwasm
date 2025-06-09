@@ -25,33 +25,23 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
             .realtime(false)
             .hardware_decode(true)
             .build(),
-        Vid::builder()
-            .name("intel")
-            .path(format!("{ASSET_PATH}/streams/intel.mp4"))
-            .resolution((640, 480))
-            .tbq((1, 15360))
-            .pix_fmt("yuv420p")
-            .repeat(true)
-            .realtime(false)
-            .hardware_decode(true)
-            .build(),
-        Vid::builder()
-            .name("front cam")
-            .path("MacBook Pro Camera")
-            .format("avfoundation")
-            .opts(&vec![
-                ("pixel_format", "bgr0"),
-                ("framerate", "30.0"),
-                ("video_size", "1280x720"),
-            ])
-            .resolution((1280, 720))
-            .tbq((1, 1000000))
-            .pix_fmt("bgr0")
-            .repeat(false)
-            .realtime(true)
-            .hardware_decode(false)
-            .build()
-            .into(),
+        // Vid::builder()
+        //     .name("front cam")
+        //     .path("MacBook Pro Camera")
+        //     .format("avfoundation")
+        //     .opts(&vec![
+        //         ("pixel_format", "bgr0"),
+        //         ("framerate", "30.0"),
+        //         ("video_size", "1280x720"),
+        //     ])
+        //     .resolution((1280, 720))
+        //     .tbq((1, 1000000))
+        //     .pix_fmt("bgr0")
+        //     .repeat(false)
+        //     .realtime(true)
+        //     .hardware_decode(false)
+        //     .build()
+        //     .into(),
         //   Vid::builder()
         //     .name("capture")
         //     .path("USB3 Video")
@@ -91,9 +81,9 @@ static PLAYBACK_NAMES: LazyLock<Vec<&'static str>> = LazyLock::new(|| {
         "generate",
         "grid",
         "compose",
-        "intel2",
-        "intel",
-        "front cam",
+        "sun",
+        "sun_compose",
+        // "front cam",
     ]
 });
 
@@ -142,19 +132,34 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
     });
     configs.push(MixConfig {
         def: VidMixer::builder()
-            .name("intel2_mix")
+            .name("sun_mix")
             .header(include_str!("../glsl/utils.glsl"))
-            .body(include_str!("../glsl/shuffle.glsl"))
+            .body(include_str!("../glsl/sun.glsl"))
             .width(720)
             .height(480)
             .build(),
         mix: Mix::builder()
-            .name("intel2_mix")
-            .mixed("intel_main_mix")
+            .name("sun_mix")
+            .video("blank")
             .no_display(true)
             .build(),
     });
-
+    configs.push(MixConfig {
+        def: VidMixer::builder()
+            .name("sun_compose_mix")
+            .header(include_str!("../glsl/utils.glsl"))
+            .body(include_str!("../glsl/compose.glsl"))
+            .width(720)
+            .height(480)
+            .build(),
+        mix: Mix::builder()
+            .name("sun_compose_mix")
+            .mixed("blank_mix")
+            //.mixed("sun_feedback")
+            .mixed("grid_feedback")
+            .no_display(true)
+            .build(),
+    });
     for vid in STREAM_DEFS.iter() {
         let mix_name = format!("{}_mix", vid.name);
         configs.push(MixConfig {
