@@ -80,7 +80,7 @@ static PLAYBACK_NAMES: LazyLock<Vec<&'static str>> = LazyLock::new(|| {
         "blank",
         "generate",
         "grid",
-        "compose",
+        "shuffle",
         "sun",
         "sun_compose",
         // "front cam",
@@ -117,15 +117,14 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
     });
     configs.push(MixConfig {
         def: VidMixer::builder()
-            .name("compose_mix")
+            .name("shuffle_mix")
             .header(include_str!("../glsl/utils.glsl"))
-            .body(include_str!("../glsl/compose.glsl"))
+            .body(concat!(include_str!("../glsl/shuffle.glsl"), "\n"))
             .width(720)
             .height(480)
             .build(),
         mix: Mix::builder()
-            .name("compose_mix")
-            .mixed("intel_main_mix")
+            .name("shuffle_mix")
             .mixed("generate_feedback")
             .no_display(true)
             .build(),
