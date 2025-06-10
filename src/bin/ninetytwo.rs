@@ -25,6 +25,16 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
             .realtime(false)
             .hardware_decode(true)
             .build(),
+        Vid::builder()
+            .name("intro1")
+            .path(format!("{ASSET_PATH}/streams/intro1.mp4"))
+            .resolution((1280, 720))
+            .tbq((1, 12800))
+            .pix_fmt("yuv420p")
+            .repeat(true)
+            .realtime(false)
+            .hardware_decode(true)
+            .build(),
         // Vid::builder()
         //     .name("front cam")
         //     .path("MacBook Pro Camera")
@@ -78,6 +88,7 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
 static PLAYBACK_NAMES: LazyLock<Vec<&'static str>> = LazyLock::new(|| {
     vec![
         "blank",
+        "intro1",
         "generate",
         "grid",
         "shuffle",
@@ -92,8 +103,8 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
     configs.push(MixConfig {
         def: VidMixer::builder()
             .name("generate_mix")
-            .width(720)
-            .height(480)
+            .width(1280)
+            .height(720)
             .header(include_str!("../glsl/utils.glsl"))
             .body(include_str!("../glsl/generate.glsl"))
             .build(),
@@ -106,8 +117,8 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
     configs.push(MixConfig {
         def: VidMixer::builder()
             .name("grid_mix")
-            .width(720)
-            .height(480)
+            .width(1280)
+            .height(720)
             .build(),
         mix: Mix::builder()
             .name("grid_mix")
@@ -120,8 +131,8 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
             .name("shuffle_mix")
             .header(include_str!("../glsl/utils.glsl"))
             .body(concat!(include_str!("../glsl/shuffle.glsl"), "\n"))
-            .width(720)
-            .height(480)
+            .width(1280)
+            .height(720)
             .build(),
         mix: Mix::builder()
             .name("shuffle_mix")
@@ -134,8 +145,8 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
             .name("sun_mix")
             .header(include_str!("../glsl/utils.glsl"))
             .body(include_str!("../glsl/sun.glsl"))
-            .width(720)
-            .height(480)
+            .width(1280)
+            .height(720)
             .build(),
         mix: Mix::builder()
             .name("sun_mix")
@@ -148,13 +159,13 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
             .name("sun_compose_mix")
             .header(include_str!("../glsl/utils.glsl"))
             .body(include_str!("../glsl/compose.glsl"))
-            .width(720)
-            .height(480)
+            .width(1280)
+            .height(720)
             .build(),
         mix: Mix::builder()
             .name("sun_compose_mix")
-            .mixed("blank_mix")
-            //.mixed("sun_feedback")
+            // .mixed("blank_mix")
+            .mixed("sun_feedback")
             .mixed("grid_feedback")
             .no_display(true)
             .build(),
