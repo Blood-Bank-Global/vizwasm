@@ -1,5 +1,5 @@
-#define border_max 50.0
-#define border_min -20.0
+#define border_max 85.0
+#define border_min -40.0
 
 float amp_horizontal = border_max + border_min + border_max
     * sin((src_coord0.x + mod(frame, 154.0) / 154.0) * 2.0 * M_PI) 

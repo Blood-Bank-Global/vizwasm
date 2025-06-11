@@ -121,6 +121,7 @@ vec3 distort(in vec2 coord, in sampler2D map, in float level) {
 #define EDGE_MODE_WRAP 1
 #define EDGE_MODE_MIRROR 2
 #define EDGE_MODE_BLANK 3
+#define EDGE_MODE_ALPHA 4
 
 vec2 coord_smear(in vec2 coord) {
     // Smear the coordinates to avoid edge artifacts

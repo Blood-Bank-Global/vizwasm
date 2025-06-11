@@ -1030,7 +1030,8 @@ loops: [{}], loop capture: {}
               offset: {:<04.3}
               flash: {}
 
-{}[2] Mix rr {} | rg {} | rb {} | ra {}
+{}[2] Usr {}
+      Mix rr {} | rg {} | rb {} | ra {}
          gr {} | gg {} | gb {} | ga {}
          br {} | bg {} | bb {} | ba {}
          ar {} | ag {} | ab {} | aa {}
@@ -1087,8 +1088,10 @@ loops: [{}], loop capture: {}
             self.playback[self.active_idx].loops.selected_loop,
             get!(offset),
             get!(flash_enable) as u8,
-            // MIX
+            // USR
             if self.selected_knobs == 2 { ">" } else { " " },
+            get!(usr_var) as i32,
+            // MIX
             if get!(color_mix_selected) as u8 == 0 {
                 format!("({:+.04})", get!(rr))
             } else {
@@ -1550,6 +1553,9 @@ pub struct StreamSettings {
     offset: f64,
     bpm: f64, // we are going to ignore BPM and count for now
     count: f64,
+    // USER
+    #[adjustable(k = L, idx = 2, min = -100.0, max = 100.0, step = 1.0, command_simple = (self.input_mix(), "usr_var", Integer))]
+    usr_var: f64,
     //VIDEO MIXER
     #[adjustable(k = R, idx = 2, min = 0.0, max = 15, do_not_record = true)]
     color_mix_selected: f64,
@@ -1602,9 +1608,9 @@ pub struct StreamSettings {
     distort_or_warp_level: (),
     #[adjustable(k = CL, idx = 4, setter = set_skew_selected, do_not_record = true)]
     skew_selected: f64,
-    #[adjustable(k = L, idx = 4, min = -20.0, max = 20.0, step = 0.01, ty = f64, getter = skew_dx, setter = set_skew_dx)]
+    #[adjustable(k = L, idx = 4, min = -20.0, max = 20.0, step = 0.001, ty = f64, getter = skew_dx, setter = set_skew_dx)]
     skew_dx: (),
-    #[adjustable(k = R, idx = 4, min = -20.0, max = 20.0, step = 0.01, ty = f64, getter = skew_dy, setter = set_skew_dy)]
+    #[adjustable(k = R, idx = 4, min = -20.0, max = 20.0, step = 0.001, ty = f64, getter = skew_dy, setter = set_skew_dy)]
     skew_dy: (),
     #[adjustable(k = B, idx = 4, kind = custom, ty = ((f64, f64), (f64, f64) (f64, f64), (f64, f64)), getter = skew_all, setter = set_skew_all)]
     skew_all: (),
@@ -1769,6 +1775,7 @@ impl StreamSettings {
             bpm: 135.0,
             offset: 0.0,
             count: 1.0,
+            usr_var: 0.0,
             color_mix: (),
             color_mix_selected: 0.0,
             rr: 1.0,
@@ -2013,7 +2020,7 @@ impl StreamSettings {
     }
 
     pub fn adjust_skew_all(&mut self, inc: f64) {
-        let step = inc * 0.01; //if inc > 0.0 { 0.01 } else { -0.01 };
+        let step = inc * 0.001;
         self.set_skew_all((
             (
                 (self.skew_x0 + step).clamp(-20.0, 20.0),
