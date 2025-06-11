@@ -1031,7 +1031,7 @@ loops: [{}], loop capture: {}
               flash: {}
 
 {}[2] Usr {}
-      Mix rr {} | rg {} | rb {} | ra {}
+     Mix rr {} | rg {} | rb {} | ra {}
          gr {} | gg {} | gb {} | ga {}
          br {} | bg {} | bb {} | ba {}
          ar {} | ag {} | ab {} | aa {}
