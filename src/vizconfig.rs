@@ -1030,11 +1030,11 @@ loops: [{}], loop capture: {}
               offset: {:<04.3}
               flash: {}
 
-{}[2] Usr {}
-     Mix rr {} | rg {} | rb {} | ra {}
-         gr {} | gg {} | gb {} | ga {}
-         br {} | bg {} | bb {} | ba {}
-         ar {} | ag {} | ab {} | aa {}
+{}[2]  Usr {} Toggle {}
+      Mix rr {} | rg {} | rb {} | ra {}
+          gr {} | gg {} | gb {} | ga {}
+          br {} | bg {} | bb {} | ba {}
+          ar {} | ag {} | ab {} | aa {}
 
 {}[3] Boost: {:0.2}
      Threshold: {:0.4}
@@ -1091,6 +1091,7 @@ loops: [{}], loop capture: {}
             // USR
             if self.selected_knobs == 2 { ">" } else { " " },
             get!(usr_var) as i32,
+            get!(usr_toggle),
             // MIX
             if get!(color_mix_selected) as u8 == 0 {
                 format!("({:+.04})", get!(rr))
@@ -1556,6 +1557,8 @@ pub struct StreamSettings {
     // USER
     #[adjustable(k = L, idx = 2, min = -100.0, max = 100.0, step = 1.0, command_simple = (self.input_mix(), "usr_var", Integer))]
     usr_var: f64,
+    #[adjustable(k = CL, idx = 2, kind = toggle, command_simple = (self.input_mix(), "usr_toggle", Integer))]
+    usr_toggle: u8,
     //VIDEO MIXER
     #[adjustable(k = R, idx = 2, min = 0.0, max = 15, do_not_record = true)]
     color_mix_selected: f64,
@@ -1776,6 +1779,7 @@ impl StreamSettings {
             offset: 0.0,
             count: 1.0,
             usr_var: 0.0,
+            usr_toggle: 0,
             color_mix: (),
             color_mix_selected: 0.0,
             rr: 1.0,

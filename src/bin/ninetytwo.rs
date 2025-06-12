@@ -6,29 +6,19 @@ use std::{
 
 use sdlrig::{
     gfxinfo::{Asset, GfxEvent, GfxInfo, Vid, VidMixer},
-    renderspec::{Mix, RenderSpec},
+    renderspec::{Mix, MixInput, RenderSpec},
 };
-use vizwasm::vizconfig::{AllSettings, MixConfig};
+use vizwasm::vizconfig::{AllSettings, MixConfig, StreamSettingsAllFieldsEnum};
 fn main() {}
 
 static ASSET_PATH: &'static str = "/Users/ttie/Desktop/ninetytwo";
 
 static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
-    vec![
+    let mut vids = vec![
         Vid::builder()
             .name("blank")
             .path(format!("{ASSET_PATH}/streams/blank.mp4"))
             .resolution((720, 480))
-            .tbq((1, 12800))
-            .pix_fmt("yuv420p")
-            .repeat(true)
-            .realtime(false)
-            .hardware_decode(true)
-            .build(),
-        Vid::builder()
-            .name("intro1")
-            .path(format!("{ASSET_PATH}/streams/intro1.mp4"))
-            .resolution((1280, 720))
             .tbq((1, 12800))
             .pix_fmt("yuv420p")
             .repeat(true)
@@ -82,20 +72,38 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
         //     .realtime(true)
         //     .repeat(false)
         //     .build(),
-    ]
+    ];
+
+    for i in 1..=34 {
+        vids.push(
+            Vid::builder()
+                .name(format!("secrets{}", i))
+                .path(format!("{ASSET_PATH}/streams/secrets-{i:02}.mp4"))
+                .resolution((1920, 1080))
+                .tbq((1, 15360))
+                .pix_fmt("yuv420p")
+                .repeat(true)
+                .realtime(false)
+                .hardware_decode(true)
+                .build(),
+        );
+    }
+
+    vids
 });
 
-static PLAYBACK_NAMES: LazyLock<Vec<&'static str>> = LazyLock::new(|| {
-    vec![
-        "blank",
-        "intro1",
-        "generate",
-        "grid",
-        "shuffle",
-        "sun",
-        "sun_compose",
-        // "front cam",
-    ]
+static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
+    let names = vec![
+        "blank".to_string(),
+        "generate".to_string(),
+        "grid".to_string(),
+        "shuffle".to_string(),
+        "sun".to_string(),
+        "sun_compose".to_string(),
+        "secrets".to_string(),
+        // "front cam".to_string(),
+    ];
+    names
 });
 
 static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
@@ -167,6 +175,20 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
             // .mixed("blank_mix")
             .mixed("sun_feedback")
             .mixed("grid_feedback")
+            .no_display(true)
+            .build(),
+    });
+    configs.push(MixConfig {
+        def: VidMixer::builder()
+            .name("secrets_mix")
+            .header(include_str!("../glsl/utils.glsl"))
+            .body(include_str!("../glsl/shuffle.glsl"))
+            .width(1280)
+            .height(720)
+            .build(),
+        mix: Mix::builder()
+            .name("secrets_mix")
+            .video("secrets1")
             .no_display(true)
             .build(),
     });
@@ -279,11 +301,47 @@ pub fn calculate(
 
     let mut specs = settings.update_record_and_get_specs(reg_events, frame)?;
 
+    // Wire up usr_toggle to actually count up usr_var as well every change
+    let orig = settings.playback[settings.active_idx].stream.usr_var();
+    for i in 0..specs.len() {
+        match &specs[i] {
+            RenderSpec::SendCmd(cmd) => {
+                eprintln!("Command: {:#?}", cmd);
+                if cmd.name == "usr_toggle" {
+                    settings.playback[settings.active_idx]
+                        .stream
+                        .adjust_usr_var(1.0);
+                    if settings.playback[settings.active_idx].stream.usr_var() >= 99.0 {
+                        settings.playback[settings.active_idx]
+                            .stream
+                            .set_usr_var(-99.0);
+                    } else if settings.playback[settings.active_idx].stream.usr_var() <= -99.0 {
+                        settings.playback[settings.active_idx]
+                            .stream
+                            .set_usr_var(99.0);
+                    }
+                }
+            }
+            _ => (),
+        }
+    }
+
+    specs.extend(
+        settings.playback[settings.active_idx]
+            .stream
+            .get_commands(&[StreamSettingsAllFieldsEnum::USR_VAR(orig)]),
+    );
+
     let mut seen = HashMap::<String, Mix>::new();
 
     // TOP
+    let usr_var = settings.playback[settings.active_idx].stream.usr_var();
+    let input_name = settings.playback[settings.active_idx].stream.input_mix();
+    if let Some(mix_config) = settings.mix_configs.get_mut(&input_name) {
+        update_input(usr_var as i32, mix_config)?;
+    }
     let mix_name = settings.playback[settings.active_idx].stream.overlay_mix();
-    if let Some(mix_config) = settings.mix_configs.get(&mix_name) {
+    if let Some(mix_config) = settings.mix_configs.get_mut(&mix_name) {
         let iw = mix_config.def.width as i32;
         let ih = mix_config.def.height as i32;
         let mut ow = iw;
@@ -324,8 +382,13 @@ pub fn calculate(
     }
 
     // BOTTOM
+    let usr_var = settings.playback[settings.active_idx].stream.usr_var();
+    let input_name = settings.playback[settings.active_idx].stream.input_mix();
+    if let Some(mix_config) = settings.mix_configs.get_mut(&input_name) {
+        update_input(usr_var as i32, mix_config)?;
+    }
     let mix_name = settings.playback[settings.display_idx].stream.overlay_mix();
-    if let Some(mix_config) = settings.mix_configs.get(&mix_name) {
+    if let Some(mix_config) = settings.mix_configs.get_mut(&mix_name) {
         let iw = mix_config.def.width as i32;
         let ih = mix_config.def.height as i32;
         let mut ow = iw;
@@ -367,4 +430,16 @@ pub fn calculate(
 
     settings.clean_up_by_specs(&mut specs);
     Ok(specs)
+}
+
+fn update_input(usr_var: i32, mix_config: &mut MixConfig) -> Result<(), Box<dyn Error>> {
+    match mix_config.def.name.as_str() {
+        "secrets_mix" => {
+            if let Some(MixInput::Video(inp)) = mix_config.mix.inputs.get_mut(0) {
+                *inp = format!("secrets{}", usr_var.rem_euclid(34) + 1);
+            }
+        }
+        _ => (),
+    }
+    Ok(())
 }
