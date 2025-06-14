@@ -1739,7 +1739,7 @@ pub struct StreamSettings {
     // DELTA FRAMES
     #[adjustable(command_fn = delta_sec_update)]
     delta_sec: f64,
-    #[adjustable(k = B, idx = 12, step = 0.15, command_fn = scrub_update)]
+    #[adjustable(k = B, idx = 12, step = 0.05, command_fn = scrub_update)]
     scrub: f64,
     mark: Option<f64>,
     #[adjustable(command_fn = exact_sec_update)]

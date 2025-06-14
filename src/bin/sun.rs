@@ -13,23 +13,8 @@ fn main() {}
 
 static ASSET_PATH: &'static str = "/Users/ttie/Desktop/ninetytwo";
 
-static CLIP_COUNTS: LazyLock<HashMap<String, usize>> = LazyLock::new(|| {
-    HashMap::from([
-        ("secrets".to_string(), 34),
-        ("danger".to_string(), 12),
-        ("drop".to_string(), 19),
-        ("heist".to_string(), 72),
-        ("hideout".to_string(), 15),
-        ("intro".to_string(), 13),
-        ("phreak".to_string(), 14),
-        ("prof".to_string(), 18),
-        ("sound".to_string(), 22),
-        ("truck".to_string(), 16),
-    ])
-});
-
 static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
-    let mut vids = vec![Vid::builder()
+    let vids = vec![Vid::builder()
         .name("blank")
         .path(format!("{ASSET_PATH}/streams/blank.mp4"))
         .resolution((720, 480))
@@ -40,325 +25,75 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
         .hardware_decode(true)
         .build()];
 
-    //secrets
-    for i in 1..=CLIP_COUNTS["secrets"] {
-        vids.push(
-            Vid::builder()
-                .name(format!("secrets{}", i))
-                .path(format!("{ASSET_PATH}/streams/secrets-{i:02}.mp4"))
-                .resolution((1920, 1080))
-                .tbq((1, 15360))
-                .pix_fmt("yuv420p")
-                .repeat(true)
-                .realtime(false)
-                .hardware_decode(true)
-                .build(),
-        );
-    }
-
-    //danger
-    for i in 1..=CLIP_COUNTS["danger"] {
-        vids.push(
-            Vid::builder()
-                .name(format!("danger{}", i))
-                .path(format!("{ASSET_PATH}/streams/danger-{i:02}.mp4"))
-                .resolution((1920, 1080))
-                .tbq((1, 15360))
-                .pix_fmt("yuv420p")
-                .repeat(true)
-                .realtime(false)
-                .hardware_decode(true)
-                .build(),
-        );
-    }
-
-    //drop
-    for i in 1..=CLIP_COUNTS["drop"] {
-        vids.push(
-            Vid::builder()
-                .name(format!("drop{}", i))
-                .path(format!("{ASSET_PATH}/streams/drop-{i:02}.mp4"))
-                .resolution((1920, 1080))
-                .tbq((1, 15360))
-                .pix_fmt("yuv420p")
-                .repeat(true)
-                .realtime(false)
-                .hardware_decode(true)
-                .build(),
-        );
-    }
-
-    //heist
-    for i in 1..=CLIP_COUNTS["heist"] {
-        vids.push(
-            Vid::builder()
-                .name(format!("heist{}", i))
-                .path(format!("{ASSET_PATH}/streams/heist-{i:02}.mp4"))
-                .resolution((1920, 1080))
-                .tbq((1, 15360))
-                .pix_fmt("yuv420p")
-                .repeat(true)
-                .realtime(false)
-                .hardware_decode(true)
-                .build(),
-        );
-    }
-
-    //hideout
-    for i in 1..=CLIP_COUNTS["hideout"] {
-        vids.push(
-            Vid::builder()
-                .name(format!("hideout{}", i))
-                .path(format!("{ASSET_PATH}/streams/hideout-{i:02}.mp4"))
-                .resolution((1920, 1080))
-                .tbq((1, 15360))
-                .pix_fmt("yuv420p")
-                .repeat(true)
-                .realtime(false)
-                .hardware_decode(true)
-                .build(),
-        );
-    }
-
-    //intro
-    for i in 1..=CLIP_COUNTS["intro"] {
-        vids.push(
-            Vid::builder()
-                .name(format!("intro{}", i))
-                .path(format!("{ASSET_PATH}/streams/intro-{i:02}.mp4"))
-                .resolution((1920, 1080))
-                .tbq((1, 15360))
-                .pix_fmt("yuv420p")
-                .repeat(true)
-                .realtime(false)
-                .hardware_decode(true)
-                .build(),
-        );
-    }
-
-    //phreak
-    for i in 1..=CLIP_COUNTS["phreak"] {
-        vids.push(
-            Vid::builder()
-                .name(format!("phreak{}", i))
-                .path(format!("{ASSET_PATH}/streams/phreak-{i:02}.mp4"))
-                .resolution((1920, 1080))
-                .tbq((1, 15360))
-                .pix_fmt("yuv420p")
-                .repeat(true)
-                .realtime(false)
-                .hardware_decode(true)
-                .build(),
-        );
-    }
-
-    //prof
-    for i in 1..=CLIP_COUNTS["prof"] {
-        vids.push(
-            Vid::builder()
-                .name(format!("prof{}", i))
-                .path(format!("{ASSET_PATH}/streams/prof-{i:02}.mp4"))
-                .resolution((1920, 1080))
-                .tbq((1, 15360))
-                .pix_fmt("yuv420p")
-                .repeat(true)
-                .realtime(false)
-                .hardware_decode(true)
-                .build(),
-        );
-    }
-
-    //sound
-    for i in 1..=CLIP_COUNTS["sound"] {
-        vids.push(
-            Vid::builder()
-                .name(format!("sound{}", i))
-                .path(format!("{ASSET_PATH}/streams/sound-{i:02}.mp4"))
-                .resolution((1920, 1080))
-                .tbq((1, 15360))
-                .pix_fmt("yuv420p")
-                .repeat(true)
-                .realtime(false)
-                .hardware_decode(true)
-                .build(),
-        );
-    }
-
-    //truck
-    for i in 1..=CLIP_COUNTS["truck"] {
-        vids.push(
-            Vid::builder()
-                .name(format!("truck{}", i))
-                .path(format!("{ASSET_PATH}/streams/truck-{i:02}.mp4"))
-                .resolution((1920, 1080))
-                .tbq((1, 15360))
-                .pix_fmt("yuv420p")
-                .repeat(true)
-                .realtime(false)
-                .hardware_decode(true)
-                .build(),
-        );
-    }
-
     vids
 });
 
 static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
     let names = vec![
         "blank".to_string(),
-        "intro".to_string(),   // Jericho
-        "truck".to_string(),   // Music Reach
-        "prof".to_string(),    // Your Love
-        "secrets".to_string(), // Out of Space
-        "drop".to_string(),    // Everybody in the Place
-        "hideout".to_string(), // The Weather Experience
-        "phreak".to_string(),  // The Weather Experience
-        "danger".to_string(),  // Fire
-        "sound".to_string(),   // Ruff In the Jungle
-        "heist".to_string(),   // Ruff In the Jungle + Death of the Prodigy Dancers
+        "generate".to_string(),
+        "grid".to_string(),
+        "sun".to_string(),
+        "sun_compose".to_string(),
     ];
     names
 });
 
 static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
     let mut configs = vec![];
-    //secrets
     configs.push(MixConfig {
         def: VidMixer::builder()
-            .name("secrets_mix")
-            .header(include_str!("../glsl/utils.glsl"))
+            .name("generate_mix")
             .width(1280)
             .height(720)
+            .header(include_str!("../glsl/utils.glsl"))
+            .body(include_str!("../glsl/generate.glsl"))
             .build(),
         mix: Mix::builder()
-            .name("secrets_mix")
-            .video("secrets1")
+            .name("generate_mix")
+            .mixed("blank_mix")
             .no_display(true)
             .build(),
     });
-    // danger
     configs.push(MixConfig {
         def: VidMixer::builder()
-            .name("danger_mix")
-            .header(include_str!("../glsl/utils.glsl"))
+            .name("grid_mix")
             .width(1280)
             .height(720)
             .build(),
         mix: Mix::builder()
-            .name("danger_mix")
-            .video("danger1")
+            .name("grid_mix")
+            .mixed("generate_feedback")
             .no_display(true)
             .build(),
     });
-    // drop
     configs.push(MixConfig {
         def: VidMixer::builder()
-            .name("drop_mix")
+            .name("sun_mix")
             .header(include_str!("../glsl/utils.glsl"))
+            .body(include_str!("../glsl/sun.glsl"))
             .width(1280)
             .height(720)
             .build(),
         mix: Mix::builder()
-            .name("drop_mix")
-            .video("drop1")
+            .name("sun_mix")
+            .video("blank")
             .no_display(true)
             .build(),
     });
-    // heist
     configs.push(MixConfig {
         def: VidMixer::builder()
-            .name("heist_mix")
+            .name("sun_compose_mix")
             .header(include_str!("../glsl/utils.glsl"))
+            .body(include_str!("../glsl/compose.glsl"))
             .width(1280)
             .height(720)
             .build(),
         mix: Mix::builder()
-            .name("heist_mix")
-            .video("heist1")
-            .no_display(true)
-            .build(),
-    });
-    // hideout
-    configs.push(MixConfig {
-        def: VidMixer::builder()
-            .name("hideout_mix")
-            .header(include_str!("../glsl/utils.glsl"))
-            .width(1280)
-            .height(720)
-            .build(),
-        mix: Mix::builder()
-            .name("hideout_mix")
-            .video("hideout1")
-            .no_display(true)
-            .build(),
-    });
-    // intro
-    configs.push(MixConfig {
-        def: VidMixer::builder()
-            .name("intro_mix")
-            .header(include_str!("../glsl/utils.glsl"))
-            .width(1280)
-            .height(720)
-            .build(),
-        mix: Mix::builder()
-            .name("intro_mix")
-            .video("intro1")
-            .no_display(true)
-            .build(),
-    });
-    // phreak
-    configs.push(MixConfig {
-        def: VidMixer::builder()
-            .name("phreak_mix")
-            .header(include_str!("../glsl/utils.glsl"))
-            .width(1280)
-            .height(720)
-            .build(),
-        mix: Mix::builder()
-            .name("phreak_mix")
-            .video("phreak1")
-            .no_display(true)
-            .build(),
-    });
-    // prof
-    configs.push(MixConfig {
-        def: VidMixer::builder()
-            .name("prof_mix")
-            .header(include_str!("../glsl/utils.glsl"))
-            .width(1280)
-            .height(720)
-            .build(),
-        mix: Mix::builder()
-            .name("prof_mix")
-            .video("prof1")
-            .no_display(true)
-            .build(),
-    });
-    // sound
-    configs.push(MixConfig {
-        def: VidMixer::builder()
-            .name("sound_mix")
-            .header(include_str!("../glsl/utils.glsl"))
-            .width(1280)
-            .height(720)
-            .build(),
-        mix: Mix::builder()
-            .name("sound_mix")
-            .video("sound1")
-            .no_display(true)
-            .build(),
-    });
-    // truck
-    configs.push(MixConfig {
-        def: VidMixer::builder()
-            .name("truck_mix")
-            .header(include_str!("../glsl/utils.glsl"))
-            .width(1280)
-            .height(720)
-            .build(),
-        mix: Mix::builder()
-            .name("truck_mix")
-            .video("truck1")
+            .name("sun_compose_mix")
+            // .mixed("blank_mix")
+            .mixed("sun_feedback")
+            .mixed("grid_feedback")
             .no_display(true)
             .build(),
     });
@@ -401,7 +136,7 @@ pub fn asset_list(fps: i64) -> Vec<Asset> {
 
     let settings = lock.as_mut();
 
-    // this is to make sure if there are changes to static data we pick it up here
+    eprintln!("here comes assets");
     if PLAYBACK_NAMES
         .iter()
         .map(|s| s.to_string())
@@ -415,6 +150,7 @@ pub fn asset_list(fps: i64) -> Vec<Asset> {
             PLAYBACK_NAMES.clone(),
             ASSET_PATH,
         );
+        eprintln!("settings playback names: {:?}", settings.playback_names);
         for i in 0..orig.playback.len() {
             for j in 0..settings.playback.len() {
                 if settings.playback[j].stream.ident.name == orig.playback[i].stream.ident.name {
@@ -596,38 +332,18 @@ pub fn calculate(
         }
     }
 
-    fix_seeks(&mut specs, settings);
     settings.clean_up_by_specs(&mut specs);
     Ok(specs)
 }
 
 fn update_input(usr_var: i32, mix_config: &mut MixConfig) -> Result<(), Box<dyn Error>> {
-    if let Some(prefix) = mix_config.def.name.strip_suffix("_mix") {
-        if CLIP_COUNTS.contains_key(prefix) {
-            let count = CLIP_COUNTS[prefix];
+    match mix_config.def.name.as_str() {
+        "secrets_mix" => {
             if let Some(MixInput::Video(inp)) = mix_config.mix.inputs.get_mut(0) {
-                *inp = format!("{prefix}{}", usr_var.rem_euclid(count as i32) + 1);
+                *inp = format!("secrets{}", usr_var.rem_euclid(34) + 1);
             }
         }
+        _ => (),
     }
     Ok(())
-}
-
-fn fix_seeks(specs: &mut [RenderSpec], settings: &mut AllSettings) {
-    for event in specs.iter_mut() {
-        if let RenderSpec::SeekVid(seek) = event {
-            for playback in &settings.playback {
-                if playback.stream.first_video() == seek.target {
-                    if let Some(prefix) = playback.stream.input_mix().strip_suffix("_mix") {
-                        if let Some(count) = CLIP_COUNTS.get(prefix) {
-                            seek.target = format!(
-                                "{prefix}{}",
-                                (playback.stream.usr_var() as i32).rem_euclid(*count as i32) + 1
-                            );
-                        }
-                    }
-                }
-            }
-        }
-    }
 }
