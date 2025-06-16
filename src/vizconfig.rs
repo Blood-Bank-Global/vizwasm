@@ -196,6 +196,9 @@ impl AllSettings {
             "plague",
             "hyper",
             "sepia",
+            "red_pop",
+            "green_pop",
+            "blue_pop",
         ]
     }
 
