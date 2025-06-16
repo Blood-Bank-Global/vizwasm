@@ -698,15 +698,6 @@ pub fn calculate(
                     settings.playback[settings.active_idx]
                         .stream
                         .adjust_usr_var(1.0);
-                    if settings.playback[settings.active_idx].stream.usr_var() >= 100.0 {
-                        settings.playback[settings.active_idx]
-                            .stream
-                            .set_usr_var(-100.0);
-                    } else if settings.playback[settings.active_idx].stream.usr_var() <= -100.0 {
-                        settings.playback[settings.active_idx]
-                            .stream
-                            .set_usr_var(100.0);
-                    }
                 }
             }
             _ => (),

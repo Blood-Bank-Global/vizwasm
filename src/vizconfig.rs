@@ -1555,7 +1555,7 @@ pub struct StreamSettings {
     bpm: f64, // we are going to ignore BPM and count for now
     count: f64,
     // USER
-    #[adjustable(k = L, idx = 2, min = -100.0, max = 100.0, step = 1.0, command_simple = (self.input_mix(), "usr_var", Integer))]
+    #[adjustable(k = L, idx = 2, min = -101.0, max = 101.0, step = 1.0, setter=set_usr_var, command_simple = (self.input_mix(), "usr_var", Integer))]
     usr_var: f64,
     #[adjustable(k = CL, idx = 2, kind = toggle, command_simple = (self.input_mix(), "usr_toggle", Integer))]
     usr_toggle: u8,
@@ -2045,7 +2045,11 @@ impl StreamSettings {
         ));
     }
 
-    fn set_feedback_rotation(&mut self, v: f64) {
+    pub fn set_usr_var(&mut self, v: f64) {
+        self.usr_var = (v + 100.0).rem_euclid(201.0) - 100.0;
+    }
+
+    pub fn set_feedback_rotation(&mut self, v: f64) {
         self.feedback_rotation = v.rem_euclid(2.0 * PI);
     }
 
