@@ -1,12 +1,12 @@
 use std::{
-    collections::HashMap,
+    collections::{HashMap, HashSet},
     error::Error,
     sync::{LazyLock, Mutex},
 };
 
 use sdlrig::{
     gfxinfo::{Asset, GfxEvent, GfxInfo, Vid, VidMixer},
-    renderspec::{Mix, MixInput, RenderSpec},
+    renderspec::{Mix, MixInput, RenderSpec, Reset},
 };
 use vizwasm::vizconfig::{AllSettings, MixConfig, StreamSettingsAllFieldsEnum};
 fn main() {}
@@ -25,6 +25,13 @@ static CLIP_COUNTS: LazyLock<HashMap<String, usize>> = LazyLock::new(|| {
         ("prof".to_string(), 18),
         ("sound".to_string(), 22),
         ("truck".to_string(), 16),
+        ("motzart".to_string(), 112),
+        ("vacation".to_string(), 190),
+        ("return".to_string(), 91),
+        ("chat".to_string(), 46),
+        ("carnival".to_string(), 60),
+        ("office".to_string(), 128),
+        ("convention".to_string(), 100),
     ])
 });
 
@@ -200,22 +207,136 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
         );
     }
 
+    // motzart
+    for i in 1..=CLIP_COUNTS["motzart"] {
+        vids.push(
+            Vid::builder()
+                .name(format!("motzart{}", i))
+                .path(format!("{ASSET_PATH}/streams/net/motzart-{i:03}.mp4"))
+                .resolution((1920, 1080))
+                .tbq((1, 15360))
+                .pix_fmt("yuv420p")
+                .repeat(true)
+                .realtime(false)
+                .hardware_decode(true)
+                .build(),
+        );
+    }
+    // vacation
+    for i in 1..=CLIP_COUNTS["vacation"] {
+        vids.push(
+            Vid::builder()
+                .name(format!("vacation{}", i))
+                .path(format!("{ASSET_PATH}/streams/net/vacation-{i:03}.mp4"))
+                .resolution((1920, 1080))
+                .tbq((1, 15360))
+                .pix_fmt("yuv420p")
+                .repeat(true)
+                .realtime(false)
+                .hardware_decode(true)
+                .build(),
+        );
+    }
+    // return
+    for i in 1..=CLIP_COUNTS["return"] {
+        vids.push(
+            Vid::builder()
+                .name(format!("return{}", i))
+                .path(format!("{ASSET_PATH}/streams/net/return-{i:03}.mp4"))
+                .resolution((1920, 1080))
+                .tbq((1, 15360))
+                .pix_fmt("yuv420p")
+                .repeat(true)
+                .realtime(false)
+                .hardware_decode(true)
+                .build(),
+        );
+    }
+
+    // chat
+    for i in 1..=CLIP_COUNTS["chat"] {
+        vids.push(
+            Vid::builder()
+                .name(format!("chat{}", i))
+                .path(format!("{ASSET_PATH}/streams/net/chat-{i:03}.mp4"))
+                .resolution((1920, 1080))
+                .tbq((1, 15360))
+                .pix_fmt("yuv420p")
+                .repeat(true)
+                .realtime(false)
+                .hardware_decode(true)
+                .build(),
+        );
+    }
+
+    // carnival
+    for i in 1..=CLIP_COUNTS["carnival"] {
+        vids.push(
+            Vid::builder()
+                .name(format!("carnival{}", i))
+                .path(format!("{ASSET_PATH}/streams/net/carnival-{i:03}.mp4"))
+                .resolution((1920, 1080))
+                .tbq((1, 15360))
+                .pix_fmt("yuv420p")
+                .repeat(true)
+                .realtime(false)
+                .hardware_decode(true)
+                .build(),
+        );
+    }
+    // office
+    for i in 1..=CLIP_COUNTS["office"] {
+        vids.push(
+            Vid::builder()
+                .name(format!("office{}", i))
+                .path(format!("{ASSET_PATH}/streams/net/office-{i:03}.mp4"))
+                .resolution((1920, 1080))
+                .tbq((1, 15360))
+                .pix_fmt("yuv420p")
+                .repeat(true)
+                .realtime(false)
+                .hardware_decode(true)
+                .build(),
+        );
+    }
+    // convention
+    for i in 1..=CLIP_COUNTS["convention"] {
+        vids.push(
+            Vid::builder()
+                .name(format!("convention{}", i))
+                .path(format!("{ASSET_PATH}/streams/net/convention-{i:03}.mp4"))
+                .resolution((1920, 1080))
+                .tbq((1, 15360))
+                .pix_fmt("yuv420p")
+                .repeat(true)
+                .realtime(false)
+                .hardware_decode(true)
+                .build(),
+        );
+    }
     vids
 });
 
 static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
     let names = vec![
         "blank".to_string(),
-        "intro".to_string(),   // Jericho
-        "truck".to_string(),   // Music Reach
-        "prof".to_string(),    // Your Love
-        "secrets".to_string(), // Out of Space
-        "drop".to_string(),    // Everybody in the Place
-        "hideout".to_string(), // The Weather Experience
-        "phreak".to_string(),  // The Weather Experience
-        "danger".to_string(),  // Fire
-        "sound".to_string(),   // Ruff In the Jungle
-        "heist".to_string(),   // Ruff In the Jungle + Death of the Prodigy Dancers
+        "intro".to_string(),      // Jericho
+        "truck".to_string(),      // Music Reach
+        "prof".to_string(),       // Your Love
+        "secrets".to_string(),    // Out of Space
+        "drop".to_string(),       // Everybody in the Place
+        "hideout".to_string(),    // The Weather Experience
+        "phreak".to_string(),     // The Weather Experience
+        "danger".to_string(),     // Fire
+        "sound".to_string(),      // Ruff In the Jungle
+        "heist".to_string(),      // Ruff In the Jungle + Death of the Prodigy Dancers
+        "motzart".to_string(),    // black cat + ghosts
+        "vacation".to_string(),   // I'm not scared + Runaway
+        "return".to_string(),     // Season of Illusions + Burning Up
+        "chat".to_string(),       // Kletva
+        "carnival".to_string(),   // they gave you a heart + predict the day
+        "office".to_string(),     // the lovers + deep blue
+        "convention".to_string(), // tomorrow + versus
     ];
     names
 });
@@ -362,6 +483,104 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
             .no_display(true)
             .build(),
     });
+    // motzart
+    configs.push(MixConfig {
+        def: VidMixer::builder()
+            .name("motzart_mix")
+            .header(include_str!("../glsl/utils.glsl"))
+            .width(1280)
+            .height(720)
+            .build(),
+        mix: Mix::builder()
+            .name("motzart_mix")
+            .video("motzart1")
+            .no_display(true)
+            .build(),
+    });
+    // vacation
+    configs.push(MixConfig {
+        def: VidMixer::builder()
+            .name("vacation_mix")
+            .header(include_str!("../glsl/utils.glsl"))
+            .width(1280)
+            .height(720)
+            .build(),
+        mix: Mix::builder()
+            .name("vacation_mix")
+            .video("vacation1")
+            .no_display(true)
+            .build(),
+    });
+    // return
+    configs.push(MixConfig {
+        def: VidMixer::builder()
+            .name("return_mix")
+            .header(include_str!("../glsl/utils.glsl"))
+            .width(1280)
+            .height(720)
+            .build(),
+        mix: Mix::builder()
+            .name("return_mix")
+            .video("return1")
+            .no_display(true)
+            .build(),
+    });
+    // chat
+    configs.push(MixConfig {
+        def: VidMixer::builder()
+            .name("chat_mix")
+            .header(include_str!("../glsl/utils.glsl"))
+            .width(1280)
+            .height(720)
+            .build(),
+        mix: Mix::builder()
+            .name("chat_mix")
+            .video("chat1")
+            .no_display(true)
+            .build(),
+    });
+    // carnival
+    configs.push(MixConfig {
+        def: VidMixer::builder()
+            .name("carnival_mix")
+            .header(include_str!("../glsl/utils.glsl"))
+            .width(1280)
+            .height(720)
+            .build(),
+        mix: Mix::builder()
+            .name("carnival_mix")
+            .video("carnival1")
+            .no_display(true)
+            .build(),
+    });
+    // office
+    configs.push(MixConfig {
+        def: VidMixer::builder()
+            .name("office_mix")
+            .header(include_str!("../glsl/utils.glsl"))
+            .width(1280)
+            .height(720)
+            .build(),
+        mix: Mix::builder()
+            .name("office_mix")
+            .video("office1")
+            .no_display(true)
+            .build(),
+    });
+    // convention
+    configs.push(MixConfig {
+        def: VidMixer::builder()
+            .name("convention_mix")
+            .header(include_str!("../glsl/utils.glsl"))
+            .width(1280)
+            .height(720)
+            .build(),
+        mix: Mix::builder()
+            .name("convention_mix")
+            .video("convention1")
+            .no_display(true)
+            .build(),
+    });
     for vid in STREAM_DEFS.iter() {
         let mix_name = format!("{}_mix", vid.name);
         configs.push(MixConfig {
@@ -479,14 +698,14 @@ pub fn calculate(
                     settings.playback[settings.active_idx]
                         .stream
                         .adjust_usr_var(1.0);
-                    if settings.playback[settings.active_idx].stream.usr_var() >= 99.0 {
+                    if settings.playback[settings.active_idx].stream.usr_var() >= 100.0 {
                         settings.playback[settings.active_idx]
                             .stream
-                            .set_usr_var(-99.0);
-                    } else if settings.playback[settings.active_idx].stream.usr_var() <= -99.0 {
+                            .set_usr_var(-100.0);
+                    } else if settings.playback[settings.active_idx].stream.usr_var() <= -100.0 {
                         settings.playback[settings.active_idx]
                             .stream
-                            .set_usr_var(99.0);
+                            .set_usr_var(100.0);
                     }
                 }
             }
@@ -597,8 +816,60 @@ pub fn calculate(
     }
 
     fix_seeks(&mut specs, settings);
+    reset_vids(&mut specs, settings);
     settings.clean_up_by_specs(&mut specs);
     Ok(specs)
+}
+
+fn reset_vids(specs: &mut Vec<RenderSpec>, settings: &mut AllSettings) {
+    let mut seen = HashSet::new();
+    for spec in specs.iter() {
+        if let RenderSpec::Mix(mix) = spec {
+            seen.insert(mix.name.clone());
+        }
+    }
+
+    for (i, playback) in settings.playback.iter().enumerate() {
+        if !settings.initial_reset_complete[i] {
+            continue;
+        }
+        if seen.contains(&playback.stream.input_mix()) {
+            // If the input mix is seen, skip resetting the video.
+            continue;
+        }
+
+        if let Some(prefix) = playback.stream.input_mix().strip_suffix("_mix") {
+            if let Some(count) = CLIP_COUNTS.get(prefix) {
+                if !seen.contains(&playback.stream.input_mix()) {
+                    eprintln!("Resetting videos for {}", playback.stream.input_mix());
+                    // If the input mix is not seen, reset all the videos.
+                    for i in 1..=*count {
+                        specs.push(RenderSpec::Reset(Reset {
+                            target: format!("{prefix}{i}"),
+                        }));
+                    }
+                }
+            } else {
+                eprintln!(
+                    "Skipping reset for {} as it does not have a valid count",
+                    playback.stream.input_mix()
+                );
+            }
+        } else {
+            eprintln!(
+                "Skipping reset for {} as it does not have a valid prefix",
+                playback.stream.input_mix()
+            );
+        }
+    }
+}
+
+fn rotate_usr_var(usr_var: i32, count: usize) -> i32 {
+    // if count == 0 {
+    //     return usr_var;
+    // }
+    // let usr_var = if usr_var < 0 { usr_var + 201 } else { usr_var };
+    usr_var.rem_euclid(count as i32) + 1
 }
 
 fn update_input(usr_var: i32, mix_config: &mut MixConfig) -> Result<(), Box<dyn Error>> {
@@ -606,7 +877,7 @@ fn update_input(usr_var: i32, mix_config: &mut MixConfig) -> Result<(), Box<dyn 
         if CLIP_COUNTS.contains_key(prefix) {
             let count = CLIP_COUNTS[prefix];
             if let Some(MixInput::Video(inp)) = mix_config.mix.inputs.get_mut(0) {
-                *inp = format!("{prefix}{}", usr_var.rem_euclid(count as i32) + 1);
+                *inp = format!("{prefix}{}", rotate_usr_var(usr_var, count));
             }
         }
     }
@@ -622,7 +893,7 @@ fn fix_seeks(specs: &mut [RenderSpec], settings: &mut AllSettings) {
                         if let Some(count) = CLIP_COUNTS.get(prefix) {
                             seek.target = format!(
                                 "{prefix}{}",
-                                (playback.stream.usr_var() as i32).rem_euclid(*count as i32) + 1
+                                rotate_usr_var(playback.stream.usr_var() as i32, *count)
                             );
                         }
                     }
