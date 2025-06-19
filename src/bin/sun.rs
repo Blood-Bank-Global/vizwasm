@@ -6,12 +6,12 @@ use std::{
 
 use sdlrig::{
     gfxinfo::{Asset, GfxEvent, GfxInfo, Vid, VidMixer},
-    renderspec::{Mix, MixInput, RenderSpec},
+    renderspec::{Mix, RenderSpec},
 };
 use vizwasm::vizconfig::{AllSettings, MixConfig, StreamSettingsAllFieldsEnum};
 fn main() {}
 
-static ASSET_PATH: &'static str = "/Users/ttie/Desktop/ninetytwo";
+static ASSET_PATH: &'static str = "/Users/ttie/Desktop/tech";
 
 static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
     let vids = vec![Vid::builder()
@@ -239,11 +239,6 @@ pub fn calculate(
     let mut seen = HashMap::<String, Mix>::new();
 
     // TOP
-    let usr_var = settings.playback[settings.active_idx].stream.usr_var();
-    let input_name = settings.playback[settings.active_idx].stream.input_mix();
-    if let Some(mix_config) = settings.mix_configs.get_mut(&input_name) {
-        update_input(usr_var as i32, mix_config)?;
-    }
     let mix_name = settings.playback[settings.active_idx].stream.overlay_mix();
     if let Some(mix_config) = settings.mix_configs.get_mut(&mix_name) {
         let iw = mix_config.def.width as i32;
@@ -286,11 +281,6 @@ pub fn calculate(
     }
 
     // BOTTOM
-    let usr_var = settings.playback[settings.active_idx].stream.usr_var();
-    let input_name = settings.playback[settings.active_idx].stream.input_mix();
-    if let Some(mix_config) = settings.mix_configs.get_mut(&input_name) {
-        update_input(usr_var as i32, mix_config)?;
-    }
     let mix_name = settings.playback[settings.display_idx].stream.overlay_mix();
     if let Some(mix_config) = settings.mix_configs.get_mut(&mix_name) {
         let iw = mix_config.def.width as i32;
@@ -334,16 +324,4 @@ pub fn calculate(
 
     settings.clean_up_by_specs(&mut specs);
     Ok(specs)
-}
-
-fn update_input(usr_var: i32, mix_config: &mut MixConfig) -> Result<(), Box<dyn Error>> {
-    match mix_config.def.name.as_str() {
-        "secrets_mix" => {
-            if let Some(MixInput::Video(inp)) = mix_config.mix.inputs.get_mut(0) {
-                *inp = format!("secrets{}", usr_var.rem_euclid(34) + 1);
-            }
-        }
-        _ => (),
-    }
-    Ok(())
 }

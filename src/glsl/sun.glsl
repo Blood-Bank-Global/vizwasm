@@ -1,6 +1,6 @@
 //!VAR int usr_var 0
 
-float scale = 10.0;
+float scale = 600.0;
 float usr_p = (scale - mod(iTime, scale))/scale;
 vec2 sun_center = vec2(0.5, (0.2 + 0.3 * usr_p)) * iResolution.xy;
 vec2 pt = src_coord0 * iResolution.xy;
