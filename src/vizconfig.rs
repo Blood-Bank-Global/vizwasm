@@ -9,6 +9,7 @@ use sdlrig::{
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::f64::consts::PI;
+use std::sync::LazyLock;
 use std::{error::Error, i64, io::Write};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -173,15 +174,89 @@ impl AllSettings {
         &["smear", "wrap", "mirror", "blank"]
     }
 
-    pub fn overlay_names() -> &'static [&'static str] {
-        &[
-            "blank",
-            "vhs_overlay",
-            "film_dust",
-            "tracking",
-            "colorful",
-            "bottom",
-        ]
+    pub fn overlay_vids() -> &'static [Vid] {
+        static OVERLAY_VIDS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
+            let mut v = vec![
+                Vid::builder()
+                    .name("blank")
+                    .path(format!("REPLACE/overlays/blank.mp4"))
+                    .resolution((1280, 720))
+                    .tbq((1, 12800))
+                    .pix_fmt("yuv420p")
+                    .repeat(true)
+                    .realtime(false)
+                    .hardware_decode(true)
+                    .build(),
+                Vid::builder()
+                    .name("vhs_overlay")
+                    .path(format!("REPLACE/overlays/vhs_overlay.mp4"))
+                    .resolution((1280, 720))
+                    .tbq((1, 12800))
+                    .pix_fmt("yuv420p")
+                    .repeat(true)
+                    .realtime(false)
+                    .hardware_decode(true)
+                    .build(),
+                Vid::builder()
+                    .name("film_dust")
+                    .path(format!("REPLACE/overlays/film_dust.mp4"))
+                    .resolution((1280, 720))
+                    .tbq((1, 12800))
+                    .pix_fmt("yuv420p")
+                    .repeat(true)
+                    .realtime(false)
+                    .hardware_decode(true)
+                    .build(),
+                Vid::builder()
+                    .name("tracking")
+                    .path(format!("REPLACE/overlays/tracking.mp4"))
+                    .resolution((1280, 720))
+                    .tbq((1, 12800))
+                    .pix_fmt("yuv420p")
+                    .repeat(true)
+                    .realtime(false)
+                    .hardware_decode(true)
+                    .build(),
+                Vid::builder()
+                    .name("bottom")
+                    .path(format!("REPLACE/overlays/bottom.mp4"))
+                    .resolution((1280, 720))
+                    .tbq((1, 12800))
+                    .pix_fmt("yuv420p")
+                    .repeat(true)
+                    .realtime(false)
+                    .hardware_decode(true)
+                    .build(),
+                Vid::builder()
+                    .name("colorful")
+                    .path(format!("REPLACE/overlays/colorful.mp4"))
+                    .resolution((1280, 720))
+                    .tbq((1, 12800))
+                    .pix_fmt("yuv420p")
+                    .repeat(true)
+                    .realtime(false)
+                    .hardware_decode(true)
+                    .build(),
+            ];
+
+            for i in 1..=13 {
+                v.push(
+                    Vid::builder()
+                        .name(format!("Sci Fi HUD_{i}"))
+                        .path(format!("REPLACE/overlays/Sci Fi HUD_{i}.mp4"))
+                        .resolution((3840, 2160))
+                        .tbq((1, 12800))
+                        .pix_fmt("yuv420p")
+                        .repeat(true)
+                        .realtime(false)
+                        .hardware_decode(true)
+                        .build(),
+                )
+            }
+
+            v
+        });
+        OVERLAY_VIDS.as_ref()
     }
 
     pub fn lut_names() -> &'static [&'static str] {
@@ -302,28 +377,17 @@ impl AllSettings {
             .map(|s| s.to_string())
             .collect::<Vec<_>>();
 
-        let overlay_names = Self::overlay_names()
+        let mut overlay_vids = Vec::from(Self::overlay_vids());
+        for overlay_vid in &mut overlay_vids {
+            overlay_vid.path = overlay_vid.path.replace("REPLACE", &asset_path);
+        }
+
+        let overlay_names = overlay_vids
             .iter()
-            .map(|s| s.to_string())
+            .map(|v| v.name.clone())
             .collect::<Vec<_>>();
 
-        stream_defs.extend(
-            overlay_names
-                .iter()
-                .map(|s| {
-                    Vid::builder()
-                        .name(s)
-                        .path(&format!("{asset_path}/overlays/{s}.mp4"))
-                        .resolution((720, 480))
-                        .tbq((1, 12800))
-                        .pix_fmt("yuv420p")
-                        .repeat(true)
-                        .realtime(false)
-                        .hardware_decode(true)
-                        .build()
-                })
-                .collect::<Vec<_>>(),
-        );
+        stream_defs.extend(overlay_vids);
         mix_configs.extend(overlay_names.iter().map(|s| {
             (
                 format!("{s}_mix"),
@@ -1734,7 +1798,7 @@ pub struct StreamSettings {
     #[adjustable(kind = assign, k = CL, idx = 11, from = self.scanlines_scan, command_simple = (self.overlay_mix(), "scanline_kind", Unsigned))]
     scanlines_selected: f64,
 
-    #[adjustable(k = B, idx = 11, min = 0.0, max = (AllSettings::overlay_names().len() - 1), step = 1.0, do_not_record = true)]
+    #[adjustable(k = B, idx = 11, min = 0.0, max = (AllSettings::overlay_vids().len() - 1), step = 1.0, do_not_record = true)]
     overlay_scan: f64,
     #[adjustable(kind = assign, k = CB, idx = 11, from = self.overlay_scan)]
     overlay_selected: f64,
