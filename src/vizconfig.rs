@@ -254,6 +254,21 @@ impl AllSettings {
                 )
             }
 
+            for i in 1..=10 {
+                v.push(
+                    Vid::builder()
+                        .name(format!("VHS_{i}"))
+                        .path(format!("REPLACE/overlays/VHS_{i}.mp4"))
+                        .resolution((3840, 2160))
+                        .tbq((1, 25000))
+                        .pix_fmt("yuv420p")
+                        .repeat(true)
+                        .realtime(false)
+                        .hardware_decode(true)
+                        .build(),
+                )
+            }
+
             v
         });
         OVERLAY_VIDS.as_ref()
@@ -1481,11 +1496,12 @@ loops: [{}], loop capture: {}
         return assets;
     }
 
-    pub fn get_playback_specs(
+    pub fn get_playback_specs<S: AsRef<str>>(
         &mut self,
         idx: usize,
         src: (i32, i32, u32, u32),
         dst: (i32, i32, u32, u32),
+        displayed: S,
     ) -> Vec<RenderSpec> {
         let mut mixes = vec![];
         let mut added = HashSet::new();
@@ -1546,8 +1562,6 @@ loops: [{}], loop capture: {}
                     let overly =
                         &self.overlay_names[self.playback[fidx].stream.overlay_selected as usize];
                     mix.inputs[1] = MixInput::Mixed(format!("{overly}_mix"));
-                    mix.target = Some(CopyEx::builder().src(src).dst(dst).build());
-                    mix.no_display = false; // this is the top mix we want to display
                 }
                 for input in &mix.inputs {
                     match input {
@@ -1567,6 +1581,15 @@ loops: [{}], loop capture: {}
         }
 
         let mut specs = mixes.into_iter().map(RenderSpec::from).collect::<Vec<_>>();
+        for spec in &mut specs {
+            if let RenderSpec::Mix(mix) = spec {
+                if mix.name == displayed.as_ref().to_string() {
+                    mix.target = Some(CopyEx::builder().src(src).dst(dst).build());
+                    mix.no_display = false; // this is the top mix we want to display
+                }
+            }
+        }
+
         for i in main_mixes {
             if self.initial_reset_complete[i] == false {
                 self.initial_reset_complete[i] = true;

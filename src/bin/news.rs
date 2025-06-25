@@ -6,7 +6,7 @@ use std::{
 
 use sdlrig::{
     gfxinfo::{Asset, GfxEvent, GfxInfo, Vid, VidMixer},
-    renderspec::{Mix, RenderSpec},
+    renderspec::{Mix, MixInput, RenderSpec},
 };
 use vizwasm::vizconfig::{AllSettings, MixConfig, StreamSettingsAllFieldsEnum};
 fn main() {}
@@ -35,6 +35,26 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
             .realtime(false)
             .hardware_decode(true)
             .build(),
+        Vid::builder()
+            .name("phobos")
+            .path(format!("{ASSET_PATH}/streams/phobos.mp4"))
+            .resolution((1280, 720))
+            .tbq((1, 12800))
+            .pix_fmt("yuv420p")
+            .repeat(true)
+            .realtime(false)
+            .hardware_decode(true)
+            .build(),
+        Vid::builder()
+            .name("monolith")
+            .path(format!("{ASSET_PATH}/streams/monolith.mp4"))
+            .resolution((1280, 720))
+            .tbq((1, 12800))
+            .pix_fmt("yuv420p")
+            .repeat(true)
+            .realtime(false)
+            .hardware_decode(true)
+            .build(),
     ];
 
     vids
@@ -45,26 +65,15 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "blank".to_string(),
         "buzz".to_string(),
         "buzz_shuffle".to_string(),
+        "phobos".to_string(),
+        "monolith".to_string(),
+        "full".to_string(),
     ];
     names
 });
 
 static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
     let mut configs = vec![];
-    configs.push(MixConfig {
-        def: VidMixer::builder()
-            .name("buzz_shuffle_mix")
-            .header(include_str!("../glsl/utils.glsl"))
-            .body(include_str!("../glsl/shuffle.glsl"))
-            .width(1280)
-            .height(720)
-            .build(),
-        mix: Mix::builder()
-            .name("buzz_shuffle_mix")
-            .mixed("buzz_mix")
-            .no_display(true)
-            .build(),
-    });
 
     for vid in STREAM_DEFS.iter() {
         let mix_name = format!("{}_mix", vid.name);
@@ -81,6 +90,35 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
                 .build(),
         });
     }
+
+    configs.push(MixConfig {
+        def: VidMixer::builder()
+            .name("buzz_shuffle_mix")
+            .header(include_str!("../glsl/utils.glsl"))
+            .body(include_str!("../glsl/shuffle.glsl"))
+            .width(1280)
+            .height(720)
+            .build(),
+        mix: Mix::builder()
+            .name("buzz_shuffle_mix")
+            .mixed("buzz_mix")
+            .no_display(true)
+            .build(),
+    });
+
+    configs.push(MixConfig {
+        def: VidMixer::builder()
+            .name("full_mix")
+            .header(include_str!("../glsl/utils.glsl"))
+            .width(1280)
+            .height(720)
+            .build(),
+        mix: Mix::builder()
+            .name("full_mix")
+            .mixed("buzz_shuffle_feedback")
+            .no_display(true)
+            .build(),
+    });
     configs
 });
 
@@ -105,7 +143,6 @@ pub fn asset_list(fps: i64) -> Vec<Asset> {
 
     let settings = lock.as_mut();
 
-    eprintln!("here comes assets");
     if PLAYBACK_NAMES
         .iter()
         .map(|s| s.to_string())
@@ -173,6 +210,21 @@ pub fn calculate(
     let mut lock = SETTINGS.lock().expect("Settings mutex corrupted");
     let settings = lock.as_mut();
 
+    let mix = settings.mix_configs.iter_mut().find(|m| m.0 == "full_mix");
+    let playback = settings
+        .playback
+        .iter()
+        .find(|p| p.stream.ident.name == "full");
+    if let Some((_, mix)) = mix {
+        if let Some(playback) = playback {
+            mix.mix.inputs[0] = match playback.stream.usr_var() as u8 {
+                0 => MixInput::Mixed("buzz_shuffle_overlay".to_string()),
+                1 => MixInput::Mixed("phobos_overlay".to_string()),
+                2 => MixInput::Mixed("monolith_overlay".to_string()),
+                _ => MixInput::Mixed("blank_overlay".to_string()),
+            };
+        }
+    }
     let mut specs = settings.update_record_and_get_specs(reg_events, frame)?;
 
     // Wire up usr_toggle to actually count up usr_var as well every change
@@ -233,7 +285,7 @@ pub fn calculate(
         let src = (ix, iy, ow as u32, oh as u32);
         let dst = (0, 0, canvas_w as u32, canvas_h as u32 / 2);
 
-        let playback_specs = settings.get_playback_specs(settings.active_idx, src, dst);
+        let playback_specs = settings.get_playback_specs(settings.active_idx, src, dst, mix_name);
         for spec in playback_specs {
             if let RenderSpec::Mix(mix) = &spec {
                 let other = seen.get(&mix.name);
@@ -275,7 +327,7 @@ pub fn calculate(
         let src = (ix, iy, ow as u32, oh as u32);
         let dst = (0, canvas_h as i32 / 2, canvas_w as u32, canvas_h as u32 / 2);
 
-        let playback_specs = settings.get_playback_specs(settings.display_idx, src, dst);
+        let playback_specs = settings.get_playback_specs(settings.display_idx, src, dst, mix_name);
         for spec in playback_specs {
             if let RenderSpec::Mix(mix) = &spec {
                 let other = seen.get(&mix.name);

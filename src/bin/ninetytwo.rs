@@ -743,7 +743,7 @@ pub fn calculate(
         let src = (ix, iy, ow as u32, oh as u32);
         let dst = (0, 0, canvas_w as u32, canvas_h as u32 / 2);
 
-        let playback_specs = settings.get_playback_specs(settings.active_idx, src, dst);
+        let playback_specs = settings.get_playback_specs(settings.active_idx, src, dst, mix_name);
         for spec in playback_specs {
             if let RenderSpec::Mix(mix) = &spec {
                 let other = seen.get(&mix.name);
@@ -790,7 +790,7 @@ pub fn calculate(
         let src = (ix, iy, ow as u32, oh as u32);
         let dst = (0, canvas_h as i32 / 2, canvas_w as u32, canvas_h as u32 / 2);
 
-        let playback_specs = settings.get_playback_specs(settings.display_idx, src, dst);
+        let playback_specs = settings.get_playback_specs(settings.display_idx, src, dst, mix_name);
         for spec in playback_specs {
             if let RenderSpec::Mix(mix) = &spec {
                 let other = seen.get(&mix.name);
