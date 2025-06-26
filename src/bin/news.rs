@@ -210,21 +210,29 @@ pub fn calculate(
     let mut lock = SETTINGS.lock().expect("Settings mutex corrupted");
     let settings = lock.as_mut();
 
+    static FULL_INPUTS: LazyLock<Vec<MixInput>> = LazyLock::new(|| {
+        vec![
+            MixInput::Mixed("buzz_shuffle_mix".to_string()),
+            MixInput::Mixed("phobos_mix".to_string()),
+            MixInput::Mixed("monolith_mix".to_string()),
+        ]
+    });
+
     let mix = settings.mix_configs.iter_mut().find(|m| m.0 == "full_mix");
     let playback = settings
         .playback
         .iter()
         .find(|p| p.stream.ident.name == "full");
+
     if let Some((_, mix)) = mix {
         if let Some(playback) = playback {
-            mix.mix.inputs[0] = match playback.stream.usr_var() as u8 {
-                0 => MixInput::Mixed("buzz_shuffle_overlay".to_string()),
-                1 => MixInput::Mixed("phobos_overlay".to_string()),
-                2 => MixInput::Mixed("monolith_overlay".to_string()),
-                _ => MixInput::Mixed("blank_overlay".to_string()),
-            };
+            mix.mix.inputs[0] = FULL_INPUTS
+                .get(playback.stream.usr_var() as usize)
+                .unwrap_or(&MixInput::Mixed("blank_overlay".to_string()))
+                .clone();
         }
     }
+
     let mut specs = settings.update_record_and_get_specs(reg_events, frame)?;
 
     // Wire up usr_toggle to actually count up usr_var as well every change
@@ -285,7 +293,7 @@ pub fn calculate(
         let src = (ix, iy, ow as u32, oh as u32);
         let dst = (0, 0, canvas_w as u32, canvas_h as u32 / 2);
 
-        let playback_specs = settings.get_playback_specs(settings.active_idx, src, dst, mix_name);
+        let playback_specs = settings.get_playback_specs(&mix_name, src, dst);
         for spec in playback_specs {
             if let RenderSpec::Mix(mix) = &spec {
                 let other = seen.get(&mix.name);
@@ -327,7 +335,7 @@ pub fn calculate(
         let src = (ix, iy, ow as u32, oh as u32);
         let dst = (0, canvas_h as i32 / 2, canvas_w as u32, canvas_h as u32 / 2);
 
-        let playback_specs = settings.get_playback_specs(settings.display_idx, src, dst, mix_name);
+        let playback_specs = settings.get_playback_specs(&mix_name, src, dst);
         for spec in playback_specs {
             if let RenderSpec::Mix(mix) = &spec {
                 let other = seen.get(&mix.name);
@@ -343,6 +351,14 @@ pub fn calculate(
         }
     }
 
+    let to_return = specs.clone();
+
+    for inp in FULL_INPUTS.iter() {
+        if let MixInput::Mixed(src) = inp {
+            specs.append(&mut settings.get_playback_specs(&src, (1, 1, 1, 1), (1, 1, 1, 1)));
+        }
+    }
+
     settings.clean_up_by_specs(&mut specs);
-    Ok(specs)
+    Ok(to_return)
 }

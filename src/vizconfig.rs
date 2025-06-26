@@ -239,34 +239,30 @@ impl AllSettings {
                     .build(),
             ];
 
-            for i in 1..=13 {
-                v.push(
-                    Vid::builder()
-                        .name(format!("Sci Fi HUD_{i}"))
-                        .path(format!("REPLACE/overlays/Sci Fi HUD_{i}.mp4"))
-                        .resolution((3840, 2160))
-                        .tbq((1, 12800))
-                        .pix_fmt("yuv420p")
-                        .repeat(true)
-                        .realtime(false)
-                        .hardware_decode(true)
-                        .build(),
-                )
-            }
-
-            for i in 1..=10 {
-                v.push(
-                    Vid::builder()
-                        .name(format!("VHS_{i}"))
-                        .path(format!("REPLACE/overlays/VHS_{i}.mp4"))
-                        .resolution((3840, 2160))
-                        .tbq((1, 25000))
-                        .pix_fmt("yuv420p")
-                        .repeat(true)
-                        .realtime(false)
-                        .hardware_decode(true)
-                        .build(),
-                )
+            let overlay_batch = [
+                ("Sci Fi HUD", 13),
+                ("VHS", 10),
+                ("VHS_Glitch", 10),
+                ("VHS_Line", 10),
+                ("VHS_N", 5),
+                ("VHS_Noise", 7),
+                ("VHS_Old", 10),
+            ];
+            for (name, count) in overlay_batch.iter() {
+                for i in 1..=*count {
+                    v.push(
+                        Vid::builder()
+                            .name(format!("{name}_{i}"))
+                            .path(format!("REPLACE/overlays/{name}_{i}.mp4"))
+                            .resolution((3840, 2160))
+                            .tbq((1, 12800))
+                            .pix_fmt("yuv420p")
+                            .repeat(true)
+                            .realtime(false)
+                            .hardware_decode(true)
+                            .build(),
+                    );
+                }
             }
 
             v
@@ -1498,14 +1494,13 @@ loops: [{}], loop capture: {}
 
     pub fn get_playback_specs<S: AsRef<str>>(
         &mut self,
-        idx: usize,
+        root: S,
         src: (i32, i32, u32, u32),
         dst: (i32, i32, u32, u32),
-        displayed: S,
     ) -> Vec<RenderSpec> {
         let mut mixes = vec![];
         let mut added = HashSet::new();
-        let mut stack = vec![self.playback[idx].stream.overlay_mix()];
+        let mut stack = vec![root.as_ref().to_string()];
 
         let mut main_mixes = vec![];
         //recursively add all the other mixes needed to display the overlay
@@ -1583,7 +1578,7 @@ loops: [{}], loop capture: {}
         let mut specs = mixes.into_iter().map(RenderSpec::from).collect::<Vec<_>>();
         for spec in &mut specs {
             if let RenderSpec::Mix(mix) = spec {
-                if mix.name == displayed.as_ref().to_string() {
+                if mix.name == root.as_ref().to_string() {
                     mix.target = Some(CopyEx::builder().src(src).dst(dst).build());
                     mix.no_display = false; // this is the top mix we want to display
                 }
