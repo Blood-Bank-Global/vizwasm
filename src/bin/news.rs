@@ -212,9 +212,9 @@ pub fn calculate(
 
     static FULL_INPUTS: LazyLock<Vec<MixInput>> = LazyLock::new(|| {
         vec![
-            MixInput::Mixed("buzz_shuffle_mix".to_string()),
-            MixInput::Mixed("phobos_mix".to_string()),
-            MixInput::Mixed("monolith_mix".to_string()),
+            MixInput::Mixed("buzz_shuffle_overlay".to_string()),
+            MixInput::Mixed("phobos_overlay".to_string()),
+            MixInput::Mixed("monolith_overlay".to_string()),
         ]
     });
 
