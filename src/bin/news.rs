@@ -14,7 +14,8 @@ fn main() {}
 static ASSET_PATH: &'static str = "/Users/ttie/Desktop/news_clips";
 
 static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
-    let vids = vec![
+    let mut vids = vec![];
+    vids.push(
         Vid::builder()
             .name("blank")
             .path(format!("{ASSET_PATH}/streams/blank.mp4"))
@@ -25,37 +26,22 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
             .realtime(false)
             .hardware_decode(true)
             .build(),
-        Vid::builder()
-            .name("buzz")
-            .path(format!("{ASSET_PATH}/streams/buzz.mp4"))
-            .resolution((1280, 720))
-            .tbq((1, 12800))
-            .pix_fmt("yuv420p")
-            .repeat(true)
-            .realtime(false)
-            .hardware_decode(true)
-            .build(),
-        Vid::builder()
-            .name("phobos")
-            .path(format!("{ASSET_PATH}/streams/phobos.mp4"))
-            .resolution((1280, 720))
-            .tbq((1, 12800))
-            .pix_fmt("yuv420p")
-            .repeat(true)
-            .realtime(false)
-            .hardware_decode(true)
-            .build(),
-        Vid::builder()
-            .name("monolith")
-            .path(format!("{ASSET_PATH}/streams/monolith.mp4"))
-            .resolution((1280, 720))
-            .tbq((1, 12800))
-            .pix_fmt("yuv420p")
-            .repeat(true)
-            .realtime(false)
-            .hardware_decode(true)
-            .build(),
-    ];
+    );
+    let vid1280x720 = ["buzz", "phobos", "monolith", "fly", "bars"];
+    for vid_name in vid1280x720.iter() {
+        vids.push(
+            Vid::builder()
+                .name(vid_name)
+                .path(format!("{ASSET_PATH}/streams/{}.mp4", vid_name))
+                .resolution((1280, 720))
+                .tbq((1, 12800))
+                .pix_fmt("yuv420p")
+                .repeat(true)
+                .realtime(false)
+                .hardware_decode(true)
+                .build(),
+        );
+    }
 
     vids
 });
@@ -68,6 +54,8 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "phobos".to_string(),
         "monolith".to_string(),
         "full".to_string(),
+        "fly".to_string(),
+        "bars".to_string(),
     ];
     names
 });
@@ -215,6 +203,8 @@ pub fn calculate(
             MixInput::Mixed("buzz_shuffle_overlay".to_string()),
             MixInput::Mixed("phobos_overlay".to_string()),
             MixInput::Mixed("monolith_overlay".to_string()),
+            MixInput::Mixed("fly_overlay".to_string()),
+            MixInput::Mixed("bars_overlay".to_string()),
         ]
     });
 
