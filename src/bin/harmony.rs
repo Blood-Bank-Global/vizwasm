@@ -28,7 +28,8 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
             .hardware_decode(true)
             .build(),
     );
-    let vid1280x720: [&'static str; 0] = [];
+
+    let vid1280x720 = ["error2", "error3"];
     for vid_name in vid1280x720.iter() {
         vids.push(
             Vid::builder()
@@ -48,7 +49,16 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
 });
 
 static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
-    let names = vec!["blank".to_string(), "full".to_string()];
+    let names = vec![
+        "blank".to_string(),
+        "error2".to_string(),
+        "error3".to_string(),
+        "harmony1".to_string(),
+        "harmony2".to_string(),
+        "harmony3".to_string(),
+        "harmony4".to_string(),
+        "full".to_string(),
+    ];
     names
 });
 
@@ -71,20 +81,33 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
         });
     }
 
-    // configs.push(MixConfig {
-    //     def: VidMixer::builder()
-    //         .name("buzz_shuffle_mix")
-    //         .header(include_str!("../glsl/utils.glsl"))
-    //         .body(include_str!("../glsl/shuffle.glsl"))
-    //         .width(1280)
-    //         .height(720)
-    //         .build(),
-    //     mix: Mix::builder()
-    //         .name("buzz_shuffle_mix")
-    //         .mixed("buzz_mix")
-    //         .no_display(true)
-    //         .build(),
-    // });
+    macro_rules! generate_harmony_mix {
+        ($i:expr) => {
+            configs.push(MixConfig {
+                def: VidMixer::builder()
+                    .name(concat!("harmony", $i, "_mix"))
+                    .header(concat!(
+                        include_str!("../glsl/utils.glsl"),
+                        "\n",
+                        include_str!("../glsl/harmony_header.glsl")
+                    ))
+                    .body(include_str!(concat!("../glsl/harmony", $i, ".glsl")))
+                    .width(1280)
+                    .height(720)
+                    .build(),
+                mix: Mix::builder()
+                    .name(concat!("harmony", $i, "_mix"))
+                    .mixed("blank_overlay")
+                    .no_display(true)
+                    .build(),
+            });
+        };
+    }
+
+    generate_harmony_mix!(1);
+    generate_harmony_mix!(2);
+    generate_harmony_mix!(3);
+    generate_harmony_mix!(4);
 
     configs.push(MixConfig {
         def: VidMixer::builder()
@@ -190,7 +213,17 @@ pub fn calculate(
     let mut lock = SETTINGS.lock().expect("Settings mutex corrupted");
     let settings = lock.as_mut();
 
-    static FULL_INPUTS: LazyLock<Vec<MixInput>> = LazyLock::new(|| vec![]);
+    static FULL_INPUTS: LazyLock<Vec<MixInput>> = LazyLock::new(|| {
+        vec![
+            MixInput::Mixed("blank_overlay".to_string()),
+            MixInput::Mixed("error2_overlay".to_string()),
+            MixInput::Mixed("error3_overlay".to_string()),
+            MixInput::Mixed("harmony1_overlay".to_string()),
+            MixInput::Mixed("harmony2_overlay".to_string()),
+            MixInput::Mixed("harmony3_overlay".to_string()),
+            MixInput::Mixed("harmony4_overlay".to_string()),
+        ]
+    });
 
     let mix = settings.mix_configs.iter_mut().find(|m| m.0 == "full_mix");
     let playback = settings
