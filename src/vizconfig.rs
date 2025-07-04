@@ -241,10 +241,10 @@ impl AllSettings {
 
             let overlay_batch = [
                 ("Sci Fi HUD", 13),
-                ("VHS", 10),
-                ("VHS_Glitch", 10),
+                ("VHS", 10),        // down to 7
+                ("VHS_Glitch", 10), // remove
                 ("VHS_Line", 10),
-                ("VHS_N", 5),
+                ("VHS_N", 5), // remove
                 ("VHS_Noise", 7),
                 ("VHS_Old", 10),
             ];
@@ -831,13 +831,31 @@ impl AllSettings {
                         KeyEvent {
                             key: KeyCode::SDLK_s,
                             down: true,
-                            shift,
                             ..
                         } => {
-                            if *shift {
-                                self.playback[self.active_idx].stream.delta_sec = 1.0;
-                            } else {
-                                self.playback[self.active_idx].stream.delta_sec = -1.0;
+                            let mix = self.playback[self.active_idx].stream.overlay_mix();
+                            let specs = self.get_playback_specs(mix, (0, 0, 1, 1), (0, 0, 1, 1));
+                            let last = specs
+                                .iter()
+                                .filter_map(|s| {
+                                    if let RenderSpec::Mix(mix) = s {
+                                        if let Some(MixInput::Video(v)) = mix.inputs.get(0) {
+                                            Some(v.clone())
+                                        } else {
+                                            None
+                                        }
+                                    } else {
+                                        None
+                                    }
+                                })
+                                .last();
+                            if let Some(last) = last {
+                                for i in 0..self.playback.len() {
+                                    if self.playback[i].stream.first_video() == last {
+                                        self.playback[i].stream.exact_sec = 0.01;
+                                        break;
+                                    }
+                                }
                             }
                         }
                         // PLAYBACK MODE
@@ -931,9 +949,34 @@ impl AllSettings {
                             shift,
                             ..
                         } => {
-                            self.playback[self.active_idx]
-                                .stream
-                                .adjust_delta_sec(if *shift { -10.0 } else { -1.0 });
+                            let mix = self.playback[self.active_idx].stream.overlay_mix();
+                            let specs = self.get_playback_specs(mix, (0, 0, 1, 1), (0, 0, 1, 1));
+                            let last = specs
+                                .iter()
+                                .filter_map(|s| {
+                                    if let RenderSpec::Mix(mix) = s {
+                                        if let Some(MixInput::Video(v)) = mix.inputs.get(0) {
+                                            Some(v.clone())
+                                        } else {
+                                            None
+                                        }
+                                    } else {
+                                        None
+                                    }
+                                })
+                                .last();
+                            if let Some(last) = last {
+                                for i in 0..self.playback.len() {
+                                    if self.playback[i].stream.first_video() == last {
+                                        self.playback[i].stream.adjust_delta_sec(if *shift {
+                                            -10.0
+                                        } else {
+                                            -1.0
+                                        });
+                                        break;
+                                    }
+                                }
+                            }
                         }
                         KeyEvent {
                             key: KeyCode::SDLK_RIGHT,
@@ -941,9 +984,34 @@ impl AllSettings {
                             shift,
                             ..
                         } => {
-                            self.playback[self.active_idx]
-                                .stream
-                                .adjust_delta_sec(if *shift { 10.0 } else { 1.0 });
+                            let mix = self.playback[self.active_idx].stream.overlay_mix();
+                            let specs = self.get_playback_specs(mix, (0, 0, 1, 1), (0, 0, 1, 1));
+                            let last = specs
+                                .iter()
+                                .filter_map(|s| {
+                                    if let RenderSpec::Mix(mix) = s {
+                                        if let Some(MixInput::Video(v)) = mix.inputs.get(0) {
+                                            Some(v.clone())
+                                        } else {
+                                            None
+                                        }
+                                    } else {
+                                        None
+                                    }
+                                })
+                                .last();
+                            if let Some(last) = last {
+                                for i in 0..self.playback.len() {
+                                    if self.playback[i].stream.first_video() == last {
+                                        self.playback[i].stream.adjust_delta_sec(if *shift {
+                                            10.0
+                                        } else {
+                                            1.0
+                                        });
+                                        break;
+                                    }
+                                }
+                            }
                         }
                         KeyEvent {
                             key: KeyCode::SDLK_COMMA,
