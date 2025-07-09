@@ -27,7 +27,7 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
             .hardware_decode(true)
             .build(),
     );
-    let vid1280x720 = ["buzz", "phobos", "monolith", "fly", "bars"];
+    let vid1280x720 = ["buzz", "phobos", "monolith", "fly", "bars", "two_moons"];
     for vid_name in vid1280x720.iter() {
         vids.push(
             Vid::builder()
@@ -56,6 +56,7 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "full".to_string(),
         "fly".to_string(),
         "bars".to_string(),
+        "two_moons".to_string(),
     ];
     names
 });
