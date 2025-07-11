@@ -27,7 +27,15 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
             .hardware_decode(true)
             .build(),
     );
-    let vid1280x720 = ["buzz", "phobos", "monolith", "fly", "bars", "two_moons"];
+    let vid1280x720 = [
+        "buzz",
+        "phobos",
+        "monolith",
+        "fly",
+        "bars",
+        "two_moons",
+        "orbit",
+    ];
     for vid_name in vid1280x720.iter() {
         vids.push(
             Vid::builder()
@@ -57,6 +65,7 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "fly".to_string(),
         "bars".to_string(),
         "two_moons".to_string(),
+        "orbit".to_string(),
     ];
     names
 });
@@ -206,6 +215,8 @@ pub fn calculate(
             MixInput::Mixed("monolith_overlay".to_string()),
             MixInput::Mixed("fly_overlay".to_string()),
             MixInput::Mixed("bars_overlay".to_string()),
+            MixInput::Mixed("two_moons_overlay".to_string()),
+            MixInput::Mixed("orbit_overlay".to_string()),
         ]
     });
 
