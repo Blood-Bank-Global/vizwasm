@@ -602,8 +602,6 @@ impl AllSettings {
                                 if let Some(tweened) = &self.playback[i].stream.tween_diff(*diff, p)
                                 {
                                     tween_diffs.push(*tweened);
-                                } else {
-                                    eprintln!("Failed to tween diff: {:?} at p: {}", diff, p);
                                 }
                             }
                             diffs = tween_diffs;
@@ -1798,21 +1796,21 @@ pub struct StreamSettings {
     skew_dy: (),
     #[adjustable(k = B, idx = 4, kind = custom, ty = ((f64, f64), (f64, f64) (f64, f64), (f64, f64)), getter = skew_all, setter = set_skew_all)]
     skew_all: (),
-    #[adjustable(command_fn = skew_update)]
+    #[adjustable(command_fn = skew_update, tween = true)]
     skew_x0: f64,
-    #[adjustable(command_fn = skew_update)]
+    #[adjustable(command_fn = skew_update, tween = true)]
     skew_y0: f64,
-    #[adjustable(command_fn = skew_update)]
+    #[adjustable(command_fn = skew_update, tween = true)]
     skew_x1: f64,
-    #[adjustable(command_fn = skew_update)]
+    #[adjustable(command_fn = skew_update, tween = true)]
     skew_y1: f64,
-    #[adjustable(command_fn = skew_update)]
+    #[adjustable(command_fn = skew_update, tween = true)]
     skew_x2: f64,
-    #[adjustable(command_fn = skew_update)]
+    #[adjustable(command_fn = skew_update, tween = true)]
     skew_y2: f64,
-    #[adjustable(command_fn = skew_update)]
+    #[adjustable(command_fn = skew_update, tween = true)]
     skew_x3: f64,
-    #[adjustable(command_fn = skew_update)]
+    #[adjustable(command_fn = skew_update, tween = true)]
     skew_y3: f64,
 
     // VIDEO KEY
