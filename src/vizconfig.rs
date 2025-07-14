@@ -22,6 +22,7 @@ pub struct LoopEvent {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[repr(C)]
 pub struct Loop {
+    pub tween: bool,
     pub events: Vec<LoopEvent>,
     pub end: i64,
 }
@@ -29,6 +30,7 @@ pub struct Loop {
 impl Loop {
     const fn new() -> Self {
         Self {
+            tween: false,
             events: vec![],
             end: i64::MIN,
         }
@@ -570,17 +572,44 @@ impl AllSettings {
                         let start = lp.events[0].frame;
                         let lp_len = lp.end - start;
                         let curr = (frame % lp_len) + start;
+                        let mut prev = start;
+                        let mut next = lp.end;
+                        let mut diffs = vec![];
+                        let mut found = false;
                         for event in &lp.events {
-                            if event.frame == curr {
-                                let diffs = event.diffs.clone();
-                                if diffs.len() > 0 {
-                                    self.playback[i].stream.apply_diff(&diffs);
-                                    specs.append(&mut self.playback[i].stream.get_commands(&diffs));
-                                }
-
+                            if event.frame >= curr {
+                                next = event.frame;
+                                diffs = event.diffs.clone();
+                                found = true;
                                 break;
                             }
+                            prev = event.frame;
                         }
+
+                        if !found {
+                            // if we didn't find a next event, act like we will loop to the first event
+                            next = lp.end;
+                            diffs = lp.events[0].diffs.clone();
+                            // prev will be set from above
+                        }
+
+                        if curr == next {
+                            self.playback[i].stream.apply_diff(&diffs);
+                        } else if lp.tween {
+                            let p = ((curr - prev) as f64 / (next - prev) as f64).abs();
+                            let mut tween_diffs = vec![];
+                            for diff in &diffs {
+                                if let Some(tweened) = &self.playback[i].stream.tween_diff(*diff, p)
+                                {
+                                    tween_diffs.push(*tweened);
+                                } else {
+                                    eprintln!("Failed to tween diff: {:?} at p: {}", diff, p);
+                                }
+                            }
+                            diffs = tween_diffs;
+                            self.playback[i].stream.apply_diff(&diffs);
+                        }
+                        specs.append(&mut self.playback[i].stream.get_commands(&diffs));
                     }
                 }
             }
@@ -823,6 +852,7 @@ impl AllSettings {
                                 }
                             } else {
                                 self.playback[selected_idx].loops.record_buffer = Some(Loop {
+                                    tween: self.playback[selected_idx].stream.tween != 0,
                                     events: vec![],
                                     end: i64::MIN,
                                 });
@@ -1173,7 +1203,7 @@ impl AllSettings {
 loops: [{}], loop capture: {}
 
 {}[1] Loop Ctl Loop:   {:<04.3}
-              offset: {:<04.3}
+              tween: {}
               flash: {}
 
 {}[2]  Usr {} Toggle {}
@@ -1232,7 +1262,7 @@ loops: [{}], loop capture: {}
             if self.selected_knobs == 1 { ">" } else { " " },
             // TIMING
             self.playback[self.active_idx].loops.selected_loop,
-            get!(offset),
+            get!(tween),
             get!(flash_enable) as u8,
             // USR
             if self.selected_knobs == 2 { ">" } else { " " },
@@ -1703,10 +1733,8 @@ pub struct StreamSettings {
     #[adjustable(kind = toggle, k = CB, idx = 1, command_simple = (self.main_mix(), "flash_enable", Unsigned))]
     flash_enable: u8,
     // LOOP CONTROL
-    #[adjustable(k = L, idx = 1, min = 0.0, max = 60.0, step = 0.1)]
-    offset: f64,
-    bpm: f64, // we are going to ignore BPM and count for now
-    count: f64,
+    #[adjustable(k = CL, idx = 1, kind = toggle)]
+    tween: u8,
     // USER
     #[adjustable(k = L, idx = 2, min = -101.0, max = 101.0, step = 1.0, setter=set_usr_var, command_simple = (self.input_mix(), "usr_var", Integer))]
     usr_var: f64,
@@ -1717,37 +1745,37 @@ pub struct StreamSettings {
     color_mix_selected: f64,
     #[adjustable(k = B, idx = 2, min = -2.0, max = 2.0, step = 0.01, ty = f64, getter = color_mix, setter = set_color_mix)]
     color_mix: (),
-    #[adjustable(min =  -2.0, max = 2.0, step = 0.01, command_simple = (self.main_mix(), "rr", Float))]
+    #[adjustable(min =  -2.0, max = 2.0, step = 0.01, command_simple = (self.main_mix(), "rr", Float), tween = true)]
     rr: f64,
-    #[adjustable(min =  -2.0, max = 2.0, step = 0.01, command_simple = (self.main_mix(), "rg", Float))]
+    #[adjustable(min =  -2.0, max = 2.0, step = 0.01, command_simple = (self.main_mix(), "rg", Float), tween = true)]
     rg: f64,
-    #[adjustable(min =  -2.0, max = 2.0, step = 0.01, command_simple = (self.main_mix(), "rb", Float))]
+    #[adjustable(min =  -2.0, max = 2.0, step = 0.01, command_simple = (self.main_mix(), "rb", Float), tween = true)]
     rb: f64,
-    #[adjustable(min =  -2.0, max = 2.0, step = 0.01, command_simple = (self.main_mix(), "ra", Float))]
+    #[adjustable(min =  -2.0, max = 2.0, step = 0.01, command_simple = (self.main_mix(), "ra", Float), tween = true)]
     ra: f64,
-    #[adjustable(min =  -2.0, max = 2.0, step = 0.01, command_simple = (self.main_mix(), "gr", Float))]
+    #[adjustable(min =  -2.0, max = 2.0, step = 0.01, command_simple = (self.main_mix(), "gr", Float), tween = true)]
     gr: f64,
-    #[adjustable(min =  -2.0, max = 2.0, step = 0.01, command_simple = (self.main_mix(), "gg", Float))]
+    #[adjustable(min =  -2.0, max = 2.0, step = 0.01, command_simple = (self.main_mix(), "gg", Float), tween = true)]
     gg: f64,
-    #[adjustable(min =  -2.0, max = 2.0, step = 0.01, command_simple = (self.main_mix(), "gb", Float))]
+    #[adjustable(min =  -2.0, max = 2.0, step = 0.01, command_simple = (self.main_mix(), "gb", Float), tween = true)]
     gb: f64,
-    #[adjustable(min =  -2.0, max = 2.0, step = 0.01, command_simple = (self.main_mix(), "ga", Float))]
+    #[adjustable(min =  -2.0, max = 2.0, step = 0.01, command_simple = (self.main_mix(), "ga", Float), tween = true)]
     ga: f64,
-    #[adjustable(min =  -2.0, max = 2.0, step = 0.01, command_simple = (self.main_mix(), "br", Float))]
+    #[adjustable(min =  -2.0, max = 2.0, step = 0.01, command_simple = (self.main_mix(), "br", Float), tween = true)]
     br: f64,
-    #[adjustable(min =  -2.0, max = 2.0, step = 0.01, command_simple = (self.main_mix(), "bg", Float))]
+    #[adjustable(min =  -2.0, max = 2.0, step = 0.01, command_simple = (self.main_mix(), "bg", Float), tween = true)]
     bg: f64,
-    #[adjustable(min =  -2.0, max = 2.0, step = 0.01, command_simple = (self.main_mix(), "bb", Float))]
+    #[adjustable(min =  -2.0, max = 2.0, step = 0.01, command_simple = (self.main_mix(), "bb", Float), tween = true)]
     bb: f64,
-    #[adjustable(min =  -2.0, max = 2.0, step = 0.01, command_simple = (self.main_mix(), "ba", Float))]
+    #[adjustable(min =  -2.0, max = 2.0, step = 0.01, command_simple = (self.main_mix(), "ba", Float), tween = true)]
     ba: f64,
-    #[adjustable(min =  -2.0, max = 2.0, step = 0.01, command_simple = (self.main_mix(), "ar", Float))]
+    #[adjustable(min =  -2.0, max = 2.0, step = 0.01, command_simple = (self.main_mix(), "ar", Float), tween = true)]
     ar: f64,
-    #[adjustable(min =  -2.0, max = 2.0, step = 0.01, command_simple = (self.main_mix(), "ag", Float))]
+    #[adjustable(min =  -2.0, max = 2.0, step = 0.01, command_simple = (self.main_mix(), "ag", Float), tween = true)]
     ag: f64,
-    #[adjustable(min =  -2.0, max = 2.0, step = 0.01, command_simple = (self.main_mix(), "ab", Float))]
+    #[adjustable(min =  -2.0, max = 2.0, step = 0.01, command_simple = (self.main_mix(), "ab", Float), tween = true)]
     ab: f64,
-    #[adjustable(min =  -2.0, max = 2.0, step = 0.01, command_simple = (self.main_mix(), "aa", Float))]
+    #[adjustable(min =  -2.0, max = 2.0, step = 0.01, command_simple = (self.main_mix(), "aa", Float), tween = true)]
     aa: f64,
 
     #[adjustable(k = L, idx = 3, min = -1.0, max = 1.0, step = 0.0087, command_simple = (self.main_mix(), "boost", Float))]
@@ -1928,9 +1956,7 @@ impl StreamSettings {
             real_ts: (0, 1),
             continuous_ts: (0, 1),
             flash_enable: 0,
-            bpm: 135.0,
-            offset: 0.0,
-            count: 1.0,
+            tween: 0,
             usr_var: 0.0,
             usr_toggle: 0,
             color_mix: (),

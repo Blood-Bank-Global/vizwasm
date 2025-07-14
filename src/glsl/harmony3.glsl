@@ -1,11 +1,11 @@
 //!VAR int usr_var 0
 color = vec4(1.0, 0.0, 0.0, 1.0);
 
-float dim = 25.0;
+float dim = 70.0;
 vec2 coord = src_coord0 * iResolution.xy;
 float row = floor(coord.y / dim);
 
-float vari = 3 + 3 * sin(mod(float(frame), 720.0)/720.0 * 2.0 * M_PI) * dim;
+float vari = 3 + 3 * sin(mod(float(frame), 720.0)/720.0 * 2.0 * M_PI) * dim + dim * 0.25;
 
 if (mod(row, 2.0) == 1.0) {
     coord.x +=  vari; // Offset for odd rows
