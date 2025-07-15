@@ -1875,7 +1875,7 @@ pub struct StreamSettings {
     #[adjustable(k = R, idx = 8, min = -1.0, max = 1.0, step = 0.001, command_simple = (self.main_mix(), "dy", Float))]
     dy: f64,
 
-    #[adjustable(k = B, idx = 8, step = 2.0 * std::f64::consts::PI/400.0, setter = set_feedback_rotation, command_simple = (self.main_mix(), "feedback_rotation", Float))]
+    #[adjustable(k = B, idx = 8, step = 2.0 * std::f64::consts::PI/400.0, tween = true, setter = set_feedback_rotation, command_simple = (self.main_mix(), "feedback_rotation", Float))]
     feedback_rotation: f64,
 
     #[adjustable(k = B, idx = 9, min = 0.0, max = (AllSettings::distort_names().len() - 1), step = 1.0, do_not_record = true)]
@@ -2227,7 +2227,7 @@ impl StreamSettings {
     }
 
     pub fn set_feedback_rotation(&mut self, v: f64) {
-        self.feedback_rotation = v.rem_euclid(2.0 * PI);
+        self.feedback_rotation = (v + 2.0 * PI).rem_euclid(4.0 * PI) - 2.0 * PI;
     }
 
     fn distort_or_warp_level(&self) -> f64 {
