@@ -9,6 +9,7 @@ use sdlrig::{
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::f64::consts::PI;
+use std::hash::Hash;
 use std::sync::LazyLock;
 use std::{error::Error, i64, io::Write};
 
@@ -16,7 +17,7 @@ use std::{error::Error, i64, io::Write};
 #[repr(C)]
 pub struct LoopEvent {
     pub frame: i64,
-    pub diffs: Vec<StreamSettingsAllFieldsEnum>,
+    pub diffs: Vec<StreamSettingsAllFieldsChange>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -52,8 +53,8 @@ pub struct LoopSettings {
 #[repr(C)]
 pub struct PresetSettings {
     pub baseline: StreamSettings,
-    pub saved: [Vec<StreamSettingsAllFieldsEnum>; 10],
-    pub original: Vec<StreamSettingsAllFieldsEnum>,
+    pub saved: [Vec<StreamSettingsAllFieldsChange>; 10],
+    pub original: Vec<StreamSettingsAllFieldsChange>,
     pub selected_preset: Option<usize>,
 }
 
@@ -547,11 +548,15 @@ impl AllSettings {
                 .diff(&self.playback[i].stream)
                 .into_iter()
                 .collect::<Vec<_>>();
-            specs.append(&mut self.playback[i].stream.get_commands(&diffs));
+            specs.append(
+                &mut self.playback[i]
+                    .stream
+                    .get_commands(&diffs.iter().map(|d| d.field).collect::<Vec<_>>()),
+            );
             if let Some(buf) = self.playback[i].loops.record_buffer.as_mut() {
                 let filtered_diffs = diffs
                     .into_iter()
-                    .filter(|d| StreamSettings::should_record(d))
+                    .filter(|d| StreamSettings::should_record(&d.field))
                     .collect::<Vec<_>>();
                 // Save the diffs for this frame
                 if filtered_diffs.len() > 0 {
@@ -572,18 +577,24 @@ impl AllSettings {
                         let start = lp.events[0].frame;
                         let lp_len = lp.end - start;
                         let curr = (frame % lp_len) + start;
-                        let mut prev = start;
+                        let mut prev_frame = start;
                         let mut next = lp.end;
                         let mut diffs = vec![];
                         let mut found = false;
+                        let mut prev_state = HashMap::new();
                         for event in &lp.events {
-                            if event.frame >= curr {
+                            if !found && event.frame >= curr {
                                 next = event.frame;
                                 diffs = event.diffs.clone();
                                 found = true;
-                                break;
+                            } else if !found {
+                                prev_frame = event.frame;
+                            } else {
+                                // collect all the state from the back end of the loop
+                                for diff in &event.diffs {
+                                    prev_state.insert(diff.field, diff.new_value.clone());
+                                }
                             }
-                            prev = event.frame;
                         }
 
                         if !found {
@@ -593,21 +604,38 @@ impl AllSettings {
                             // prev will be set from above
                         }
 
+                        // overwrite the prev_state with any changes from the front of the loop
+                        for event in &lp.events {
+                            if event.frame < next {
+                                for diff in &event.diffs {
+                                    prev_state.insert(diff.field, diff.new_value.clone());
+                                }
+                            }
+                        }
+
                         if curr == next {
                             self.playback[i].stream.apply_diff(&diffs);
                         } else if lp.tween {
-                            let p = ((curr - prev) as f64 / (next - prev) as f64).abs();
+                            let p = ((curr - prev_frame) as f64 / (next - prev_frame) as f64).abs();
                             let mut tween_diffs = vec![];
                             for diff in &diffs {
-                                if let Some(tweened) = &self.playback[i].stream.tween_diff(*diff, p)
-                                {
-                                    tween_diffs.push(*tweened);
+                                if let Some(prev_value) = prev_state.get(&diff.field).cloned() {
+                                    if let Some(tweened) =
+                                        &self.playback[i].stream.tween_diff(prev_value, *diff, p)
+                                    {
+                                        tween_diffs.push(*tweened);
+                                    }
                                 }
                             }
                             diffs = tween_diffs;
                             self.playback[i].stream.apply_diff(&diffs);
                         }
-                        specs.append(&mut self.playback[i].stream.get_commands(&diffs));
+
+                        specs.append(
+                            &mut self.playback[i]
+                                .stream
+                                .get_commands(&diffs.iter().map(|d| d.field).collect::<Vec<_>>()),
+                        );
                     }
                 }
             }
@@ -742,7 +770,7 @@ impl AllSettings {
                                     .stream
                                     .diff(&self.playback[selected_idx].presets.baseline)
                                     .into_iter()
-                                    .filter(|d| StreamSettings::should_record(d))
+                                    .filter(|d| StreamSettings::should_record(&d.field))
                                     .collect::<Vec<_>>();
                                 self.playback[selected_idx].stream.apply_diff(&diffs);
                             } else {
@@ -780,16 +808,18 @@ impl AllSettings {
                                     .baseline
                                     .diff(&self.playback[selected_idx].stream)
                                     .into_iter()
-                                    .filter(|d| StreamSettings::should_record(d))
+                                    .filter(|d| StreamSettings::should_record(&d.field))
                                     .collect::<Vec<_>>();
                             } else if *alt && *down && !*ctl && !*shift {
                                 // save time
                                 self.playback[selected_idx].presets.saved[selected_preset] =
-                                    vec![StreamSettingsAllFieldsEnum::EXACT_SEC(
-                                        self.playback[self.active_idx].stream.real_ts.0 as f64
+                                    vec![StreamSettingsAllFieldsChange {
+                                        field: StreamSettingsAllFieldsEnum::EXACT_SEC,
+                                        new_value: self.playback[self.active_idx].stream.real_ts.0
+                                            as f64
                                             / self.playback[self.active_idx].stream.real_ts.1
                                                 as f64,
-                                    )]
+                                    }];
                             } else if *ctl
                                 && *down
                                 && self.playback[selected_idx]

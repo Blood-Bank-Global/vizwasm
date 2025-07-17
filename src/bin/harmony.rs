@@ -243,7 +243,6 @@ pub fn calculate(
     let mut specs = settings.update_record_and_get_specs(reg_events, frame)?;
 
     // Wire up usr_toggle to actually count up usr_var as well every change
-    let orig = settings.playback[settings.active_idx].stream.usr_var();
     for i in 0..specs.len() {
         match &specs[i] {
             RenderSpec::SendCmd(cmd) => {
@@ -269,7 +268,7 @@ pub fn calculate(
     specs.extend(
         settings.playback[settings.active_idx]
             .stream
-            .get_commands(&[StreamSettingsAllFieldsEnum::USR_VAR(orig)]),
+            .get_commands(&[StreamSettingsAllFieldsEnum::USR_VAR]),
     );
 
     let mut seen = HashMap::<String, Mix>::new();
