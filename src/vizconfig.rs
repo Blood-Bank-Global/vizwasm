@@ -1810,9 +1810,9 @@ pub struct StreamSettings {
     boost: f64,
     #[adjustable(k = R, idx = 3, min = 0.0, max = 1.0, step = 0.01, command_simple = (self.main_mix(), "thresh", Float))]
     threshold: f64,
-    #[adjustable(command_simple = (self.main_mix(), "distort_level", Float))]
+    #[adjustable(tween = true, command_simple = (self.main_mix(), "distort_level", Float))]
     distort_level: f64,
-    #[adjustable(command_simple = (self.main_mix(), "warp_level", Float))]
+    #[adjustable(tween = true, command_simple = (self.main_mix(), "warp_level", Float))]
     warp_level: f64,
     #[adjustable(k = CB, idx = 3, kind = toggle, do_not_record = true)]
     distort_warp_select: u8,
@@ -1872,21 +1872,21 @@ pub struct StreamSettings {
     shift_select: f64,
     #[adjustable(k = B, idx = 7, min = -1.0, max = 1.0, step = 0.001, ty = f64, setter = set_color_shift, getter = color_shift)]
     color_shift: (),
-    #[adjustable(command_simple = (self.main_mix(), "rh", Float))]
+    #[adjustable(tween = true, command_simple = (self.main_mix(), "rh", Float))]
     rh: f64,
-    #[adjustable(command_simple = (self.main_mix(), "rv", Float))]
+    #[adjustable(tween = true, command_simple = (self.main_mix(), "rv", Float))]
     rv: f64,
-    #[adjustable(command_simple = (self.main_mix(), "gh", Float))]
+    #[adjustable(tween = true, command_simple = (self.main_mix(), "gh", Float))]
     gh: f64,
-    #[adjustable(command_simple = (self.main_mix(), "gv", Float))]
+    #[adjustable(tween = true, command_simple = (self.main_mix(), "gv", Float))]
     gv: f64,
-    #[adjustable(command_simple = (self.main_mix(), "bh", Float))]
+    #[adjustable(tween = true, command_simple = (self.main_mix(), "bh", Float))]
     bh: f64,
-    #[adjustable(command_simple = (self.main_mix(), "bv", Float))]
+    #[adjustable(tween = true, command_simple = (self.main_mix(), "bv", Float))]
     bv: f64,
-    #[adjustable(command_simple = (self.main_mix(), "ah", Float))]
+    #[adjustable(tween = true, command_simple = (self.main_mix(), "ah", Float))]
     ah: f64,
-    #[adjustable(command_simple = (self.main_mix(), "av", Float))]
+    #[adjustable(tween = true, command_simple = (self.main_mix(), "av", Float))]
     av: f64,
     #[adjustable(kind = toggle, k = CR, idx = 7)]
     shift_enable: u8,
@@ -1900,9 +1900,9 @@ pub struct StreamSettings {
     negate: u8,
 
     //DISTORT
-    #[adjustable(k = L, idx = 8, min = -1.0, max = 1.0, step = 0.001, command_simple = (self.main_mix(), "dx", Float))]
+    #[adjustable(k = L, idx = 8, min = -1.0, max = 1.0, step = 0.001, tween = true, command_simple = (self.main_mix(), "dx", Float))]
     dx: f64,
-    #[adjustable(k = R, idx = 8, min = -1.0, max = 1.0, step = 0.001, command_simple = (self.main_mix(), "dy", Float))]
+    #[adjustable(k = R, idx = 8, min = -1.0, max = 1.0, step = 0.001, tween = true,  command_simple = (self.main_mix(), "dy", Float))]
     dy: f64,
 
     #[adjustable(k = B, idx = 8, step = 2.0 * std::f64::consts::PI/400.0, tween = true, setter = set_feedback_rotation, command_simple = (self.main_mix(), "feedback_rotation", Float))]
