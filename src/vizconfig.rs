@@ -174,7 +174,16 @@ impl AllSettings {
     }
 
     pub fn distort_edge_types() -> &'static [&'static str] {
-        &["smear", "wrap", "mirror", "blank"]
+        &[
+            "smear",
+            "wrap",
+            "mirror",
+            "blank",
+            "wrap_lr",
+            "wrap_ud",
+            "mirror_lr",
+            "mirror_ud",
+        ]
     }
 
     pub fn overlay_vids() -> &'static [Vid] {

@@ -122,41 +122,44 @@ vec3 distort(in vec2 coord, in sampler2D map, in float level) {
 #define EDGE_MODE_WRAP 1
 #define EDGE_MODE_MIRROR 2
 #define EDGE_MODE_BLANK 3
-#define EDGE_MODE_ALPHA 4
+#define EDGE_MODE_WRAP_LR 4
+#define EDGE_MODE_WRAP_UD 5
+#define EDGE_MODE_MIRROR_LR 6
+#define EDGE_MODE_MIRROR_UD 7
 
 vec2 coord_smear(in vec2 coord) {
     // Smear the coordinates to avoid edge artifacts
     return clamp(coord, EPSILON, 1 - EPSILON);
 }
 
-vec2 coord_wrap(in vec2 coord) {
+vec2 coord_wrap(in vec2 coord, in bool wrap_lr, in bool wrap_ud) {
     // Wrap the coordinates to stay within [0, 1]
-    if (coord.x < 0.0) {
+    if (coord.x < 0.0 && wrap_lr) {
         coord.x = 1.0 + fract(coord.x);
-    } else if (coord.x > 1.0) {
+    } else if (coord.x > 1.0 && wrap_lr) {
         coord.x = fract(coord.x);
     }
-    if (coord.y < 0.0) {
+    if (coord.y < 0.0 && wrap_ud) {
         coord.y = 1.0 + fract(coord.y);
-    } else if (coord.y > 1.0) {
+    } else if (coord.y > 1.0 && wrap_ud) {
         coord.y = fract(coord.y);
     }
     return fract(coord);
 }
 
-vec2 coord_mirror(in vec2 coord) {
+vec2 coord_mirror(in vec2 coord, in bool mirror_lr, in bool mirror_ud) {
     vec2 base_coord = vec2(fract(coord.x), fract(coord.y));
-    if (base_coord.x == 0.0 && coord.x != 0.0) {
+    if (base_coord.x == 0.0 && coord.x != 0.0 && mirror_lr) {
         base_coord.x = 1.0;
     }
-    if (base_coord.y == 0.0 && coord.y != 0.0) {
+    if (base_coord.y == 0.0 && coord.y != 0.0 && mirror_ud) {
         base_coord.y = 1.0;
     }
-    if ((int(floor(coord.x)) & 1) == 1) {
+    if ((int(floor(coord.x)) & 1) == 1 && mirror_lr) {
         // If the x coordinate is odd, flip the x coordinate
         base_coord.x = 1.0 - base_coord.x;
     }
-    if ((int(floor(coord.y)) & 1) == 1) {
+    if ((int(floor(coord.y)) & 1) == 1 && mirror_ud) {
         // If the y coordinate is odd, flip the y coordinate
         base_coord.y = 1.0 - base_coord.y;
     }
@@ -169,10 +172,10 @@ vec3 handle_edge(sampler2D tex, in vec2 coord, in uint mode) {
             return texture(tex, coord_smear(coord)).rgb;
 
         case EDGE_MODE_WRAP:
-            return texture(tex, coord_wrap(coord)).rgb;
+            return texture(tex, coord_wrap(coord, true, true)).rgb;
 
         case EDGE_MODE_MIRROR:
-            return texture(tex, coord_mirror(coord)).rgb;
+            return texture(tex, coord_mirror(coord, true, true)).rgb;
 
         case EDGE_MODE_BLANK:
             if (coord.x <= EPSILON || coord.x >= (1.0 - EPSILON) ||
@@ -181,6 +184,30 @@ vec3 handle_edge(sampler2D tex, in vec2 coord, in uint mode) {
             } else {
                 return texture(tex, coord).rgb;
             }
+
+        case EDGE_MODE_WRAP_LR:
+            if (coord.y <= EPSILON || coord.y >= (1.0 - EPSILON)) {
+               return vec3(0.0, 0.0, 0.0);
+            }
+            return texture(tex, coord_wrap(coord, true, false)).rgb;
+
+        case EDGE_MODE_WRAP_UD:
+            if (coord.x <= EPSILON || coord.x >= (1.0 - EPSILON)) {
+                return vec3(0.0, 0.0, 0.0);
+            }
+            return texture(tex, coord_wrap(coord, false, true)).rgb;
+
+        case EDGE_MODE_MIRROR_LR:
+            if (coord.y <= EPSILON || coord.y >= (1.0 - EPSILON)) {
+               return vec3(0.0, 0.0, 0.0);
+            }
+            return texture(tex, coord_mirror(coord, true, false)).rgb;
+
+        case EDGE_MODE_MIRROR_UD:
+            if (coord.x <= EPSILON || coord.x >= (1.0 - EPSILON)) {
+                return vec3(0.0, 0.0, 0.0);
+            }
+            return texture(tex, coord_mirror(coord, false, true)).rgb;
 
         default:
             return vec3(1.0, 0.0, 0.0);

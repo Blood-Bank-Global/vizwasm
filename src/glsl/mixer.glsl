@@ -42,7 +42,7 @@
 vec2 base_coord = src_coord0.xy;
 
 // Scroll as needed
-base_coord = coord_mirror(vec2(base_coord.x + scrolled_h, base_coord.y + scrolled_v));
+base_coord = coord_mirror(vec2(base_coord.x + scrolled_h, base_coord.y + scrolled_v), true, true);
 
 //skew
 base_coord = skew3(base_coord, new_corners);
