@@ -11,4 +11,3 @@ if (src_coord0.y >= (1.0 - delta)) {
 } else {
   color = vec4(0.0, 0.0, 0.0, 1.0);
 }
-if
