@@ -213,14 +213,6 @@ pub fn calculate(
     let mut lock = SETTINGS.lock().expect("Settings mutex corrupted");
     let settings = lock.as_mut();
 
-    let mut was_reload = false;
-    for e in reg_events {
-        if let GfxEvent::ReloadEvent() = e {
-            was_reload = true;
-            eprintln!("Reloading settings due to GfxEvent::ReloadSettings");
-        }
-    }
-
     static FULL_INPUTS: LazyLock<Vec<MixInput>> = LazyLock::new(|| {
         vec![
             MixInput::Mixed("blank_overlay".to_string()),
@@ -374,8 +366,5 @@ pub fn calculate(
     }
 
     settings.clean_up_by_specs(&mut specs);
-    if was_reload {
-        eprintln!("Specs: {:?}", specs);
-    }
     Ok(to_return)
 }
