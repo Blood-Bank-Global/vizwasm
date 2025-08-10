@@ -45,6 +45,22 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
         );
     }
 
+    let vids1920x1080 = ["logo"];
+    for vid_name in vids1920x1080.iter() {
+        vids.push(
+            Vid::builder()
+                .name(vid_name)
+                .path(format!("{STREAM_PATH}/{}.mp4", vid_name))
+                .resolution((1920, 1080))
+                .tbq((1, 12288))
+                .pix_fmt("yuv420p")
+                .repeat(true)
+                .realtime(false)
+                .hardware_decode(true)
+                .build(),
+        );
+    }
+
     vids
 });
 
@@ -53,6 +69,7 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "blank".to_string(),
         "error2".to_string(),
         "error3".to_string(),
+        "logo".to_string(),
         "harmony1".to_string(),
         "harmony2".to_string(),
         "harmony3".to_string(),
@@ -109,18 +126,20 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
     generate_harmony_mix!(3);
     generate_harmony_mix!(4);
 
+    let mut full_mix_builder = Mix::builder().name("full_mix").no_display(true);
+    for name in PLAYBACK_NAMES.iter() {
+        full_mix_builder = full_mix_builder.mixed(format!("{name}_overlay"));
+    }
+
     configs.push(MixConfig {
         def: VidMixer::builder()
             .name("full_mix")
             .header(include_str!("../glsl/utils.glsl"))
+            .body(include_str!("../glsl/harmony_full.glsl"))
             .width(1280)
             .height(720)
             .build(),
-        mix: Mix::builder()
-            .name("full_mix")
-            .mixed("blank_feedback")
-            .no_display(true)
-            .build(),
+        mix: full_mix_builder.build(),
     });
     configs
 });
