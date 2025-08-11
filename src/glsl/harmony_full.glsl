@@ -1,16 +1,28 @@
 //!VAR int usr_var 0
 
+//!VAR vec2 iResolution0 1.0 1.0
+//!VAR vec2 iResolution1 1.0 1.0
+//!VAR vec2 iResolution2 1.0 1.0
+//!VAR vec2 iResolution3 1.0 1.0
+//!VAR vec2 iResolution4 1.0 1.0
+//!VAR vec2 iResolution5 1.0 1.0
+//!VAR vec2 iResolution6 1.0 1.0
+//!VAR vec2 iResolution7 1.0 1.0
+//!VAR vec2 iResolution8 1.0 1.0
+//!VAR vec2 iResolution9 1.0 1.0
+
 /**
  * Notes:
  * 0. blank
  * 1. error2
  * 2. error3
  * 3. logo
- * 4. harmony1
- * 5. harmony2
- * 6. harmony3
- * 7. harmony4
- * 8. full
+ * 4. the_moon
+ * 5. harmony1
+ * 6. harmony2
+ * 7. harmony3
+ * 8. harmony4
+ * 9. full
  */
 
 #define SELECT_WAVE 0
@@ -32,10 +44,14 @@ if (selection == SELECT_WAVE) { // wave feedback
 }
 
 if (selection == SELECT_MOON) { // moon mode
-    vec2 below_coord = src_coord0;
-    vec2 xform = (src_coord4 - vec2(0.0, 0.0)) * 2.0 ;
-    vec4 below = vec4(handle_edge(src_tex4, xform, EDGE_MODE_BLANK), 1.0);
-    vec4 above = texture(src_tex7, src_coord7);
+    vec2 below_normalize = vec2((iResolution.x/iResolution4.x) * src_coord4.x, (iResolution.y/iResolution4.y) * src_coord4.y);
+    vec2 below_offset = vec2((1.0 - (iResolution.x/iResolution4.x)) / 2.0, 0.0);
+    vec2 below_coord = below_normalize + below_offset;
+    vec4 below = vec4(handle_edge(src_tex4, below_coord, EDGE_MODE_BLANK), 1.0);
+
+    mat4x2 new_corners = mat4x2(0.0, 0.667, 1.0, 0.667, -2.0, 1.0, 2.0, 1.0);
+    vec2 above_coord = skew3(src_coord7, new_corners);
+    vec4 above = texture(src_tex7, above_coord);
 
     if (src_coord7.y <= 0.6667) {
         above.a = 0.0;  // If above the midpoint, set alpha to 0
