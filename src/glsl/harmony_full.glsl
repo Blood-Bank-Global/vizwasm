@@ -18,19 +18,31 @@
  * 2. error3
  * 3. logo
  * 4. the_moon
- * 5. harmony1
- * 6. harmony2
- * 7. harmony3
- * 8. harmony4
- * 9. full
+ * 5. harmony1 - wave
+ * 6. harmony2 - flower
+ * 7. harmony3 - grid
+ * 8. harmony4 - walls
+ * 9. statue
+ * 10. full
  */
 
-#define SELECT_WAVE 0
-#define SELECT_FLOWER 1
+#define SELECT_FLOWER 0
+#define SELECT_WAVE 1
 #define SELECT_MOON 2
 #define SELECT_WALLS 3
 
-int selection = SELECT_FLOWER;
+int selection = SELECT_WALLS;
+
+if (selection == SELECT_FLOWER) { // flower feedback
+    vec4 below = texture(src_tex0, src_coord0);
+    vec4 above = texture(src_tex6, src_coord6);
+
+    if (distance(above.rgb, vec3(0.0)) < 0.3) {
+        above.a = 0.0;  // If above is almost black, set alpha to 0
+    } 
+
+    color = blend_by_mode(below, above, BLEND_ALPHA);
+}
 
 if (selection == SELECT_WAVE) { // wave feedback
     vec4 below = texture(src_tex3, src_coord3);
@@ -43,16 +55,24 @@ if (selection == SELECT_WAVE) { // wave feedback
     color = blend_by_mode(below, above, BLEND_ALPHA);
 }
 
-if (selection == SELECT_FLOWER) { // flower feedback
-    vec4 below = texture(src_tex0, src_coord0);
-    vec4 above = texture(src_tex6, src_coord6);
+if (selection == SELECT_WALLS) {
+    vec4 below = texture(src_tex9, src_coord9);
+    vec4 above = texture(src_tex8, src_coord8);
 
-    if (distance(above.rgb, vec3(0.0)) < 0.3) {
+    float w = 400.0;
+    float h = 400.0 * iResolution8.y / iResolution8.x;
+    float left = (iResolution8.x - w)/2.0/iResolution8.x;
+    float right = left + w / iResolution8.x;
+    float top = (iResolution8.y - h)/2.0/iResolution8.y;
+    float bottom = top + h / iResolution8.y;
+
+    if (src_coord8.x > left && src_coord8.x < right && src_coord8.y > top && src_coord8.y < bottom) {
         above.a = 0.0;  // If above is almost black, set alpha to 0
     } 
 
     color = blend_by_mode(below, above, BLEND_ALPHA);
 }
+
 
 if (selection == SELECT_MOON) { // moon mode
     vec2 below_normalize = vec2((iResolution.x/iResolution4.x) * src_coord4.x, (iResolution.y/iResolution4.y) * src_coord4.y);

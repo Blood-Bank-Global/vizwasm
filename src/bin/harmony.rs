@@ -49,7 +49,7 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
         );
     }
 
-    let vids1920x1080 = ["logo"];
+    let vids1920x1080 = ["logo", "statue"];
     for vid_name in vids1920x1080.iter() {
         vids.push(
             Vid::builder()
@@ -79,6 +79,7 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "harmony2".to_string(),
         "harmony3".to_string(),
         "harmony4".to_string(),
+        "statue".to_string(),
         "full".to_string(),
     ];
     names
