@@ -6,7 +6,7 @@ use std::{
 
 use sdlrig::{
     gfxinfo::{Asset, GfxEvent, GfxInfo, Vid, VidMixer},
-    renderspec::{Mix, MixInput, RenderSpec},
+    renderspec::{Mix, RenderSpec},
 };
 use vizwasm::vizconfig::{AllSettings, MixConfig, StreamSettingsAllFieldsEnum};
 fn main() {}
@@ -74,13 +74,16 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "error2".to_string(),
         "error3".to_string(),
         "logo".to_string(),
+        "statue".to_string(),
         "the_moon".to_string(),
         "harmony1".to_string(),
         "harmony2".to_string(),
         "harmony3".to_string(),
         "harmony4".to_string(),
-        "statue".to_string(),
-        "full".to_string(),
+        "combo1".to_string(),
+        "combo2".to_string(),
+        "combo3".to_string(),
+        "combo4".to_string(),
     ];
     names
 });
@@ -132,21 +135,38 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
     generate_harmony_mix!(3);
     generate_harmony_mix!(4);
 
-    let mut full_mix_builder = Mix::builder().name("full_mix").no_display(true);
-    for name in PLAYBACK_NAMES.iter() {
-        full_mix_builder = full_mix_builder.mixed(format!("{name}_overlay"));
+    macro_rules! generate_combo_mix {
+        ($i:expr, $below:expr, $above:expr) => {
+            configs.push(MixConfig {
+                def: VidMixer::builder()
+                    .name(concat!("combo", $i, "_mix"))
+                    .header(concat!(
+                        include_str!("../glsl/utils.glsl"),
+                        "\n",
+                        include_str!("../glsl/harmony_header.glsl")
+                    ))
+                    .body(include_str!(concat!("../glsl/combo", $i, ".glsl")))
+                    .width(1280)
+                    .height(720)
+                    .build(),
+                mix: Mix::builder()
+                    .name(concat!("combo", $i, "_mix"))
+                    .mixed($below)
+                    .mixed($above)
+                    .mixed("blank_overlay")
+                    .mixed("error2_overlay")
+                    .mixed("error3_overlay")
+                    .no_display(true)
+                    .build(),
+            });
+        };
     }
 
-    configs.push(MixConfig {
-        def: VidMixer::builder()
-            .name("full_mix")
-            .header(include_str!("../glsl/utils.glsl"))
-            .body(include_str!("../glsl/harmony_full.glsl"))
-            .width(1280)
-            .height(720)
-            .build(),
-        mix: full_mix_builder.build(),
-    });
+    generate_combo_mix!(1, "logo_overlay", "harmony1_overlay");
+    generate_combo_mix!(2, "blank_overlay", "harmony2_overlay");
+    generate_combo_mix!(3, "the_moon_overlay", "harmony3_overlay");
+    generate_combo_mix!(4, "statue_overlay", "harmony4_overlay");
+
     configs
 });
 
@@ -237,33 +257,6 @@ pub fn calculate(
 ) -> Result<Vec<RenderSpec>, Box<dyn Error>> {
     let mut lock = SETTINGS.lock().expect("Settings mutex corrupted");
     let settings = lock.as_mut();
-
-    static FULL_INPUTS: LazyLock<Vec<MixInput>> = LazyLock::new(|| {
-        vec![
-            MixInput::Mixed("blank_overlay".to_string()),
-            MixInput::Mixed("error2_overlay".to_string()),
-            MixInput::Mixed("error3_overlay".to_string()),
-            MixInput::Mixed("harmony1_overlay".to_string()),
-            MixInput::Mixed("harmony2_overlay".to_string()),
-            MixInput::Mixed("harmony3_overlay".to_string()),
-            MixInput::Mixed("harmony4_overlay".to_string()),
-        ]
-    });
-
-    let mix = settings.mix_configs.iter_mut().find(|m| m.0 == "full_mix");
-    let playback = settings
-        .playback
-        .iter()
-        .find(|p| p.stream.ident.name == "full");
-
-    if let Some((_, mix)) = mix {
-        if let Some(playback) = playback {
-            mix.mix.inputs[0] = FULL_INPUTS
-                .get(playback.stream.usr_var() as usize)
-                .unwrap_or(&MixInput::Mixed("blank_overlay".to_string()))
-                .clone();
-        }
-    }
 
     let mut specs = settings.update_record_and_get_specs(reg_events, frame)?;
 
@@ -383,13 +376,6 @@ pub fn calculate(
     }
 
     let to_return = specs.clone();
-
-    for inp in FULL_INPUTS.iter() {
-        if let MixInput::Mixed(src) = inp {
-            specs.append(&mut settings.get_playback_specs(&src, (1, 1, 1, 1), (1, 1, 1, 1)));
-        }
-    }
-
     settings.clean_up_by_specs(&mut specs);
     Ok(to_return)
 }
