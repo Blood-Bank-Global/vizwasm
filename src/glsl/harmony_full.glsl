@@ -26,15 +26,26 @@
  */
 
 #define SELECT_WAVE 0
-#define SELECT_TUNNEL 1
-#define SELECT_WALLS 2
-#define SELECT_MOON 3
+#define SELECT_FLOWER 1
+#define SELECT_MOON 2
+#define SELECT_WALLS 3
 
-int selection = SELECT_MOON;
+int selection = SELECT_FLOWER;
 
 if (selection == SELECT_WAVE) { // wave feedback
     vec4 below = texture(src_tex3, src_coord3);
     vec4 above = texture(src_tex5, src_coord5);
+
+    if (distance(above.rgb, vec3(0.0)) < 0.3) {
+        above.a = 0.0;  // If above is almost black, set alpha to 0
+    } 
+
+    color = blend_by_mode(below, above, BLEND_ALPHA);
+}
+
+if (selection == SELECT_FLOWER) { // flower feedback
+    vec4 below = texture(src_tex0, src_coord0);
+    vec4 above = texture(src_tex6, src_coord6);
 
     if (distance(above.rgb, vec3(0.0)) < 0.3) {
         above.a = 0.0;  // If above is almost black, set alpha to 0

@@ -6,13 +6,22 @@ vec2 coord = src_coord0 * iResolution.xy;
 vec2 center = vec2(0.5, 0.5) * iResolution.xy;
 
 vec2 to_coord = coord - center;
+
+//rot 180 degrees
+to_coord = to_coord * mat2x2(
+    -1.0, 0.0,
+    0.0, -1.0
+);
+
+if (to_coord.x < 0.0) {
+    to_coord.x = -to_coord.x;
+}
+
 float angle = atan(to_coord.y, to_coord.x);
-float pos = abs(M_PI - angle);
-float t1 = mod(frame + pos * 40.0, 40.0) / 40.0;
-float t2 = mod(frame + pos * 20.0 + 5, 20.0) / 20.0;
-float t3 = mod(frame + pos * 60.0 + 50, 60.0) / 60.0;
-float thickness = 100.0 + 20.0 * sin(t1 * 2.0 * M_PI) + 20.0 * cos(t2 * 2.0 * M_PI) * sin(t3 * 2.0 * M_PI);
-thickness *= (float(abs(usr_var)) / 20.0) + 1.0;
+
+float t1 = abs(0.5 - mod(frame + angle * 100.0, 100.0) / 100.0);
+float thickness = 100.0 + 100.0 * t1;
+thickness *= clamp(float(usr_var) / 20.0, -0.9, 100.0) + 1.0;
 
 if (distance(coord, center) < thickness) {
     float weight = clamp(distance(coord, center) / thickness, 0.0, 1.0);
