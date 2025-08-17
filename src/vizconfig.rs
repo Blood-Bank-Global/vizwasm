@@ -266,7 +266,7 @@ impl AllSettings {
                         Vid::builder()
                             .name(format!("{name}_{i}"))
                             .path(format!("REPLACE/overlays/{name}_{i}.mp4"))
-                            .resolution((3840, 2160))
+                            .resolution((960, 540))
                             .tbq((1, 12800))
                             .pix_fmt("yuv420p")
                             .repeat(true)
