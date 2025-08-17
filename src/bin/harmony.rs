@@ -28,7 +28,7 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
                 .pix_fmt("yuv420p")
                 .repeat(true)
                 .realtime(false)
-                .hardware_decode(true)
+                .hardware_decode(false)
                 .build(),
         );
     }
@@ -44,7 +44,7 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
                 .pix_fmt("yuv420p")
                 .repeat(true)
                 .realtime(false)
-                .hardware_decode(true)
+                .hardware_decode(false)
                 .build(),
         );
     }
@@ -60,7 +60,7 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
                 .pix_fmt("yuv420p")
                 .repeat(true)
                 .realtime(false)
-                .hardware_decode(true)
+                .hardware_decode(false)
                 .build(),
         );
     }

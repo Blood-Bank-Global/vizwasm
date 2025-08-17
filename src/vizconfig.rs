@@ -197,7 +197,7 @@ impl AllSettings {
                     .pix_fmt("yuv420p")
                     .repeat(true)
                     .realtime(false)
-                    .hardware_decode(true)
+                    .hardware_decode(false)
                     .build(),
                 Vid::builder()
                     .name("vhs_overlay")
@@ -207,7 +207,7 @@ impl AllSettings {
                     .pix_fmt("yuv420p")
                     .repeat(true)
                     .realtime(false)
-                    .hardware_decode(true)
+                    .hardware_decode(false)
                     .build(),
                 Vid::builder()
                     .name("film_dust")
@@ -217,7 +217,7 @@ impl AllSettings {
                     .pix_fmt("yuv420p")
                     .repeat(true)
                     .realtime(false)
-                    .hardware_decode(true)
+                    .hardware_decode(false)
                     .build(),
                 Vid::builder()
                     .name("tracking")
@@ -227,7 +227,7 @@ impl AllSettings {
                     .pix_fmt("yuv420p")
                     .repeat(true)
                     .realtime(false)
-                    .hardware_decode(true)
+                    .hardware_decode(false)
                     .build(),
                 Vid::builder()
                     .name("bottom")
@@ -237,7 +237,7 @@ impl AllSettings {
                     .pix_fmt("yuv420p")
                     .repeat(true)
                     .realtime(false)
-                    .hardware_decode(true)
+                    .hardware_decode(false)
                     .build(),
                 Vid::builder()
                     .name("colorful")
@@ -247,7 +247,7 @@ impl AllSettings {
                     .pix_fmt("yuv420p")
                     .repeat(true)
                     .realtime(false)
-                    .hardware_decode(true)
+                    .hardware_decode(false)
                     .build(),
             ];
 
@@ -271,7 +271,7 @@ impl AllSettings {
                             .pix_fmt("yuv420p")
                             .repeat(true)
                             .realtime(false)
-                            .hardware_decode(true)
+                            .hardware_decode(false)
                             .build(),
                     );
                 }
@@ -368,7 +368,7 @@ impl AllSettings {
                         .pix_fmt("yuv420p")
                         .repeat(true)
                         .realtime(false)
-                        .hardware_decode(true)
+                        .hardware_decode(false)
                         .build()
                 })
                 .collect::<Vec<_>>(),
