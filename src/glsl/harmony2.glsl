@@ -19,7 +19,9 @@ if (to_coord.x < 0.0) {
 
 float angle = atan(to_coord.y, to_coord.x);
 
-float t1 = abs(0.5 - mod(frame + angle * 100.0, 100.0) / 100.0);
+//float t1 = abs(0.5 - mod(frame + angle * 100.0, 100.0) / 100.0);
+//float t1 = abs(0.5 - 0.25 * mod(frame * angle / M_PI , 100.0) / 100.0 + 0.25 * sin(frame/10.0 + angle*4.0));
+float t1 = abs(0.5 - mod(frame + angle * 100.0, 200.0) / 200.0);
 float thickness = 100.0 + 100.0 * t1;
 thickness *= clamp(float(usr_var) / 20.0, -0.9, 100.0) + 1.0;
 
