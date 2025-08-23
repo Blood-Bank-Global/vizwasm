@@ -2,7 +2,7 @@
 //!VAR int usr_var 0
 color = vec4(1.0, 1.0, 1.0, 1.0);
 
-float dim = iResolution0.y / 30.0;;
+float dim = iResolution0.y / 5.0;;
 vec2 coord = src_coord0 * iResolution.xy;
 float row = floor(coord.y / dim);
 

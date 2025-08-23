@@ -948,22 +948,22 @@ impl AllSettings {
                             down: true,
                             ..
                         } => {
-                            self.scan_idx = (self.scan_idx as i64 + 1)
-                                .clamp(0, self.playback.len() as i64 - 1)
-                                as usize;
-                            self.active_idx = self.scan_idx;
-                            self.display_idx = self.scan_idx;
+                            // self.scan_idx = (self.scan_idx as i64 + 1)
+                            //     .clamp(0, self.playback.len() as i64 - 1)
+                            //     as usize;
+                            // self.active_idx = self.scan_idx;
+                            // self.display_idx = self.scan_idx;
                         }
                         KeyEvent {
                             key: KeyCode::SDLK_g,
                             down: true,
                             ..
                         } => {
-                            self.scan_idx = (self.scan_idx as i64 - 1)
-                                .clamp(0, self.playback.len() as i64 - 1)
-                                as usize;
-                            self.active_idx = self.scan_idx;
-                            self.display_idx = self.scan_idx;
+                            // self.scan_idx = (self.scan_idx as i64 - 1)
+                            //     .clamp(0, self.playback.len() as i64 - 1)
+                            //     as usize;
+                            // self.active_idx = self.scan_idx;
+                            // self.display_idx = self.scan_idx;
                         }
 
                         // Adjust Settings
