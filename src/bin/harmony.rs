@@ -17,13 +17,13 @@ static ASSET_PATH: &'static str = "/Users/ttie/Desktop/common_data";
 static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
     let mut vids = vec![];
 
-    let vid720x480 = ["the_moon", "blank"];
-    for vid_name in vid720x480.iter() {
+    let vid640x320 = ["the_moon", "blank"];
+    for vid_name in vid640x320.iter() {
         vids.push(
             Vid::builder()
                 .name(vid_name)
                 .path(format!("{STREAM_PATH}/{}.mp4", vid_name))
-                .resolution((720, 480))
+                .resolution((640, 320))
                 .tbq((1, 12800))
                 .pix_fmt("yuv420p")
                 .repeat(true)
@@ -118,8 +118,8 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
                         include_str!("../glsl/harmony_header.glsl")
                     ))
                     .body(include_str!(concat!("../glsl/harmony", $i, ".glsl")))
-                    .width(1280)
-                    .height(720)
+                    .width(2560)
+                    .height(1280)
                     .build(),
                 mix: Mix::builder()
                     .name(concat!("harmony", $i, "_mix"))
@@ -146,8 +146,8 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
                         include_str!("../glsl/harmony_header.glsl")
                     ))
                     .body(include_str!(concat!("../glsl/combo", $i, ".glsl")))
-                    .width(1280)
-                    .height(720)
+                    .width(640)
+                    .height(320)
                     .build(),
                 mix: Mix::builder()
                     .name(concat!("combo", $i, "_mix"))

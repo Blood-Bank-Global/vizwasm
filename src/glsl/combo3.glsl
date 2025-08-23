@@ -17,7 +17,7 @@ float aspect0 = iResolution0.x / iResolution0.y;
 float aspect1 = iResolution1.x / iResolution1.y;
 float scale0 = aspect0 / aspect1;
 vec2 offset0 = vec2(0.0, 0.25);
-vec2 below_coord = src_coord0 * vec2(1.0, scale0) + offset0;
+vec2 below_coord = src_coord0 * vec2(1.0, 1.0) + offset0;
 vec4 below = vec4(handle_edge(src_tex0, below_coord, EDGE_MODE_BLANK), 1.0);
 
 // skew the grid

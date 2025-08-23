@@ -11,9 +11,10 @@
 // error3
 //!VAR vec2 iResolution4 1.0 1.0
 
-vec2 above_coord = src_coord0 + vec2(0.0, -30.0 / iResolution0.y);
 vec4 below = texture(src_tex1, src_coord1);
-vec4 above = texture(src_tex0, src_coord0);
+
+vec2 above_coord = src_coord0 + vec2(0.0, -60.0 / iResolution0.y);
+vec4 above = texture(src_tex0, above_coord);
 
 if (distance(above.rgb, vec3(0.0)) < 0.3) {
     above.a = 0.0;  // If above is almost black, set alpha to 0
