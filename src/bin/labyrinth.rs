@@ -11,13 +11,13 @@ use sdlrig::{
 use vizwasm::vizconfig::{AllSettings, MixConfig, StreamSettingsAllFieldsEnum};
 fn main() {}
 
-static STREAM_PATH: &'static str = "/Users/ttie/Desktop/harmony/streams";
+static STREAM_PATH: &'static str = "/Users/ttie/Desktop/labyrinth/streams";
 static ASSET_PATH: &'static str = "/Users/ttie/Desktop/common_data";
 
 static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
     let mut vids = vec![];
 
-    let vid640x320 = ["the_moon", "blank"];
+    let vid640x320 = [/*"the_moon",*/ "blank"];
     for vid_name in vid640x320.iter() {
         vids.push(
             Vid::builder()
@@ -33,13 +33,13 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
         );
     }
 
-    let vid1280x720 = ["error2", "error3"];
-    for vid_name in vid1280x720.iter() {
+    let pngs640x480 = ["wall_demo"];
+    for png_name in pngs640x480.iter() {
         vids.push(
             Vid::builder()
-                .name(vid_name)
-                .path(format!("{STREAM_PATH}/{}.mp4", vid_name))
-                .resolution((1280, 720))
+                .name(png_name)
+                .path(format!("{STREAM_PATH}/{}.png", png_name))
+                .resolution((640, 480))
                 .tbq((1, 12800))
                 .pix_fmt("yuv420p")
                 .repeat(true)
@@ -49,21 +49,37 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
         );
     }
 
-    let vids1920x1080 = ["logo", "statue"];
-    for vid_name in vids1920x1080.iter() {
-        vids.push(
-            Vid::builder()
-                .name(vid_name)
-                .path(format!("{STREAM_PATH}/{}.mp4", vid_name))
-                .resolution((1920, 1080))
-                .tbq((1, 12288))
-                .pix_fmt("yuv420p")
-                .repeat(true)
-                .realtime(false)
-                .hardware_decode(false)
-                .build(),
-        );
-    }
+    // let vid1280x720 = ["error2", "error3"];
+    // for vid_name in vid1280x720.iter() {
+    //     vids.push(
+    //         Vid::builder()
+    //             .name(vid_name)
+    //             .path(format!("{STREAM_PATH}/{}.mp4", vid_name))
+    //             .resolution((1280, 720))
+    //             .tbq((1, 12800))
+    //             .pix_fmt("yuv420p")
+    //             .repeat(true)
+    //             .realtime(false)
+    //             .hardware_decode(false)
+    //             .build(),
+    //     );
+    // }
+
+    // let vids1920x1080 = ["logo", "statue"];
+    // for vid_name in vids1920x1080.iter() {
+    //     vids.push(
+    //         Vid::builder()
+    //             .name(vid_name)
+    //             .path(format!("{STREAM_PATH}/{}.mp4", vid_name))
+    //             .resolution((1920, 1080))
+    //             .tbq((1, 12288))
+    //             .pix_fmt("yuv420p")
+    //             .repeat(true)
+    //             .realtime(false)
+    //             .hardware_decode(false)
+    //             .build(),
+    //     );
+    // }
 
     vids
 });
@@ -71,11 +87,12 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
 static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
     let names = vec![
         "blank".to_string(),
-        "error2".to_string(),
-        "error3".to_string(),
-        "logo".to_string(),
-        "statue".to_string(),
-        "the_moon".to_string(),
+        "wall_demo".to_string(),
+        // "error2".to_string(),
+        // "error3".to_string(),
+        // "logo".to_string(),
+        // "statue".to_string(),
+        // "the_moon".to_string(),
         // "harmony1".to_string(),
         // "harmony2".to_string(),
         // "harmony3".to_string(),
