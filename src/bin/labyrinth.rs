@@ -5,7 +5,7 @@ use std::{
 };
 
 use sdlrig::{
-    gfxinfo::{Asset, GfxEvent, GfxInfo, Vid, VidMixer},
+    gfxinfo::{Asset, GfxEvent, GfxInfo, MidiEvent, Vid, VidMixer},
     renderspec::{Mix, RenderSpec},
 };
 use vizwasm::vizconfig::{AllSettings, MixConfig, StreamSettingsAllFieldsEnum};
@@ -28,11 +28,26 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
                 .pix_fmt("yuv420p")
                 .repeat(true)
                 .realtime(false)
-                .hardware_decode(false)
+                .hardware_decode(true)
                 .build(),
         );
     }
 
+    let vid640x480 = ["castles"];
+    for vid_name in vid640x480.iter() {
+        vids.push(
+            Vid::builder()
+                .name(vid_name)
+                .path(format!("{STREAM_PATH}/{}.mp4", vid_name))
+                .resolution((640, 480))
+                .tbq((1, 12800))
+                .pix_fmt("yuv420p")
+                .repeat(true)
+                .realtime(false)
+                .hardware_decode(true)
+                .build(),
+        );
+    }
     let pngs640x480 = ["wall_demo"];
     for png_name in pngs640x480.iter() {
         vids.push(
@@ -44,7 +59,7 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
                 .pix_fmt("yuv420p")
                 .repeat(true)
                 .realtime(false)
-                .hardware_decode(false)
+                .hardware_decode(true)
                 .build(),
         );
     }
@@ -86,6 +101,7 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
 
 static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
     let names = vec![
+        "castles".to_string(),
         "blank".to_string(),
         "wall_demo".to_string(),
         // "error2".to_string(),
@@ -275,7 +291,67 @@ pub fn calculate(
     let mut lock = SETTINGS.lock().expect("Settings mutex corrupted");
     let settings = lock.as_mut();
 
-    let mut specs = settings.update_record_and_get_specs(reg_events, frame)?;
+    let orig = settings.playback[settings.active_idx].clone();
+    // handle midi events
+    for event in reg_events {
+        match event {
+            GfxEvent::MidiEvent(MidiEvent {
+                channel: 0,
+                key,
+                velocity,
+                down,
+                ..
+            }) => {
+                eprintln!("EVENT: {:?}", event);
+                match key {
+                    36 => {
+                        if *down {
+                            settings.playback[settings.active_idx]
+                                .stream
+                                .set_rr(*velocity as f64 / 127.0 + 1.0);
+                        } else {
+                            settings.playback[settings.active_idx].stream.set_rr(1.0);
+                        }
+                    }
+                    37 => {
+                        if *down {
+                            settings.playback[settings.active_idx]
+                                .stream
+                                .set_warp_level(*velocity as f64 / 127.0 * 0.3);
+                        } else {
+                            settings.playback[settings.active_idx]
+                                .stream
+                                .set_warp_level(0.0);
+                        }
+                    }
+                    38 => {
+                        if *down {
+                            settings.playback[settings.active_idx]
+                                .stream
+                                .set_distort_level(*velocity as f64 / 127.0 * 0.3);
+                        } else {
+                            settings.playback[settings.active_idx]
+                                .stream
+                                .set_distort_level(0.1);
+                        }
+                    }
+                    _ => (),
+                }
+            }
+            _ => (),
+        }
+    }
+    let diffs = orig
+        .stream
+        .diff(&settings.playback[settings.active_idx].stream)
+        .into_iter()
+        .collect::<Vec<_>>();
+
+    let mut specs = settings.playback[settings.active_idx]
+        .stream
+        .get_commands(&diffs.iter().map(|d| d.field).collect::<Vec<_>>());
+
+    specs.append(&mut (settings.update_record_and_get_specs(reg_events, frame)?));
 
     // Wire up usr_toggle to actually count up usr_var as well every change
     for i in 0..specs.len() {

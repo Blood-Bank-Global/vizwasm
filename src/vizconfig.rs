@@ -676,9 +676,7 @@ impl AllSettings {
                     }
                 }
                 GfxEvent::ReloadEvent() => (), // needs to be handled elsewhere
-                GfxEvent::MidiEvent(me) => {
-                    eprintln!("MIDI EVENT: {:?}", me);
-                }
+                GfxEvent::MidiEvent(_) => (),  // don't do anything for midi events here
                 GfxEvent::KeyEvent(ke) => {
                     let selected_idx = self.active_idx;
                     match ke {

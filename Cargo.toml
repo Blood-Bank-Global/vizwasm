@@ -13,4 +13,5 @@ serde_json = "1.0.136"
 syn = "2.0.95"
 
 [dependencies.sdlrig]
-git = "https://github.com/Blood-Bank-Global/sdlrig.git"
+#git = "https://github.com/Blood-Bank-Global/sdlrig.git"
+path = "../sdlrig"
