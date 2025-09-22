@@ -5,7 +5,7 @@ use std::{
 };
 
 use sdlrig::{
-    gfxinfo::{Asset, GfxEvent, GfxInfo, MidiEvent, Vid, VidMixer},
+    gfxinfo::{Asset, GfxEvent, GfxInfo, MidiEvent, Vid, VidMixer, MIDI_NOTE_OFF, MIDI_NOTE_ON},
     renderspec::{Mix, RenderSpec},
 };
 use vizwasm::vizconfig::{AllSettings, MixConfig, StreamSettingsAllFieldsEnum};
@@ -33,7 +33,7 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
         );
     }
 
-    let vid640x480 = ["castles"];
+    let vid640x480 = ["castles_final"];
     for vid_name in vid640x480.iter() {
         vids.push(
             Vid::builder()
@@ -101,7 +101,7 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
 
 static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
     let names = vec![
-        "castles".to_string(),
+        "castles_final".to_string(),
         "blank".to_string(),
         "wall_demo".to_string(),
         // "error2".to_string(),
@@ -296,40 +296,40 @@ pub fn calculate(
     for event in reg_events {
         match event {
             GfxEvent::MidiEvent(MidiEvent {
+                kind,
                 channel: 0,
                 key,
                 velocity,
-                down,
                 ..
             }) => {
                 eprintln!("EVENT: {:?}", event);
                 match key {
                     36 => {
-                        if *down {
+                        if *kind == MIDI_NOTE_ON {
                             settings.playback[settings.active_idx]
                                 .stream
                                 .set_rr(*velocity as f64 / 127.0 + 1.0);
-                        } else {
+                        } else if *kind == MIDI_NOTE_OFF {
                             settings.playback[settings.active_idx].stream.set_rr(1.0);
                         }
                     }
                     37 => {
-                        if *down {
+                        if *kind == MIDI_NOTE_ON {
                             settings.playback[settings.active_idx]
                                 .stream
                                 .set_warp_level(*velocity as f64 / 127.0 * 0.3);
-                        } else {
+                        } else if *kind == MIDI_NOTE_OFF {
                             settings.playback[settings.active_idx]
                                 .stream
                                 .set_warp_level(0.0);
                         }
                     }
                     38 => {
-                        if *down {
+                        if *kind == MIDI_NOTE_ON {
                             settings.playback[settings.active_idx]
                                 .stream
                                 .set_distort_level(*velocity as f64 / 127.0 * 0.3);
-                        } else {
+                        } else if *kind == MIDI_NOTE_OFF {
                             settings.playback[settings.active_idx]
                                 .stream
                                 .set_distort_level(0.1);

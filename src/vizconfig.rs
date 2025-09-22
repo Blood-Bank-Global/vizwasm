@@ -285,6 +285,7 @@ impl AllSettings {
     pub fn lut_names() -> &'static [&'static str] {
         &[
             "none",
+            "creepy",
             "rad",
             "midas",
             "blackwhite",
