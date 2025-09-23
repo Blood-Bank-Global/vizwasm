@@ -4,11 +4,14 @@ use std::{
     sync::{LazyLock, Mutex},
 };
 
+#[allow(unused_imports)]
+use sdlrig::gfxinfo::{MIDI_CONTROL_CHANGE, MIDI_NOTE_OFF, MIDI_NOTE_ON};
+
 use sdlrig::{
-    gfxinfo::{Asset, GfxEvent, GfxInfo, MidiEvent, Vid, VidMixer, MIDI_NOTE_OFF, MIDI_NOTE_ON},
+    gfxinfo::{Asset, GfxEvent, GfxInfo, MidiEvent, Vid, VidMixer},
     renderspec::{Mix, RenderSpec},
 };
-use vizwasm::vizconfig::{AllSettings, MixConfig, StreamSettingsAllFieldsEnum};
+use vizwasm::vizconfig::{AllSettings, MixConfig, StreamSettings, StreamSettingsAllFieldsEnum};
 fn main() {}
 
 static STREAM_PATH: &'static str = "/Users/ttie/Desktop/labyrinth/streams";
@@ -33,7 +36,7 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
         );
     }
 
-    let vid640x480 = ["castles_final"];
+    let vid640x480 = ["castles_final", "towers"];
     for vid_name in vid640x480.iter() {
         vids.push(
             Vid::builder()
@@ -103,16 +106,7 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
     let names = vec![
         "castles_final".to_string(),
         "blank".to_string(),
-        "wall_demo".to_string(),
-        // "error2".to_string(),
-        // "error3".to_string(),
-        // "logo".to_string(),
-        // "statue".to_string(),
-        // "the_moon".to_string(),
-        // "harmony1".to_string(),
-        // "harmony2".to_string(),
-        // "harmony3".to_string(),
-        // "harmony4".to_string(),
+        "towers".to_string(),
         // "combo1".to_string(),
         // "combo2".to_string(),
         // "combo3".to_string(),
@@ -279,6 +273,27 @@ pub fn decode_settings(bytes: &[u8]) {
     }
 }
 
+const IAC: &str = "IAC Driver Bus 1";
+pub fn midi_callback(settings: &mut StreamSettings, event: &MidiEvent) {
+    eprintln!("MIDI EVENT: {:?}", event);
+    match (
+        event.device.as_str(),
+        event.channel,
+        event.kind,
+        event.key,
+        event.velocity,
+    ) {
+        (IAC, 0, MIDI_NOTE_ON, 36, v) => settings.set_rr(v as f64 / 127.0 + 1.0),
+        // (IAC, 0, MIDI_NOTE_OFF, 36, _) => settings.set_rr(1.0),
+        // (IAC, 0, MIDI_NOTE_ON, 37, v) => settings.set_warp_level(v as f64 / 127.0 * 0.3),
+        // (IAC, 0, MIDI_NOTE_OFF, 37, _) => settings.set_warp_level(0.0),
+        // (IAC, 0, MIDI_NOTE_ON, 38, v) => settings.set_distort_level(v as f64 / 127.0 * 0.3),
+        // (IAC, 0, MIDI_NOTE_OFF, 38, _) => settings.set_distort_level(0.1),
+        // (IAC, 0, MIDI_CONTROL_CHANGE, 0, v) => settings.set_rh(v as f64 / 127.0 * 0.05),
+        _ => (),
+    }
+}
+
 #[no_mangle]
 pub fn calculate(
     #[allow(unused)] canvas_w: u32,
@@ -291,67 +306,7 @@ pub fn calculate(
     let mut lock = SETTINGS.lock().expect("Settings mutex corrupted");
     let settings = lock.as_mut();
 
-    let orig = settings.playback[settings.active_idx].clone();
-    // handle midi events
-    for event in reg_events {
-        match event {
-            GfxEvent::MidiEvent(MidiEvent {
-                kind,
-                channel: 0,
-                key,
-                velocity,
-                ..
-            }) => {
-                eprintln!("EVENT: {:?}", event);
-                match key {
-                    36 => {
-                        if *kind == MIDI_NOTE_ON {
-                            settings.playback[settings.active_idx]
-                                .stream
-                                .set_rr(*velocity as f64 / 127.0 + 1.0);
-                        } else if *kind == MIDI_NOTE_OFF {
-                            settings.playback[settings.active_idx].stream.set_rr(1.0);
-                        }
-                    }
-                    37 => {
-                        if *kind == MIDI_NOTE_ON {
-                            settings.playback[settings.active_idx]
-                                .stream
-                                .set_warp_level(*velocity as f64 / 127.0 * 0.3);
-                        } else if *kind == MIDI_NOTE_OFF {
-                            settings.playback[settings.active_idx]
-                                .stream
-                                .set_warp_level(0.0);
-                        }
-                    }
-                    38 => {
-                        if *kind == MIDI_NOTE_ON {
-                            settings.playback[settings.active_idx]
-                                .stream
-                                .set_distort_level(*velocity as f64 / 127.0 * 0.3);
-                        } else if *kind == MIDI_NOTE_OFF {
-                            settings.playback[settings.active_idx]
-                                .stream
-                                .set_distort_level(0.1);
-                        }
-                    }
-                    _ => (),
-                }
-            }
-            _ => (),
-        }
-    }
-    let diffs = orig
-        .stream
-        .diff(&settings.playback[settings.active_idx].stream)
-        .into_iter()
-        .collect::<Vec<_>>();
-
-    let mut specs = settings.playback[settings.active_idx]
-        .stream
-        .get_commands(&diffs.iter().map(|d| d.field).collect::<Vec<_>>());
-
-    specs.append(&mut (settings.update_record_and_get_specs(reg_events, frame)?));
+    let mut specs = settings.update_record_and_get_specs(reg_events, frame, Some(midi_callback))?;
 
     // Wire up usr_toggle to actually count up usr_var as well every change
     for i in 0..specs.len() {

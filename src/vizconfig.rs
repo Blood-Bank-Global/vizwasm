@@ -1,3 +1,4 @@
+use sdlrig::gfxinfo::MidiEvent;
 use sdlrig::renderspec::{CopyEx, HudText, Mix, MixInput, Reset, SendCmd, SendValue};
 use sdlrig::Adjustable;
 use sdlrig::{
@@ -528,11 +529,15 @@ impl AllSettings {
         }
     }
 
-    pub fn update_record_and_get_specs(
+    pub fn update_record_and_get_specs<F>(
         &mut self,
         reg_events: &[GfxEvent],
         frame: i64,
-    ) -> Result<Vec<RenderSpec>, Box<dyn Error>> {
+        midi_callback: Option<F>,
+    ) -> Result<Vec<RenderSpec>, Box<dyn Error>>
+    where
+        F: Fn(&mut StreamSettings, &MidiEvent),
+    {
         static ONCE: std::sync::Once = std::sync::Once::new();
 
         ONCE.call_once(|| {
@@ -551,7 +556,7 @@ impl AllSettings {
 
         let mut specs = vec![];
         // Always capture live events even while recording is playing
-        self.update(reg_events, frame)?;
+        self.update(reg_events, frame, midi_callback)?;
         for i in 0..self.playback.len() {
             let diffs = orig[i]
                 .stream
@@ -661,7 +666,15 @@ impl AllSettings {
         Ok(specs)
     }
 
-    pub fn update(&mut self, reg_events: &[GfxEvent], frame: i64) -> Result<(), Box<dyn Error>> {
+    pub fn update<F>(
+        &mut self,
+        reg_events: &[GfxEvent],
+        frame: i64,
+        midi_callback: Option<F>,
+    ) -> Result<(), Box<dyn Error>>
+    where
+        F: Fn(&mut StreamSettings, &MidiEvent),
+    {
         //Update steams for incoming frame events
         for ge in reg_events {
             match ge {
@@ -677,7 +690,11 @@ impl AllSettings {
                     }
                 }
                 GfxEvent::ReloadEvent() => (), // needs to be handled elsewhere
-                GfxEvent::MidiEvent(_) => (),  // don't do anything for midi events here
+                GfxEvent::MidiEvent(me) => {
+                    if let Some(cb) = &midi_callback {
+                        cb(&mut self.playback[self.active_idx].stream, me);
+                    }
+                }
                 GfxEvent::KeyEvent(ke) => {
                     let selected_idx = self.active_idx;
                     match ke {
