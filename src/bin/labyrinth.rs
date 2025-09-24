@@ -1,7 +1,10 @@
 use std::{
     collections::HashMap,
     error::Error,
-    sync::{LazyLock, Mutex},
+    sync::{
+        mpsc::{channel, Receiver, Sender},
+        LazyLock, Mutex,
+    },
 };
 
 #[allow(unused_imports)]
@@ -9,8 +12,9 @@ use sdlrig::gfxinfo::{MIDI_CONTROL_CHANGE, MIDI_NOTE_OFF, MIDI_NOTE_ON};
 
 use sdlrig::{
     gfxinfo::{Asset, GfxEvent, GfxInfo, MidiEvent, Vid, VidMixer},
-    renderspec::{Mix, RenderSpec},
+    renderspec::{Mix, RenderSpec, SendCmd, SendValue},
 };
+
 use vizwasm::vizconfig::{AllSettings, MixConfig, StreamSettings, StreamSettingsAllFieldsEnum};
 fn main() {}
 
@@ -107,6 +111,7 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "castles_final".to_string(),
         "blank".to_string(),
         "towers".to_string(),
+        "castle_combo".to_string(),
         // "combo1".to_string(),
         // "combo2".to_string(),
         // "combo3".to_string(),
@@ -162,33 +167,27 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
     // generate_harmony_mix!(3);
     // generate_harmony_mix!(4);
 
-    // macro_rules! generate_combo_mix {
-    //     ($i:expr, $below:expr, $above:expr) => {
-    //         configs.push(MixConfig {
-    //             def: VidMixer::builder()
-    //                 .name(concat!("combo", $i, "_mix"))
-    //                 .header(concat!(
-    //                     include_str!("../glsl/utils.glsl"),
-    //                     "\n",
-    //                     include_str!("../glsl/harmony_header.glsl")
-    //                 ))
-    //                 .body(include_str!(concat!("../glsl/combo", $i, ".glsl")))
-    //                 .width(640)
-    //                 .height(320)
-    //                 .build(),
-    //             mix: Mix::builder()
-    //                 .name(concat!("combo", $i, "_mix"))
-    //                 .mixed($below)
-    //                 .mixed($above)
-    //                 .mixed("blank_overlay")
-    //                 .mixed("error2_overlay")
-    //                 .mixed("error3_overlay")
-    //                 .no_display(true)
-    //                 .build(),
-    //         });
-    //     };
-    // }
+    macro_rules! generate_combo_mix {
+        ($name:expr, $below:expr, $above:expr) => {
+            configs.push(MixConfig {
+                def: VidMixer::builder()
+                    .name(concat!($name, "_mix"))
+                    .header(concat!(include_str!("../glsl/utils.glsl")))
+                    .body(include_str!(concat!("../glsl/", $name, ".glsl")))
+                    .width(640)
+                    .height(480)
+                    .build(),
+                mix: Mix::builder()
+                    .name(concat!($name, "_mix"))
+                    .mixed($below)
+                    .mixed($above)
+                    .no_display(true)
+                    .build(),
+            });
+        };
+    }
 
+    generate_combo_mix!("castle_combo", "castles_final_overlay", "towers_overlay");
     // generate_combo_mix!(1, "logo_overlay", "harmony1_overlay");
     // generate_combo_mix!(2, "blank_overlay", "harmony2_overlay");
     // generate_combo_mix!(3, "the_moon_overlay", "harmony3_overlay");
@@ -274,25 +273,12 @@ pub fn decode_settings(bytes: &[u8]) {
 }
 
 const IAC: &str = "IAC Driver Bus 1";
-pub fn midi_callback(settings: &mut StreamSettings, event: &MidiEvent) {
-    eprintln!("MIDI EVENT: {:?}", event);
-    match (
-        event.device.as_str(),
-        event.channel,
-        event.kind,
-        event.key,
-        event.velocity,
-    ) {
-        (IAC, 0, MIDI_NOTE_ON, 36, v) => settings.set_rr(v as f64 / 127.0 + 1.0),
-        // (IAC, 0, MIDI_NOTE_OFF, 36, _) => settings.set_rr(1.0),
-        // (IAC, 0, MIDI_NOTE_ON, 37, v) => settings.set_warp_level(v as f64 / 127.0 * 0.3),
-        // (IAC, 0, MIDI_NOTE_OFF, 37, _) => settings.set_warp_level(0.0),
-        // (IAC, 0, MIDI_NOTE_ON, 38, v) => settings.set_distort_level(v as f64 / 127.0 * 0.3),
-        // (IAC, 0, MIDI_NOTE_OFF, 38, _) => settings.set_distort_level(0.1),
-        // (IAC, 0, MIDI_CONTROL_CHANGE, 0, v) => settings.set_rh(v as f64 / 127.0 * 0.05),
-        _ => (),
-    }
-}
+const IAC_GLSL: &str = "iac_driver_bus_1";
+const MIDI_DEVICE_VARS: LazyLock<HashMap<String, String>> = LazyLock::new(|| {
+    let mut m = HashMap::new();
+    m.insert(IAC.to_string(), IAC_GLSL.to_string());
+    m
+});
 
 #[no_mangle]
 pub fn calculate(
@@ -303,6 +289,94 @@ pub fn calculate(
     #[allow(unused)] gfx_info: &HashMap<String, GfxInfo>,
     #[allow(unused)] reg_events: &[GfxEvent],
 ) -> Result<Vec<RenderSpec>, Box<dyn Error>> {
+    // setup midi callback
+    static MIDI_CALLBACK_CHANNELS: LazyLock<Mutex<(Sender<SendCmd>, Receiver<SendCmd>)>> =
+        LazyLock::new(|| Mutex::new(channel::<SendCmd>()));
+
+    let midi_channels = MIDI_CALLBACK_CHANNELS.lock().unwrap();
+    let cb_tx = midi_channels.0.clone();
+
+    let midi_callback = move |_settings: &mut StreamSettings, event: &MidiEvent| {
+        static MIXES: [&str; 1] = ["castle_combo_mix"];
+        if let Some(glsl_device) = MIDI_DEVICE_VARS.get(&event.device) {
+            for mix in MIXES.iter() {
+                match event.kind {
+                    MIDI_NOTE_ON => {
+                        let cmd = SendCmd {
+                            mix: mix.to_string(),
+                            name: format!("note_{}_{}_{}", glsl_device, event.channel, event.key)
+                                .to_string(),
+                            value: SendValue::Float(event.velocity as f32),
+                        };
+                        // eprintln!("Sending MIDI Note ON command to glsl: {:?}", cmd);
+                        cb_tx.send(cmd).ok();
+                        cb_tx
+                            .send(SendCmd {
+                                mix: mix.to_string(),
+                                name: format!(
+                                    "note_{}_{}_{}_on",
+                                    glsl_device, event.channel, event.key
+                                )
+                                .to_string(),
+                                value: SendValue::Unsigned(1),
+                            })
+                            .ok();
+                    }
+                    MIDI_NOTE_OFF => {
+                        let cmd = SendCmd {
+                            mix: mix.to_string(),
+                            name: format!("note_{}_{}_{}", glsl_device, event.channel, event.key)
+                                .to_string(),
+                            value: SendValue::Float(0.0),
+                        };
+                        // eprintln!("Sending MIDI Note OFF command to glsl: {:?}", cmd);
+                        cb_tx.send(cmd).ok();
+                        cb_tx
+                            .send(SendCmd {
+                                mix: mix.to_string(),
+                                name: format!(
+                                    "note_{}_{}_{}_on",
+                                    glsl_device, event.channel, event.key
+                                )
+                                .to_string(),
+                                value: SendValue::Unsigned(0),
+                            })
+                            .ok();
+                    }
+                    MIDI_CONTROL_CHANGE => {
+                        let cmd = SendCmd {
+                            mix: mix.to_string(),
+                            name: format!("cc_{}_{}_{}", glsl_device, event.channel, event.key)
+                                .to_string(),
+                            value: SendValue::Float(event.velocity as f32),
+                        };
+                        // eprintln!("Sending MIDI CC command to glsl: {:?}", cmd);
+                        cb_tx.send(cmd).ok();
+                    }
+                    _ => (),
+                }
+            }
+        }
+
+        // INTERNAL MATCHING FOR SETTING MODIFICATION
+        match (
+            event.device.as_str(),
+            event.channel,
+            event.kind,
+            event.key,
+            event.velocity,
+        ) {
+            // (IAC, 0, MIDI_NOTE_ON, 36, v) => settings.set_rr(v as f64 / 127.0 + 1.0),
+            // (IAC, 0, MIDI_NOTE_OFF, 36, _) => settings.set_rr(1.0),
+            // (IAC, 0, MIDI_NOTE_ON, 37, v) => settings.set_warp_level(v as f64 / 127.0 * 0.3),
+            // (IAC, 0, MIDI_NOTE_OFF, 37, _) => settings.set_warp_level(0.0),
+            // (IAC, 0, MIDI_NOTE_ON, 38, v) => settings.set_distort_level(v as f64 / 127.0 * 0.3),
+            // (IAC, 0, MIDI_NOTE_OFF, 38, _) => settings.set_distort_level(0.1),
+            // (IAC, 0, MIDI_CONTROL_CHANGE, 0, v) => settings.set_rh(v as f64 / 127.0 * 0.05),
+            _ => (),
+        }
+    };
+
     let mut lock = SETTINGS.lock().expect("Settings mutex corrupted");
     let settings = lock.as_mut();
 
@@ -336,6 +410,11 @@ pub fn calculate(
             .stream
             .get_commands(&[StreamSettingsAllFieldsEnum::USR_VAR]),
     );
+
+    // Drain out any midi commands for glsl
+    for cmd in midi_channels.1.try_iter() {
+        specs.push(RenderSpec::SendCmd(cmd));
+    }
 
     let mut seen = HashMap::<String, Mix>::new();
 
