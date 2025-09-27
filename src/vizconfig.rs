@@ -536,7 +536,7 @@ impl AllSettings {
         midi_callback: Option<F>,
     ) -> Result<Vec<RenderSpec>, Box<dyn Error>>
     where
-        F: Fn(&mut StreamSettings, &MidiEvent),
+        F: Fn(&mut AllSettings, &MidiEvent),
     {
         static ONCE: std::sync::Once = std::sync::Once::new();
 
@@ -673,7 +673,7 @@ impl AllSettings {
         midi_callback: Option<F>,
     ) -> Result<(), Box<dyn Error>>
     where
-        F: Fn(&mut StreamSettings, &MidiEvent),
+        F: Fn(&mut AllSettings, &MidiEvent),
     {
         //Update steams for incoming frame events
         for ge in reg_events {
@@ -692,7 +692,7 @@ impl AllSettings {
                 GfxEvent::ReloadEvent() => (), // needs to be handled elsewhere
                 GfxEvent::MidiEvent(me) => {
                     if let Some(cb) = &midi_callback {
-                        cb(&mut self.playback[self.active_idx].stream, me);
+                        cb(self, me);
                     }
                 }
                 GfxEvent::KeyEvent(ke) => {

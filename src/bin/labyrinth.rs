@@ -15,7 +15,7 @@ use sdlrig::{
     renderspec::{Mix, RenderSpec, SendCmd, SendValue},
 };
 
-use vizwasm::vizconfig::{AllSettings, MixConfig, StreamSettings, StreamSettingsAllFieldsEnum};
+use vizwasm::vizconfig::{AllSettings, MixConfig, StreamSettingsAllFieldsEnum};
 fn main() {}
 
 static STREAM_PATH: &'static str = "/Users/ttie/Desktop/labyrinth/streams";
@@ -40,7 +40,7 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
         );
     }
 
-    let vid640x480 = ["castles_final", "towers"];
+    let vid640x480 = ["castles_final", "towers", "undead"];
     for vid_name in vid640x480.iter() {
         vids.push(
             Vid::builder()
@@ -112,6 +112,7 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "blank".to_string(),
         "towers".to_string(),
         "castle_combo".to_string(),
+        "undead".to_string(),
         // "combo1".to_string(),
         // "combo2".to_string(),
         // "combo3".to_string(),
@@ -294,9 +295,68 @@ pub fn calculate(
         LazyLock::new(|| Mutex::new(channel::<SendCmd>()));
 
     let midi_channels = MIDI_CALLBACK_CHANNELS.lock().unwrap();
-    let cb_tx = midi_channels.0.clone();
 
-    let midi_callback = move |_settings: &mut StreamSettings, event: &MidiEvent| {
+    static mut LAST_PRESET: usize = 0;
+    static mut LAST_VELOCITY: u8 = 0;
+    let _cb_tx = midi_channels.0.clone();
+    let undead_callback = move |all_settings: &mut AllSettings, event: &MidiEvent| {
+        for i in 0..all_settings.playback.len() {
+            if all_settings.playback[i].stream.ident.name == "undead" {
+                let settings = &mut all_settings.playback[i];
+                match (
+                    event.device.as_str(),
+                    event.channel,
+                    event.kind,
+                    event.key,
+                    event.velocity,
+                ) {
+                    ("IAC Driver Bus 1", 0, MIDI_CONTROL_CHANGE, 1, v) => {
+                        if v > unsafe { LAST_VELOCITY } + 20 {
+                            for j in 0..settings.presets.saved.len() {
+                                if j != unsafe { LAST_PRESET } {
+                                    continue;
+                                }
+                                eprintln!("Applying preset {} to undead stream", j);
+                                let changes = settings.presets.saved[j].clone();
+                                for k in 0..changes.len() {
+                                    if changes[k].field == StreamSettingsAllFieldsEnum::EXACT_SEC {
+                                        settings.stream.apply_diff(&[changes[k].clone()]);
+                                    }
+                                }
+                            }
+                            unsafe {
+                                LAST_PRESET = (LAST_PRESET + 1) % 6;
+                            }
+                        }
+                        unsafe {
+                            LAST_VELOCITY = v;
+                        }
+                        if v > 50 {
+                            settings
+                                .stream
+                                .set_threshold(0.1 - 0.1 * v as f64 / 127.0 + 0.005);
+                        } else {
+                            settings.stream.set_threshold(0.3 - 0.3 * v as f64 / 127.0);
+                        }
+                    }
+                    ("IAC Driver Bus 1", 0, MIDI_NOTE_ON, 41, _v) => {
+                        settings.stream.set_warp_level(0.7);
+                    }
+                    ("IAC Driver Bus 1", 0, MIDI_NOTE_OFF, 41, _v) => {
+                        settings.stream.set_warp_level(0.0);
+                    }
+                    _ => eprintln!(
+                        "Undead MIDI event unmatched: device='{}' chan={} kind={} key={} vel={}",
+                        event.device, event.channel, event.kind, event.key, event.velocity
+                    ),
+                }
+                return;
+            }
+        }
+    };
+
+    let cb_tx = midi_channels.0.clone();
+    let _midi_callback = move |_all_settings: &mut AllSettings, event: &MidiEvent| {
         static MIXES: [&str; 1] = ["castle_combo_mix"];
         if let Some(glsl_device) = MIDI_DEVICE_VARS.get(&event.device) {
             for mix in MIXES.iter() {
@@ -380,7 +440,8 @@ pub fn calculate(
     let mut lock = SETTINGS.lock().expect("Settings mutex corrupted");
     let settings = lock.as_mut();
 
-    let mut specs = settings.update_record_and_get_specs(reg_events, frame, Some(midi_callback))?;
+    let mut specs =
+        settings.update_record_and_get_specs(reg_events, frame, Some(undead_callback))?;
 
     // Wire up usr_toggle to actually count up usr_var as well every change
     for i in 0..specs.len() {
