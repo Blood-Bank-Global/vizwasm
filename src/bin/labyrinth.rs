@@ -273,13 +273,9 @@ pub fn decode_settings(bytes: &[u8]) {
     }
 }
 
-const IAC: &str = "IAC Driver Bus 1";
-const IAC_GLSL: &str = "iac_driver_bus_1";
-const MIDI_DEVICE_VARS: LazyLock<HashMap<String, String>> = LazyLock::new(|| {
-    let mut m = HashMap::new();
-    m.insert(IAC.to_string(), IAC_GLSL.to_string());
-    m
-});
+// setup midi callback
+static MIDI_CALLBACK_CHANNELS: LazyLock<Mutex<(Sender<SendCmd>, Receiver<SendCmd>)>> =
+    LazyLock::new(|| Mutex::new(channel::<SendCmd>()));
 
 #[no_mangle]
 pub fn calculate(
@@ -290,158 +286,11 @@ pub fn calculate(
     #[allow(unused)] gfx_info: &HashMap<String, GfxInfo>,
     #[allow(unused)] reg_events: &[GfxEvent],
 ) -> Result<Vec<RenderSpec>, Box<dyn Error>> {
-    // setup midi callback
-    static MIDI_CALLBACK_CHANNELS: LazyLock<Mutex<(Sender<SendCmd>, Receiver<SendCmd>)>> =
-        LazyLock::new(|| Mutex::new(channel::<SendCmd>()));
-
-    let midi_channels = MIDI_CALLBACK_CHANNELS.lock().unwrap();
-
-    static mut LAST_PRESET: usize = 0;
-    static mut LAST_VELOCITY: u8 = 0;
-    let _cb_tx = midi_channels.0.clone();
-    let undead_callback = move |all_settings: &mut AllSettings, event: &MidiEvent| {
-        for i in 0..all_settings.playback.len() {
-            if all_settings.playback[i].stream.ident.name == "undead" {
-                let settings = &mut all_settings.playback[i];
-                match (
-                    event.device.as_str(),
-                    event.channel,
-                    event.kind,
-                    event.key,
-                    event.velocity,
-                ) {
-                    ("IAC Driver Bus 1", 0, MIDI_CONTROL_CHANGE, 1, v) => {
-                        if v > unsafe { LAST_VELOCITY } + 20 {
-                            for j in 0..settings.presets.saved.len() {
-                                if j != unsafe { LAST_PRESET } {
-                                    continue;
-                                }
-                                eprintln!("Applying preset {} to undead stream", j);
-                                let changes = settings.presets.saved[j].clone();
-                                for k in 0..changes.len() {
-                                    if changes[k].field == StreamSettingsAllFieldsEnum::EXACT_SEC {
-                                        settings.stream.apply_diff(&[changes[k].clone()]);
-                                    }
-                                }
-                            }
-                            unsafe {
-                                LAST_PRESET = (LAST_PRESET + 1) % 6;
-                            }
-                        }
-                        unsafe {
-                            LAST_VELOCITY = v;
-                        }
-                        if v > 50 {
-                            settings
-                                .stream
-                                .set_threshold(0.1 - 0.1 * v as f64 / 127.0 + 0.005);
-                        } else {
-                            settings.stream.set_threshold(0.3 - 0.3 * v as f64 / 127.0);
-                        }
-                    }
-                    ("IAC Driver Bus 1", 0, MIDI_NOTE_ON, 41, _v) => {
-                        settings.stream.set_warp_level(0.7);
-                    }
-                    ("IAC Driver Bus 1", 0, MIDI_NOTE_OFF, 41, _v) => {
-                        settings.stream.set_warp_level(0.0);
-                    }
-                    _ => eprintln!(
-                        "Undead MIDI event unmatched: device='{}' chan={} kind={} key={} vel={}",
-                        event.device, event.channel, event.kind, event.key, event.velocity
-                    ),
-                }
-                return;
-            }
-        }
-    };
-
-    let cb_tx = midi_channels.0.clone();
-    let _midi_callback = move |_all_settings: &mut AllSettings, event: &MidiEvent| {
-        static MIXES: [&str; 1] = ["castle_combo_mix"];
-        if let Some(glsl_device) = MIDI_DEVICE_VARS.get(&event.device) {
-            for mix in MIXES.iter() {
-                match event.kind {
-                    MIDI_NOTE_ON => {
-                        let cmd = SendCmd {
-                            mix: mix.to_string(),
-                            name: format!("note_{}_{}_{}", glsl_device, event.channel, event.key)
-                                .to_string(),
-                            value: SendValue::Float(event.velocity as f32),
-                        };
-                        // eprintln!("Sending MIDI Note ON command to glsl: {:?}", cmd);
-                        cb_tx.send(cmd).ok();
-                        cb_tx
-                            .send(SendCmd {
-                                mix: mix.to_string(),
-                                name: format!(
-                                    "note_{}_{}_{}_on",
-                                    glsl_device, event.channel, event.key
-                                )
-                                .to_string(),
-                                value: SendValue::Unsigned(1),
-                            })
-                            .ok();
-                    }
-                    MIDI_NOTE_OFF => {
-                        let cmd = SendCmd {
-                            mix: mix.to_string(),
-                            name: format!("note_{}_{}_{}", glsl_device, event.channel, event.key)
-                                .to_string(),
-                            value: SendValue::Float(0.0),
-                        };
-                        // eprintln!("Sending MIDI Note OFF command to glsl: {:?}", cmd);
-                        cb_tx.send(cmd).ok();
-                        cb_tx
-                            .send(SendCmd {
-                                mix: mix.to_string(),
-                                name: format!(
-                                    "note_{}_{}_{}_on",
-                                    glsl_device, event.channel, event.key
-                                )
-                                .to_string(),
-                                value: SendValue::Unsigned(0),
-                            })
-                            .ok();
-                    }
-                    MIDI_CONTROL_CHANGE => {
-                        let cmd = SendCmd {
-                            mix: mix.to_string(),
-                            name: format!("cc_{}_{}_{}", glsl_device, event.channel, event.key)
-                                .to_string(),
-                            value: SendValue::Float(event.velocity as f32),
-                        };
-                        // eprintln!("Sending MIDI CC command to glsl: {:?}", cmd);
-                        cb_tx.send(cmd).ok();
-                    }
-                    _ => (),
-                }
-            }
-        }
-
-        // INTERNAL MATCHING FOR SETTING MODIFICATION
-        match (
-            event.device.as_str(),
-            event.channel,
-            event.kind,
-            event.key,
-            event.velocity,
-        ) {
-            // (IAC, 0, MIDI_NOTE_ON, 36, v) => settings.set_rr(v as f64 / 127.0 + 1.0),
-            // (IAC, 0, MIDI_NOTE_OFF, 36, _) => settings.set_rr(1.0),
-            // (IAC, 0, MIDI_NOTE_ON, 37, v) => settings.set_warp_level(v as f64 / 127.0 * 0.3),
-            // (IAC, 0, MIDI_NOTE_OFF, 37, _) => settings.set_warp_level(0.0),
-            // (IAC, 0, MIDI_NOTE_ON, 38, v) => settings.set_distort_level(v as f64 / 127.0 * 0.3),
-            // (IAC, 0, MIDI_NOTE_OFF, 38, _) => settings.set_distort_level(0.1),
-            // (IAC, 0, MIDI_CONTROL_CHANGE, 0, v) => settings.set_rh(v as f64 / 127.0 * 0.05),
-            _ => (),
-        }
-    };
-
     let mut lock = SETTINGS.lock().expect("Settings mutex corrupted");
     let settings = lock.as_mut();
 
     let mut specs =
-        settings.update_record_and_get_specs(reg_events, frame, Some(undead_callback))?;
+        settings.update_record_and_get_specs(reg_events, frame, Some(castle_combo_cb))?;
 
     // Wire up usr_toggle to actually count up usr_var as well every change
     for i in 0..specs.len() {
@@ -473,8 +322,11 @@ pub fn calculate(
     );
 
     // Drain out any midi commands for glsl
-    for cmd in midi_channels.1.try_iter() {
-        specs.push(RenderSpec::SendCmd(cmd));
+    {
+        let midi_channels = MIDI_CALLBACK_CHANNELS.lock().unwrap();
+        for cmd in midi_channels.1.try_iter() {
+            specs.push(RenderSpec::SendCmd(cmd));
+        }
     }
 
     let mut seen = HashMap::<String, Mix>::new();
@@ -566,4 +418,98 @@ pub fn calculate(
     let to_return = specs.clone();
     settings.clean_up_by_specs(&mut specs);
     Ok(to_return)
+}
+
+const IAC: &str = "IAC Driver Bus 1";
+const IAC_GLSL: &str = "iac_driver_bus_1";
+const MIDI_DEVICE_VARS: LazyLock<HashMap<String, String>> = LazyLock::new(|| {
+    let mut m = HashMap::new();
+    m.insert(IAC.to_string(), IAC_GLSL.to_string());
+    m
+});
+// MIDI callback function for castle_combo
+pub fn castle_combo_cb(_all_settings: &mut AllSettings, event: &MidiEvent) {
+    static CB_TX: LazyLock<Sender<SendCmd>> = LazyLock::new(|| {
+        let midi_channels = MIDI_CALLBACK_CHANNELS.lock().unwrap();
+        midi_channels.0.clone()
+    });
+
+    static MIXES: [&str; 1] = ["castle_combo_mix"];
+    if let Some(glsl_device) = MIDI_DEVICE_VARS.get(&event.device) {
+        for mix in MIXES.iter() {
+            match event.kind {
+                MIDI_NOTE_ON => {
+                    let cmd = SendCmd {
+                        mix: mix.to_string(),
+                        name: format!("note_{}_{}_{}", glsl_device, event.channel, event.key)
+                            .to_string(),
+                        value: SendValue::Float(event.velocity as f32),
+                    };
+                    // eprintln!("Sending MIDI Note ON command to glsl: {:?}", cmd);
+                    CB_TX.send(cmd).ok();
+                    CB_TX
+                        .send(SendCmd {
+                            mix: mix.to_string(),
+                            name: format!(
+                                "note_{}_{}_{}_on",
+                                glsl_device, event.channel, event.key
+                            )
+                            .to_string(),
+                            value: SendValue::Unsigned(1),
+                        })
+                        .ok();
+                }
+                MIDI_NOTE_OFF => {
+                    let cmd = SendCmd {
+                        mix: mix.to_string(),
+                        name: format!("note_{}_{}_{}", glsl_device, event.channel, event.key)
+                            .to_string(),
+                        value: SendValue::Float(0.0),
+                    };
+                    // eprintln!("Sending MIDI Note OFF command to glsl: {:?}", cmd);
+                    CB_TX.send(cmd).ok();
+                    CB_TX
+                        .send(SendCmd {
+                            mix: mix.to_string(),
+                            name: format!(
+                                "note_{}_{}_{}_on",
+                                glsl_device, event.channel, event.key
+                            )
+                            .to_string(),
+                            value: SendValue::Unsigned(0),
+                        })
+                        .ok();
+                }
+                MIDI_CONTROL_CHANGE => {
+                    let cmd = SendCmd {
+                        mix: mix.to_string(),
+                        name: format!("cc_{}_{}_{}", glsl_device, event.channel, event.key)
+                            .to_string(),
+                        value: SendValue::Float(event.velocity as f32),
+                    };
+                    // eprintln!("Sending MIDI CC command to glsl: {:?}", cmd);
+                    CB_TX.send(cmd).ok();
+                }
+                _ => (),
+            }
+        }
+    }
+
+    // INTERNAL MATCHING FOR SETTING MODIFICATION
+    match (
+        event.device.as_str(),
+        event.channel,
+        event.kind,
+        event.key,
+        event.velocity,
+    ) {
+        // (IAC, 0, MIDI_NOTE_ON, 36, v) => settings.set_rr(v as f64 / 127.0 + 1.0),
+        // (IAC, 0, MIDI_NOTE_OFF, 36, _) => settings.set_rr(1.0),
+        // (IAC, 0, MIDI_NOTE_ON, 37, v) => settings.set_warp_level(v as f64 / 127.0 * 0.3),
+        // (IAC, 0, MIDI_NOTE_OFF, 37, _) => settings.set_warp_level(0.0),
+        // (IAC, 0, MIDI_NOTE_ON, 38, v) => settings.set_distort_level(v as f64 / 127.0 * 0.3),
+        // (IAC, 0, MIDI_NOTE_OFF, 38, _) => settings.set_distort_level(0.1),
+        // (IAC, 0, MIDI_CONTROL_CHANGE, 0, v) => settings.set_rh(v as f64 / 127.0 * 0.05),
+        _ => (),
+    }
 }
