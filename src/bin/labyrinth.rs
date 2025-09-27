@@ -289,8 +289,7 @@ pub fn calculate(
     let mut lock = SETTINGS.lock().expect("Settings mutex corrupted");
     let settings = lock.as_mut();
 
-    let mut specs =
-        settings.update_record_and_get_specs(reg_events, frame, Some(castle_combo_cb))?;
+    let mut specs = settings.update_record_and_get_specs(reg_events, frame, Some(mega_cb))?;
 
     // Wire up usr_toggle to actually count up usr_var as well every change
     for i in 0..specs.len() {
@@ -427,20 +426,25 @@ const MIDI_DEVICE_VARS: LazyLock<HashMap<String, String>> = LazyLock::new(|| {
     m.insert(IAC.to_string(), IAC_GLSL.to_string());
     m
 });
-// MIDI callback function for castle_combo
-pub fn castle_combo_cb(_all_settings: &mut AllSettings, event: &MidiEvent) {
+
+pub fn mega_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
+    glsl_midi_cb(all_settings, event);
+    castle_combo_cb(all_settings, event);
+}
+
+// Generic send for all midi devices to GLSL vars
+pub fn glsl_midi_cb(_all_settings: &mut AllSettings, event: &MidiEvent) {
     static CB_TX: LazyLock<Sender<SendCmd>> = LazyLock::new(|| {
         let midi_channels = MIDI_CALLBACK_CHANNELS.lock().unwrap();
         midi_channels.0.clone()
     });
 
-    static MIXES: [&str; 1] = ["castle_combo_mix"];
     if let Some(glsl_device) = MIDI_DEVICE_VARS.get(&event.device) {
-        for mix in MIXES.iter() {
+        for mix in PLAYBACK_NAMES.iter() {
             match event.kind {
                 MIDI_NOTE_ON => {
                     let cmd = SendCmd {
-                        mix: mix.to_string(),
+                        mix: format!("{mix}_mix").to_string(),
                         name: format!("note_{}_{}_{}", glsl_device, event.channel, event.key)
                             .to_string(),
                         value: SendValue::Float(event.velocity as f32),
@@ -449,7 +453,7 @@ pub fn castle_combo_cb(_all_settings: &mut AllSettings, event: &MidiEvent) {
                     CB_TX.send(cmd).ok();
                     CB_TX
                         .send(SendCmd {
-                            mix: mix.to_string(),
+                            mix: format!("{mix}_mix").to_string(),
                             name: format!(
                                 "note_{}_{}_{}_on",
                                 glsl_device, event.channel, event.key
@@ -461,7 +465,7 @@ pub fn castle_combo_cb(_all_settings: &mut AllSettings, event: &MidiEvent) {
                 }
                 MIDI_NOTE_OFF => {
                     let cmd = SendCmd {
-                        mix: mix.to_string(),
+                        mix: format!("{mix}_mix").to_string(),
                         name: format!("note_{}_{}_{}", glsl_device, event.channel, event.key)
                             .to_string(),
                         value: SendValue::Float(0.0),
@@ -470,7 +474,7 @@ pub fn castle_combo_cb(_all_settings: &mut AllSettings, event: &MidiEvent) {
                     CB_TX.send(cmd).ok();
                     CB_TX
                         .send(SendCmd {
-                            mix: mix.to_string(),
+                            mix: format!("{mix}_mix").to_string(),
                             name: format!(
                                 "note_{}_{}_{}_on",
                                 glsl_device, event.channel, event.key
@@ -482,7 +486,7 @@ pub fn castle_combo_cb(_all_settings: &mut AllSettings, event: &MidiEvent) {
                 }
                 MIDI_CONTROL_CHANGE => {
                     let cmd = SendCmd {
-                        mix: mix.to_string(),
+                        mix: format!("{mix}_mix").to_string(),
                         name: format!("cc_{}_{}_{}", glsl_device, event.channel, event.key)
                             .to_string(),
                         value: SendValue::Float(event.velocity as f32),
@@ -494,6 +498,14 @@ pub fn castle_combo_cb(_all_settings: &mut AllSettings, event: &MidiEvent) {
             }
         }
     }
+}
+
+// MIDI callback function for castle_combo
+pub fn castle_combo_cb(_all_settings: &mut AllSettings, event: &MidiEvent) {
+    static _CB_TX: LazyLock<Sender<SendCmd>> = LazyLock::new(|| {
+        let midi_channels = MIDI_CALLBACK_CHANNELS.lock().unwrap();
+        midi_channels.0.clone()
+    });
 
     // INTERNAL MATCHING FOR SETTING MODIFICATION
     match (
