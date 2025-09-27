@@ -40,7 +40,7 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
         );
     }
 
-    let vid640x480 = ["castles_final", "towers", "undead"];
+    let vid640x480 = ["castles_final", "towers", "undead", "jester", "waves"];
     for vid_name in vid640x480.iter() {
         vids.push(
             Vid::builder()
@@ -71,38 +71,6 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
         );
     }
 
-    // let vid1280x720 = ["error2", "error3"];
-    // for vid_name in vid1280x720.iter() {
-    //     vids.push(
-    //         Vid::builder()
-    //             .name(vid_name)
-    //             .path(format!("{STREAM_PATH}/{}.mp4", vid_name))
-    //             .resolution((1280, 720))
-    //             .tbq((1, 12800))
-    //             .pix_fmt("yuv420p")
-    //             .repeat(true)
-    //             .realtime(false)
-    //             .hardware_decode(false)
-    //             .build(),
-    //     );
-    // }
-
-    // let vids1920x1080 = ["logo", "statue"];
-    // for vid_name in vids1920x1080.iter() {
-    //     vids.push(
-    //         Vid::builder()
-    //             .name(vid_name)
-    //             .path(format!("{STREAM_PATH}/{}.mp4", vid_name))
-    //             .resolution((1920, 1080))
-    //             .tbq((1, 12288))
-    //             .pix_fmt("yuv420p")
-    //             .repeat(true)
-    //             .realtime(false)
-    //             .hardware_decode(false)
-    //             .build(),
-    //     );
-    // }
-
     vids
 });
 
@@ -113,10 +81,9 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "towers".to_string(),
         "castle_combo".to_string(),
         "undead".to_string(),
-        // "combo1".to_string(),
-        // "combo2".to_string(),
-        // "combo3".to_string(),
-        // "combo4".to_string(),
+        "jester".to_string(),
+        "waves".to_string(),
+        "jester_combo".to_string(),
     ];
     names
 });
@@ -140,34 +107,6 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
         });
     }
 
-    // macro_rules! generate_harmony_mix {
-    //     ($i:expr) => {
-    //         configs.push(MixConfig {
-    //             def: VidMixer::builder()
-    //                 .name(concat!("harmony", $i, "_mix"))
-    //                 .header(concat!(
-    //                     include_str!("../glsl/utils.glsl"),
-    //                     "\n",
-    //                     include_str!("../glsl/harmony_header.glsl")
-    //                 ))
-    //                 .body(include_str!(concat!("../glsl/harmony", $i, ".glsl")))
-    //                 .width(2560)
-    //                 .height(1280)
-    //                 .build(),
-    //             mix: Mix::builder()
-    //                 .name(concat!("harmony", $i, "_mix"))
-    //                 .mixed("blank_overlay")
-    //                 .no_display(true)
-    //                 .build(),
-    //         });
-    //     };
-    // }
-
-    // generate_harmony_mix!(1);
-    // generate_harmony_mix!(2);
-    // generate_harmony_mix!(3);
-    // generate_harmony_mix!(4);
-
     macro_rules! generate_combo_mix {
         ($name:expr, $below:expr, $above:expr) => {
             configs.push(MixConfig {
@@ -189,10 +128,7 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
     }
 
     generate_combo_mix!("castle_combo", "castles_final_overlay", "towers_overlay");
-    // generate_combo_mix!(1, "logo_overlay", "harmony1_overlay");
-    // generate_combo_mix!(2, "blank_overlay", "harmony2_overlay");
-    // generate_combo_mix!(3, "the_moon_overlay", "harmony3_overlay");
-    // generate_combo_mix!(4, "statue_overlay", "harmony4_overlay");
+    generate_combo_mix!("jester_combo", "jester_overlay", "waves_overlay");
 
     configs
 });
@@ -439,6 +375,23 @@ pub fn glsl_midi_cb(_all_settings: &mut AllSettings, event: &MidiEvent) {
         midi_channels.0.clone()
     });
 
+    let debug_kind = match event.kind {
+        MIDI_NOTE_ON => "note",
+        MIDI_NOTE_OFF => "note",
+        MIDI_CONTROL_CHANGE => "cc",
+        _ => "???",
+    };
+    let debug_device = MIDI_DEVICE_VARS
+        .get(&event.device)
+        .cloned()
+        .or_else(|| Some("???".to_string()))
+        .unwrap();
+
+    eprintln!(
+        "{debug_kind}_{debug_device}_{}_{} = {}",
+        event.channel, event.key, event.velocity
+    );
+
     if let Some(glsl_device) = MIDI_DEVICE_VARS.get(&event.device) {
         for mix in PLAYBACK_NAMES.iter() {
             match event.kind {
@@ -502,6 +455,32 @@ pub fn glsl_midi_cb(_all_settings: &mut AllSettings, event: &MidiEvent) {
 
 // MIDI callback function for castle_combo
 pub fn castle_combo_cb(_all_settings: &mut AllSettings, event: &MidiEvent) {
+    static _CB_TX: LazyLock<Sender<SendCmd>> = LazyLock::new(|| {
+        let midi_channels = MIDI_CALLBACK_CHANNELS.lock().unwrap();
+        midi_channels.0.clone()
+    });
+
+    // INTERNAL MATCHING FOR SETTING MODIFICATION
+    match (
+        event.device.as_str(),
+        event.channel,
+        event.kind,
+        event.key,
+        event.velocity,
+    ) {
+        // (IAC, 0, MIDI_NOTE_ON, 36, v) => settings.set_rr(v as f64 / 127.0 + 1.0),
+        // (IAC, 0, MIDI_NOTE_OFF, 36, _) => settings.set_rr(1.0),
+        // (IAC, 0, MIDI_NOTE_ON, 37, v) => settings.set_warp_level(v as f64 / 127.0 * 0.3),
+        // (IAC, 0, MIDI_NOTE_OFF, 37, _) => settings.set_warp_level(0.0),
+        // (IAC, 0, MIDI_NOTE_ON, 38, v) => settings.set_distort_level(v as f64 / 127.0 * 0.3),
+        // (IAC, 0, MIDI_NOTE_OFF, 38, _) => settings.set_distort_level(0.1),
+        // (IAC, 0, MIDI_CONTROL_CHANGE, 0, v) => settings.set_rh(v as f64 / 127.0 * 0.05),
+        _ => (),
+    }
+}
+
+// 02 Jester
+pub fn fool_cb(_all_settings: &mut AllSettings, event: &MidiEvent) {
     static _CB_TX: LazyLock<Sender<SendCmd>> = LazyLock::new(|| {
         let midi_channels = MIDI_CALLBACK_CHANNELS.lock().unwrap();
         midi_channels.0.clone()
