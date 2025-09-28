@@ -40,7 +40,14 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
         );
     }
 
-    let vid640x480 = ["castles_final", "towers", "undead", "jester", "waves"];
+    let vid640x480 = [
+        "castles_final",
+        "towers",
+        "undead",
+        "jester",
+        "waves",
+        "uncanny",
+    ];
     for vid_name in vid640x480.iter() {
         vids.push(
             Vid::builder()
@@ -84,6 +91,7 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "jester".to_string(),
         "waves".to_string(),
         "jester_combo".to_string(),
+        "uncanny".to_string(),
     ];
     names
 });
@@ -366,6 +374,7 @@ const MIDI_DEVICE_VARS: LazyLock<HashMap<String, String>> = LazyLock::new(|| {
 pub fn mega_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
     glsl_midi_cb(all_settings, event);
     castle_combo_cb(all_settings, event);
+    uncanny_cb(all_settings, event);
 }
 
 // Generic send for all midi devices to GLSL vars
@@ -502,5 +511,60 @@ pub fn fool_cb(_all_settings: &mut AllSettings, event: &MidiEvent) {
         // (IAC, 0, MIDI_NOTE_OFF, 38, _) => settings.set_distort_level(0.1),
         // (IAC, 0, MIDI_CONTROL_CHANGE, 0, v) => settings.set_rh(v as f64 / 127.0 * 0.05),
         _ => (),
+    }
+}
+
+// 03 uncanny
+pub fn uncanny_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
+    static _CB_TX: LazyLock<Sender<SendCmd>> = LazyLock::new(|| {
+        let midi_channels = MIDI_CALLBACK_CHANNELS.lock().unwrap();
+        midi_channels.0.clone()
+    });
+
+    static IDX: LazyLock<Option<usize>> = LazyLock::new(|| {
+        let mut idx = None;
+        for i in 0..PLAYBACK_NAMES.len() {
+            if PLAYBACK_NAMES[i] == "uncanny" {
+                idx.replace(i);
+                break;
+            }
+        }
+        idx
+    });
+    if let Some(idx) = *IDX {
+        if all_settings.active_idx != idx && all_settings.display_idx != idx {
+            return;
+        }
+
+        let stream = &mut all_settings.playback[idx].stream;
+        // INTERNAL MATCHING FOR SETTING MODIFICATION
+        match (
+            event.device.as_str(),
+            event.channel,
+            event.kind,
+            event.key,
+            event.velocity,
+        ) {
+            (IAC, 0, MIDI_NOTE_ON, 60.., _) => {
+                stream.set_rr(0.0);
+                stream.set_rg(1.0);
+                stream.set_gg(0.0);
+                stream.set_bg(1.0);
+                stream.set_bb(0.0);
+                stream.set_rb(1.0);
+            }
+            (IAC, 0, MIDI_NOTE_OFF, 60.., _) => {
+                stream.set_rr(1.0);
+                stream.set_gg(1.0);
+                stream.set_bb(1.0);
+            }
+            (IAC, 1, MIDI_NOTE_ON, k, _) => {
+                stream.set_warp_level(k as f64 / 127.0 * 0.2);
+            }
+            (IAC, 1, MIDI_NOTE_OFF, _, _) => {
+                stream.set_warp_level(0.0);
+            }
+            _ => (),
+        }
     }
 }
