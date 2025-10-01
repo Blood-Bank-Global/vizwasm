@@ -24,7 +24,7 @@ static ASSET_PATH: &'static str = "/Users/ttie/Desktop/common_data";
 static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
     let mut vids = vec![];
 
-    let vid640x320 = [/*"the_moon",*/ "blank"];
+    let vid640x320 = ["blank"];
     for vid_name in vid640x320.iter() {
         vids.push(
             Vid::builder()
@@ -47,6 +47,7 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
         "jester",
         "waves",
         "uncanny",
+        "fire",
     ];
     for vid_name in vid640x480.iter() {
         vids.push(
@@ -62,7 +63,7 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
                 .build(),
         );
     }
-    let pngs640x480 = ["wall_demo"];
+    let pngs640x480: &[&str] = &[];
     for png_name in pngs640x480.iter() {
         vids.push(
             Vid::builder()
@@ -92,6 +93,7 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "waves".to_string(),
         "jester_combo".to_string(),
         "uncanny".to_string(),
+        "fire".to_string(),
     ];
     names
 });
