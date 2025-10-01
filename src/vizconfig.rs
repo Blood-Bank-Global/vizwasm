@@ -1302,7 +1302,7 @@ loops: [{}], loop capture: {}
 {}[12] Scrub {:.3}
  Selected {}
  Duration: {}
- ts: {}/{}
+ ts: {:-6}/{:-6}
 "#,
             self.playback[self.active_idx]
                 .loops
