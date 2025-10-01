@@ -377,6 +377,8 @@ pub fn mega_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
     glsl_midi_cb(all_settings, event);
     castle_combo_cb(all_settings, event);
     uncanny_cb(all_settings, event);
+    fool_cb(all_settings, event);
+    fire_cb(all_settings, event);
 }
 
 // Generic send for all midi devices to GLSL vars
@@ -392,6 +394,12 @@ pub fn glsl_midi_cb(_all_settings: &mut AllSettings, event: &MidiEvent) {
         MIDI_CONTROL_CHANGE => "cc",
         _ => "???",
     };
+
+    let on_off = match event.kind {
+        MIDI_NOTE_ON => "_on",
+        MIDI_NOTE_OFF => "_off",
+        _ => "",
+    };
     let debug_device = MIDI_DEVICE_VARS
         .get(&event.device)
         .cloned()
@@ -399,8 +407,8 @@ pub fn glsl_midi_cb(_all_settings: &mut AllSettings, event: &MidiEvent) {
         .unwrap();
 
     eprintln!(
-        "{debug_kind}_{debug_device}_{}_{} = {}",
-        event.channel, event.key, event.velocity
+        "{debug_kind}_{debug_device}_{}_{}_{} = {}",
+        event.channel, event.key, on_off, event.velocity
     );
 
     if let Some(glsl_device) = MIDI_DEVICE_VARS.get(&event.device) {
@@ -565,6 +573,91 @@ pub fn uncanny_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
             }
             (IAC, 1, MIDI_NOTE_OFF, _, _) => {
                 stream.set_warp_level(0.0);
+            }
+            _ => (),
+        }
+    }
+}
+
+pub fn fire_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
+    static _CB_TX: LazyLock<Sender<SendCmd>> = LazyLock::new(|| {
+        let midi_channels = MIDI_CALLBACK_CHANNELS.lock().unwrap();
+        midi_channels.0.clone()
+    });
+
+    static TIME_CODES: &[f64] = &[
+        1.0,
+        142.0 / 15.0,
+        133.0 / 10.0,
+        503.0 / 30.0,
+        191.0 / 10.0,
+        209.0 / 10.0,
+        761.0 / 30.0,
+        397.0 / 15.0,
+        291.0 / 10.0,
+        454.0 / 15.0,
+        162.0 / 5.0,
+        1019.0 / 30.0,
+        586.0 / 15.0,
+        139.0 / 3.0,
+        491.0 / 10.0,
+    ];
+    static LAST_CODE: Mutex<usize> = Mutex::new(0);
+    static IDX: LazyLock<Option<usize>> = LazyLock::new(|| {
+        let mut idx = None;
+        for i in 0..PLAYBACK_NAMES.len() {
+            if PLAYBACK_NAMES[i] == "fire" {
+                idx.replace(i);
+                break;
+            }
+        }
+        idx
+    });
+    if let Some(idx) = *IDX {
+        if all_settings.active_idx != idx && all_settings.display_idx != idx {
+            return;
+        }
+
+        let stream = &mut all_settings.playback[idx].stream;
+        // INTERNAL MATCHING FOR SETTING MODIFICATION
+        match (
+            event.device.as_str(),
+            event.channel,
+            event.kind,
+            event.key,
+            event.velocity,
+        ) {
+            (IAC, 0, MIDI_NOTE_ON, 36, _) => {
+                let mut last_code = LAST_CODE.lock().unwrap();
+                let curr = stream.real_ts.0 as f64 / stream.real_ts.1 as f64;
+                if curr >= *TIME_CODES.last().unwrap_or(&0.0) {
+                    *last_code = 0;
+                    stream.set_exact_sec(*TIME_CODES.first().unwrap_or(&1.0));
+                } else {
+                    for tc in TIME_CODES.iter() {
+                        if *tc > curr {
+                            stream.set_exact_sec(*tc);
+                            break;
+                        }
+                    }
+                }
+            }
+            (IAC, 0, MIDI_NOTE_ON, 37, _) => stream.set_flash_enable(1),
+            (IAC, 0, MIDI_NOTE_OFF, 37, _) => stream.set_flash_enable(0),
+            (IAC, 0, MIDI_NOTE_ON, 38, _) => {
+                stream.set_rr(2.0);
+                stream.set_bb(0.5);
+            }
+            (IAC, 0, MIDI_NOTE_OFF, 38, _) => {
+                stream.set_rr(1.0);
+                stream.set_bb(1.0);
+            }
+            (IAC, 0, MIDI_NOTE_ON, 39, _) => {
+                if stream.video_key_enable() > 0 {
+                    stream.set_video_key_enable(0);
+                } else {
+                    stream.set_video_key_enable(1);
+                }
             }
             _ => (),
         }
