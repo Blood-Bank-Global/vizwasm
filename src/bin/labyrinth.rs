@@ -52,6 +52,18 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
         "vertigo_flowers",
         "vertigo_scenes",
         "vertigo_swirl",
+        "toxic_bg",
+        "toxic_boss",
+        "toxic_cans",
+        "toxic_door",
+        "toxic_dunk",
+        "toxic_guy",
+        "toxic_mop",
+        "toxic_plant",
+        "toxic_rat",
+        "toxic_static",
+        "toxic_truck",
+        "toxic_world",
     ];
     for vid_name in vid640x480.iter() {
         vids.push(
@@ -103,6 +115,19 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "vertigo_scenes".to_string(),
         "vertigo_swirl".to_string(),
         "vertigo_combo".to_string(),
+        "toxic_bg".to_string(),
+        "toxic_boss".to_string(),
+        "toxic_cans".to_string(),
+        "toxic_door".to_string(),
+        "toxic_dunk".to_string(),
+        "toxic_guy".to_string(),
+        "toxic_mop".to_string(),
+        "toxic_plant".to_string(),
+        "toxic_rat".to_string(),
+        "toxic_static".to_string(),
+        "toxic_truck".to_string(),
+        "toxic_world".to_string(),
+        "toxic_combo".to_string(),
     ];
     names
 });
@@ -157,6 +182,17 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
         "vertigo_scenes_overlay",
     );
 
+    generate_combo_mix!(
+        "toxic_combo",
+        "toxic_bg_overlay",
+        "toxic_plant_overlay",
+        "toxic_boss_overlay",
+        "toxic_cans_overlay",
+        "toxic_door_overlay",
+        "toxic_dunk_overlay",
+        "toxic_mop_overlay",
+        "toxic_static_overlay",
+    );
     configs
 });
 
@@ -396,6 +432,7 @@ pub fn mega_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
     uncanny_cb(all_settings, event);
     fool_cb(all_settings, event);
     fire_cb(all_settings, event);
+    toxic_cb(all_settings, event);
 }
 
 // Generic send for all midi devices to GLSL vars
@@ -675,6 +712,44 @@ pub fn fire_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
                 } else {
                     stream.set_video_key_enable(1);
                 }
+            }
+            _ => (),
+        }
+    }
+}
+
+pub fn toxic_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
+    static _CB_TX: LazyLock<Sender<SendCmd>> = LazyLock::new(|| {
+        let midi_channels = MIDI_CALLBACK_CHANNELS.lock().unwrap();
+        midi_channels.0.clone()
+    });
+
+    static IDX: LazyLock<Option<usize>> = LazyLock::new(|| {
+        let mut idx = None;
+        for i in 0..PLAYBACK_NAMES.len() {
+            if PLAYBACK_NAMES[i] == "toxic_combo" {
+                idx.replace(i);
+                break;
+            }
+        }
+        idx
+    });
+    if let Some(idx) = *IDX {
+        if all_settings.active_idx != idx && all_settings.display_idx != idx {
+            return;
+        }
+
+        let stream = &mut all_settings.playback[idx].stream;
+        // INTERNAL MATCHING FOR SETTING MODIFICATION
+        match (
+            event.device.as_str(),
+            event.channel,
+            event.kind,
+            event.key,
+            event.velocity,
+        ) {
+            (IAC, 0, MIDI_NOTE_ON, 36.., _) => {
+                stream.set_usr_var((stream.usr_var() + 1.0) % 6.0);
             }
             _ => (),
         }
