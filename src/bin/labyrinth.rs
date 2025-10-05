@@ -48,6 +48,10 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
         "waves",
         "uncanny",
         "fire",
+        "vertigo_dict",
+        "vertigo_flowers",
+        "vertigo_scenes",
+        "vertigo_swirl",
     ];
     for vid_name in vid640x480.iter() {
         vids.push(
@@ -94,6 +98,11 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "jester_combo".to_string(),
         "uncanny".to_string(),
         "fire".to_string(),
+        "vertigo_dict".to_string(),
+        "vertigo_flowers".to_string(),
+        "vertigo_scenes".to_string(),
+        "vertigo_swirl".to_string(),
+        "vertigo_combo".to_string(),
     ];
     names
 });
@@ -118,7 +127,13 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
     }
 
     macro_rules! generate_combo_mix {
-        ($name:expr, $below:expr, $above:expr) => {
+        ($name:expr, $($to_combo:expr),* $(,)?) => {
+            let mut mix = Mix::builder()
+                .name(concat!($name, "_mix"))
+                .no_display(true);
+
+            $(mix = mix.mixed($to_combo);)*
+            let mix = mix.build();
             configs.push(MixConfig {
                 def: VidMixer::builder()
                     .name(concat!($name, "_mix"))
@@ -127,18 +142,20 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
                     .width(640)
                     .height(480)
                     .build(),
-                mix: Mix::builder()
-                    .name(concat!($name, "_mix"))
-                    .mixed($below)
-                    .mixed($above)
-                    .no_display(true)
-                    .build(),
+                mix
             });
-        };
+        }
     }
 
     generate_combo_mix!("castle_combo", "castles_final_overlay", "towers_overlay");
     generate_combo_mix!("jester_combo", "jester_overlay", "waves_overlay");
+    generate_combo_mix!(
+        "vertigo_combo",
+        "vertigo_dict_overlay",
+        "vertigo_swirl_overlay",
+        "vertigo_flowers_overlay",
+        "vertigo_scenes_overlay",
+    );
 
     configs
 });
@@ -407,7 +424,7 @@ pub fn glsl_midi_cb(_all_settings: &mut AllSettings, event: &MidiEvent) {
         .unwrap();
 
     eprintln!(
-        "{debug_kind}_{debug_device}_{}_{}_{} = {}",
+        "{debug_kind}_{debug_device}_{}_{}{} = {}",
         event.channel, event.key, on_off, event.velocity
     );
 
