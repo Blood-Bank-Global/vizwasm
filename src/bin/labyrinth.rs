@@ -1,4 +1,5 @@
 use std::{
+    cell::RefCell,
     collections::HashMap,
     error::Error,
     sync::{
@@ -64,6 +65,8 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
         "toxic_static",
         "toxic_truck",
         "toxic_world",
+        "flicker_scene",
+        "flicker_book",
     ];
     for vid_name in vid640x480.iter() {
         vids.push(
@@ -128,6 +131,9 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "toxic_truck".to_string(),
         "toxic_world".to_string(),
         "toxic_combo".to_string(),
+        "flicker_scene".to_string(),
+        "flicker_book".to_string(),
+        "flicker_combo".to_string(),
     ];
     names
 });
@@ -192,6 +198,12 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
         "toxic_dunk_overlay",
         "toxic_mop_overlay",
         "toxic_static_overlay",
+    );
+
+    generate_combo_mix!(
+        "flicker_combo",
+        "flicker_scene_overlay",
+        "flicker_book_overlay"
     );
     configs
 });
@@ -433,6 +445,7 @@ pub fn mega_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
     fool_cb(all_settings, event);
     fire_cb(all_settings, event);
     toxic_cb(all_settings, event);
+    flicker_cb(all_settings, event);
 }
 
 // Generic send for all midi devices to GLSL vars
@@ -750,6 +763,75 @@ pub fn toxic_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
         ) {
             (IAC, 0, MIDI_NOTE_ON, 36.., _) => {
                 stream.set_usr_var((stream.usr_var() + 1.0) % 6.0);
+            }
+            _ => (),
+        }
+    }
+}
+
+pub fn flicker_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
+    static _CB_TX: LazyLock<Sender<SendCmd>> = LazyLock::new(|| {
+        let midi_channels = MIDI_CALLBACK_CHANNELS.lock().unwrap();
+        midi_channels.0.clone()
+    });
+
+    static SCENE_IDX: LazyLock<Option<usize>> = LazyLock::new(|| {
+        let mut idx = None;
+        for i in 0..PLAYBACK_NAMES.len() {
+            if PLAYBACK_NAMES[i] == "flicker_scene" {
+                idx.replace(i);
+                break;
+            }
+        }
+        idx
+    });
+
+    static COMBO_IDX: LazyLock<Option<usize>> = LazyLock::new(|| {
+        let mut idx = None;
+        for i in 0..PLAYBACK_NAMES.len() {
+            if PLAYBACK_NAMES[i] == "flicker_combo" {
+                idx.replace(i);
+                break;
+            }
+        }
+        idx
+    });
+
+    static TIME_CODES: &[f64] = &[
+        1.0,
+        241.0 / 30.0,
+        116.0 / 5.0,
+        451.0 / 10.0,
+        259.0 / 5.0,
+        1.0,
+        373.0 / 6.0,
+    ];
+    static LAST_CODE: Mutex<RefCell<usize>> = Mutex::new(RefCell::new(0));
+    if let (Some(scene_idx), Some(combo_idx)) = (*SCENE_IDX, *COMBO_IDX) {
+        if all_settings.active_idx != scene_idx
+            && all_settings.display_idx != scene_idx
+            && all_settings.active_idx != combo_idx
+            && all_settings.display_idx != combo_idx
+        {
+            return;
+        }
+
+        let stream = &mut all_settings.playback[scene_idx].stream;
+        // INTERNAL MATCHING FOR SETTING MODIFICATION
+        match (
+            event.device.as_str(),
+            event.channel,
+            event.kind,
+            event.key,
+            event.velocity,
+        ) {
+            (IAC, 0, MIDI_CONTROL_CHANGE, 0, v) => {
+                if v > 10 {
+                    let lock = LAST_CODE.lock().unwrap();
+                    let mut last = lock.borrow_mut();
+                    stream.set_exact_sec(*TIME_CODES.get(*last).unwrap_or(&1.0));
+                    *last = (*last + 1) % TIME_CODES.len();
+                }
             }
             _ => (),
         }
