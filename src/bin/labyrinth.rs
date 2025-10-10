@@ -67,6 +67,11 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
         "toxic_world",
         "flicker_scene",
         "flicker_book",
+        "day8_agent",
+        "day8_fault",
+        "day8_flow",
+        "day8_ops_err",
+        "day8_trace",
     ];
     for vid_name in vid640x480.iter() {
         vids.push(
@@ -134,6 +139,12 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "flicker_scene".to_string(),
         "flicker_book".to_string(),
         "flicker_combo".to_string(),
+        "day8_agent".to_string(),
+        "day8_fault".to_string(),
+        "day8_flow".to_string(),
+        "day8_ops_err".to_string(),
+        "day8_trace".to_string(),
+        "day8_combo".to_string(),
     ];
     names
 });
@@ -204,6 +215,15 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
         "flicker_combo",
         "flicker_scene_overlay",
         "flicker_book_overlay"
+    );
+
+    generate_combo_mix!(
+        "day8_combo",
+        "day8_agent_overlay",
+        "day8_fault_overlay",
+        "day8_flow_overlay",
+        "day8_ops_err_overlay",
+        "day8_trace_overlay"
     );
     configs
 });
@@ -446,6 +466,7 @@ pub fn mega_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
     fire_cb(all_settings, event);
     toxic_cb(all_settings, event);
     flicker_cb(all_settings, event);
+    day8_cb(all_settings, event);
 }
 
 // Generic send for all midi devices to GLSL vars
@@ -831,6 +852,104 @@ pub fn flicker_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
                     let mut last = lock.borrow_mut();
                     stream.set_exact_sec(*TIME_CODES.get(*last).unwrap_or(&1.0));
                     *last = (*last + 1) % TIME_CODES.len();
+                }
+            }
+            _ => (),
+        }
+    }
+}
+
+pub fn day8_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
+    static _CB_TX: LazyLock<Sender<SendCmd>> = LazyLock::new(|| {
+        let midi_channels = MIDI_CALLBACK_CHANNELS.lock().unwrap();
+        midi_channels.0.clone()
+    });
+
+    static COMBO_IDX: LazyLock<Option<usize>> = LazyLock::new(|| {
+        let mut idx = None;
+        for i in 0..PLAYBACK_NAMES.len() {
+            if PLAYBACK_NAMES[i] == "day8_combo" {
+                idx.replace(i);
+                break;
+            }
+        }
+        idx
+    });
+
+    static AGENT_IDX: LazyLock<Option<usize>> = LazyLock::new(|| {
+        let mut idx = None;
+        for i in 0..PLAYBACK_NAMES.len() {
+            if PLAYBACK_NAMES[i] == "day8_agent" {
+                idx.replace(i);
+                break;
+            }
+        }
+        idx
+    });
+
+    static TIME_CODES: &[f64] = &[
+        1.0,
+        127.0 / 15.0,
+        316.0 / 15.0,
+        86.0 / 3.0,
+        734.0 / 15.0,
+        699.0 / 10.0,
+        3467.0 / 30.0,
+        1856.0 / 15.0,
+        3899.0 / 30.0,
+        3983.0 / 30.0,
+        1349.0 / 10.0,
+        686.0 / 5.0,
+        4877.0 / 30.0,
+        2473.0 / 15.0,
+        2516.0 / 15.0,
+    ];
+    static LAST_CODE: Mutex<RefCell<usize>> = Mutex::new(RefCell::new(0));
+    static COUNTER: Mutex<RefCell<usize>> = Mutex::new(RefCell::new(0));
+
+    if let (Some(combo_idx), Some(agent_idx)) = (*COMBO_IDX, *AGENT_IDX) {
+        if all_settings.active_idx != combo_idx
+            && all_settings.display_idx != combo_idx
+            && all_settings.active_idx != agent_idx
+            && all_settings.display_idx != agent_idx
+        {
+            return;
+        }
+
+        // INTERNAL MATCHING FOR SETTING MODIFICATION
+        match (
+            event.device.as_str(),
+            event.channel,
+            event.kind,
+            event.key,
+            event.velocity,
+        ) {
+            (IAC, 2, MIDI_CONTROL_CHANGE, 0, _) => {
+                let lock = LAST_CODE.lock().unwrap();
+                let mut last = lock.borrow_mut();
+                all_settings.playback[agent_idx]
+                    .stream
+                    .set_exact_sec(*TIME_CODES.get(*last).unwrap_or(&1.0));
+                *last = (*last + 1) % TIME_CODES.len();
+                let count_lock = COUNTER.lock().unwrap();
+                let mut count = count_lock.borrow_mut();
+                *count += 1;
+                all_settings.playback[combo_idx]
+                    .stream
+                    .set_usr_var(((*count / 5) % 4) as f64);
+            }
+            (IAC, 0, MIDI_CONTROL_CHANGE, 1, v) => {
+                all_settings.playback[agent_idx]
+                    .stream
+                    .set_warp_level(v as f64 / 127.0 * 0.02);
+                if v > 5 {
+                    all_settings.playback[combo_idx]
+                        .stream
+                        .set_warp_selected(6.0);
+                } else {
+                    all_settings.playback[combo_idx]
+                        .stream
+                        .set_warp_selected(0.0);
                 }
             }
             _ => (),
