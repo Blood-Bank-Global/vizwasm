@@ -72,6 +72,8 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
         "day8_flow",
         "day8_ops_err",
         "day8_trace",
+        "swol_smoke",
+        "swol_how",
     ];
     for vid_name in vid640x480.iter() {
         vids.push(
@@ -145,6 +147,9 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "day8_ops_err".to_string(),
         "day8_trace".to_string(),
         "day8_combo".to_string(),
+        "swol_smoke".to_string(),
+        "swol_how".to_string(),
+        "swol_combo".to_string(),
     ];
     names
 });
@@ -225,6 +230,8 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
         "day8_ops_err_overlay",
         "day8_trace_overlay"
     );
+
+    generate_combo_mix!("swol_combo", "swol_smoke_overlay", "swol_how_overlay");
     configs
 });
 
@@ -950,6 +957,71 @@ pub fn day8_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
                     all_settings.playback[combo_idx]
                         .stream
                         .set_warp_selected(0.0);
+                }
+            }
+            _ => (),
+        }
+    }
+}
+
+pub fn swol_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
+    static _CB_TX: LazyLock<Sender<SendCmd>> = LazyLock::new(|| {
+        let midi_channels = MIDI_CALLBACK_CHANNELS.lock().unwrap();
+        midi_channels.0.clone()
+    });
+
+    static HOW_IDX: LazyLock<Option<usize>> = LazyLock::new(|| {
+        let mut idx = None;
+        for i in 0..PLAYBACK_NAMES.len() {
+            if PLAYBACK_NAMES[i] == "swol_how" {
+                idx.replace(i);
+                break;
+            }
+        }
+        idx
+    });
+
+    static SMOKE_IDX: LazyLock<Option<usize>> = LazyLock::new(|| {
+        let mut idx = None;
+        for i in 0..PLAYBACK_NAMES.len() {
+            if PLAYBACK_NAMES[i] == "swol_smoke" {
+                idx.replace(i);
+                break;
+            }
+        }
+        idx
+    });
+
+    static _COUNTER: Mutex<RefCell<usize>> = Mutex::new(RefCell::new(0));
+
+    if let (Some(how_idx), Some(agent_idx)) = (*HOW_IDX, *SMOKE_IDX) {
+        if all_settings.active_idx != how_idx
+            && all_settings.display_idx != how_idx
+            && all_settings.active_idx != agent_idx
+            && all_settings.display_idx != agent_idx
+        {
+            return;
+        }
+
+        // INTERNAL MATCHING FOR SETTING MODIFICATION
+        match (
+            event.device.as_str(),
+            event.channel,
+            event.kind,
+            event.key,
+            event.velocity,
+        ) {
+            (IAC, 2, MIDI_CONTROL_CHANGE, 0, _) => {
+                ();
+            }
+            (IAC, 0, MIDI_CONTROL_CHANGE, 1, v) => {
+                all_settings.playback[agent_idx]
+                    .stream
+                    .set_warp_level(v as f64 / 127.0 * 0.02);
+                if v > 5 {
+                    all_settings.playback[how_idx].stream.set_warp_selected(6.0);
+                } else {
+                    all_settings.playback[how_idx].stream.set_warp_selected(0.0);
                 }
             }
             _ => (),
