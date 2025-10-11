@@ -74,6 +74,9 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
         "day8_trace",
         "swol_smoke",
         "swol_how",
+        "prophetic_zol",
+        "prophetic_card",
+        "prophetic_make",
     ];
     for vid_name in vid640x480.iter() {
         vids.push(
@@ -150,6 +153,10 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "swol_smoke".to_string(),
         "swol_how".to_string(),
         "swol_combo".to_string(),
+        "prophetic_zol".to_string(),
+        "prophetic_card".to_string(),
+        "prophetic_make".to_string(),
+        "prophetic_combo".to_string(),
     ];
     names
 });
@@ -232,6 +239,12 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
     );
 
     generate_combo_mix!("swol_combo", "swol_smoke_overlay", "swol_how_overlay");
+    generate_combo_mix!(
+        "prophetic_combo",
+        "prophetic_zol_overlay",
+        "prophetic_card_overlay",
+        "prophetic_make_overlay"
+    );
     configs
 });
 
@@ -474,6 +487,7 @@ pub fn mega_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
     toxic_cb(all_settings, event);
     flicker_cb(all_settings, event);
     day8_cb(all_settings, event);
+    prophetic_cb(all_settings, event);
 }
 
 // Generic send for all midi devices to GLSL vars
@@ -964,16 +978,16 @@ pub fn day8_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
     }
 }
 
-pub fn swol_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
+pub fn prophetic_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
     static _CB_TX: LazyLock<Sender<SendCmd>> = LazyLock::new(|| {
         let midi_channels = MIDI_CALLBACK_CHANNELS.lock().unwrap();
         midi_channels.0.clone()
     });
 
-    static HOW_IDX: LazyLock<Option<usize>> = LazyLock::new(|| {
+    static BG_IDX: LazyLock<Option<usize>> = LazyLock::new(|| {
         let mut idx = None;
         for i in 0..PLAYBACK_NAMES.len() {
-            if PLAYBACK_NAMES[i] == "swol_how" {
+            if PLAYBACK_NAMES[i] == "prophetic_zol" {
                 idx.replace(i);
                 break;
             }
@@ -981,10 +995,10 @@ pub fn swol_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
         idx
     });
 
-    static SMOKE_IDX: LazyLock<Option<usize>> = LazyLock::new(|| {
+    static COMBO_IDX: LazyLock<Option<usize>> = LazyLock::new(|| {
         let mut idx = None;
         for i in 0..PLAYBACK_NAMES.len() {
-            if PLAYBACK_NAMES[i] == "swol_smoke" {
+            if PLAYBACK_NAMES[i] == "prophetic_combo" {
                 idx.replace(i);
                 break;
             }
@@ -992,13 +1006,36 @@ pub fn swol_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
         idx
     });
 
-    static _COUNTER: Mutex<RefCell<usize>> = Mutex::new(RefCell::new(0));
+    static TIME_CODES: &[f64] = &[
+        1.0,
+        63.0 / 5.0,
+        341.0 / 15.0,
+        142.0 / 5.0,
+        931.0 / 30.0,
+        1021.0 / 30.0,
+        209.0 / 6.0,
+        35.0 / 1.0,
+        574.0 / 15.0,
+        207.0 / 5.0,
+        712.0 / 15.0,
+        779.0 / 15.0,
+        663.0 / 10.0,
+        1072.0 / 15.0,
+        1103.0 / 15.0,
+        1141.0 / 15.0,
+        88.0 / 1.0,
+        563.0 / 6.0,
+        2947.0 / 30.0,
+        3121.0 / 30.0,
+        3229.0 / 30.0,
+        1113.0 / 10.0,
+    ];
 
-    if let (Some(how_idx), Some(agent_idx)) = (*HOW_IDX, *SMOKE_IDX) {
-        if all_settings.active_idx != how_idx
-            && all_settings.display_idx != how_idx
-            && all_settings.active_idx != agent_idx
-            && all_settings.display_idx != agent_idx
+    if let (Some(bg_idx), Some(combo_idx)) = (*BG_IDX, *COMBO_IDX) {
+        if all_settings.active_idx != bg_idx
+            && all_settings.display_idx != bg_idx
+            && all_settings.active_idx != combo_idx
+            && all_settings.display_idx != combo_idx
         {
             return;
         }
@@ -1011,17 +1048,22 @@ pub fn swol_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
             event.key,
             event.velocity,
         ) {
-            (IAC, 2, MIDI_CONTROL_CHANGE, 0, _) => {
-                ();
-            }
-            (IAC, 0, MIDI_CONTROL_CHANGE, 1, v) => {
-                all_settings.playback[agent_idx]
-                    .stream
-                    .set_warp_level(v as f64 / 127.0 * 0.02);
-                if v > 5 {
-                    all_settings.playback[how_idx].stream.set_warp_selected(6.0);
-                } else {
-                    all_settings.playback[how_idx].stream.set_warp_selected(0.0);
+            (IAC, 0, MIDI_CONTROL_CHANGE, 0, v) => {
+                if v > 10 {
+                    let curr = all_settings.playback[bg_idx].stream.real_ts.0 as f64
+                        / all_settings.playback[bg_idx].stream.real_ts.1 as f64;
+                    if curr >= *TIME_CODES.last().unwrap_or(&0.0) {
+                        all_settings.playback[bg_idx]
+                            .stream
+                            .set_exact_sec(*TIME_CODES.first().unwrap_or(&1.0));
+                    } else {
+                        for tc in TIME_CODES.iter() {
+                            if *tc > curr {
+                                all_settings.playback[bg_idx].stream.set_exact_sec(*tc);
+                                break;
+                            }
+                        }
+                    }
                 }
             }
             _ => (),

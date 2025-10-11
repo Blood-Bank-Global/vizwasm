@@ -299,6 +299,8 @@ impl AllSettings {
             "red_pop",
             "green_pop",
             "blue_pop",
+            "blacklight",
+            "whiteblack",
         ]
     }
 
@@ -1837,7 +1839,7 @@ pub struct StreamSettings {
     #[adjustable(min =  -2.0, max = 2.0, step = 0.01, command_simple = (self.main_mix(), "aa", Float), tween = true)]
     aa: f64,
 
-    #[adjustable(k = L, idx = 3, min = -1.0, max = 1.0, step = 0.0087, command_simple = (self.main_mix(), "boost", Float))]
+    #[adjustable(k = L, idx = 3, min = -2.0, max = 2.0, step = 0.0087, command_simple = (self.main_mix(), "boost", Float))]
     boost: f64,
     #[adjustable(k = R, idx = 3, min = 0.0, max = 1.0, step = 0.01, command_simple = (self.main_mix(), "thresh", Float))]
     threshold: f64,
