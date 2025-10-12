@@ -77,6 +77,8 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
         "prophetic_zol",
         "prophetic_card",
         "prophetic_make",
+        "insincere_cards",
+        "insincere_fg",
     ];
     for vid_name in vid640x480.iter() {
         vids.push(
@@ -157,6 +159,9 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "prophetic_card".to_string(),
         "prophetic_make".to_string(),
         "prophetic_combo".to_string(),
+        "insincere_cards".to_string(),
+        "insincere_fg".to_string(),
+        "insincere_combo".to_string(),
     ];
     names
 });
@@ -244,6 +249,12 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
         "prophetic_zol_overlay",
         "prophetic_card_overlay",
         "prophetic_make_overlay"
+    );
+
+    generate_combo_mix!(
+        "insincere_combo",
+        "insincere_cards_overlay",
+        "insincere_fg_overlay"
     );
     configs
 });
@@ -488,6 +499,7 @@ pub fn mega_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
     flicker_cb(all_settings, event);
     day8_cb(all_settings, event);
     prophetic_cb(all_settings, event);
+    insincere_cb(all_settings, event);
 }
 
 // Generic send for all midi devices to GLSL vars
@@ -1064,6 +1076,94 @@ pub fn prophetic_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
                             }
                         }
                     }
+                }
+            }
+            _ => (),
+        }
+    }
+}
+
+pub fn insincere_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
+    static _CB_TX: LazyLock<Sender<SendCmd>> = LazyLock::new(|| {
+        let midi_channels = MIDI_CALLBACK_CHANNELS.lock().unwrap();
+        midi_channels.0.clone()
+    });
+
+    static CARD_IDX: LazyLock<Option<usize>> = LazyLock::new(|| {
+        let mut idx = None;
+        for i in 0..PLAYBACK_NAMES.len() {
+            if PLAYBACK_NAMES[i] == "insincere_cards" {
+                idx.replace(i);
+                break;
+            }
+        }
+        idx
+    });
+
+    static COMBO_IDX: LazyLock<Option<usize>> = LazyLock::new(|| {
+        let mut idx = None;
+        for i in 0..PLAYBACK_NAMES.len() {
+            if PLAYBACK_NAMES[i] == "insincere_combo" {
+                idx.replace(i);
+                break;
+            }
+        }
+        idx
+    });
+
+    static TIME_CODES: &[f64] = &[0.2, 5.2, 10.2];
+
+    if let (Some(card_idx), Some(combo_idx)) = (*CARD_IDX, *COMBO_IDX) {
+        if all_settings.active_idx != card_idx
+            && all_settings.display_idx != card_idx
+            && all_settings.active_idx != combo_idx
+            && all_settings.display_idx != combo_idx
+        {
+            return;
+        }
+
+        // INTERNAL MATCHING FOR SETTING MODIFICATION
+        match (
+            event.device.as_str(),
+            event.channel,
+            event.kind,
+            event.key,
+            event.velocity,
+        ) {
+            (IAC, 0, MIDI_CONTROL_CHANGE, 0, v) => {
+                if v > 10 {
+                    let curr = all_settings.playback[card_idx].stream.real_ts.0 as f64
+                        / all_settings.playback[card_idx].stream.real_ts.1 as f64;
+                    if curr >= *TIME_CODES.last().unwrap_or(&0.0) {
+                        all_settings.playback[card_idx]
+                            .stream
+                            .set_exact_sec(*TIME_CODES.first().unwrap_or(&1.0));
+                    } else {
+                        for tc in TIME_CODES.iter() {
+                            if *tc > curr {
+                                all_settings.playback[card_idx].stream.set_exact_sec(*tc);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            (IAC, 0, MIDI_CONTROL_CHANGE, 2, v) => {
+                if v > 1 {
+                    let delta = v as f64 / 127.0 * 0.25;
+                    all_settings.playback[card_idx].stream.set_skew_all((
+                        (-delta, -delta),
+                        (1.0 + delta, -delta),
+                        (-delta, 1.0 + delta),
+                        (1.0 + delta, 1.0 + delta),
+                    ));
+                } else {
+                    all_settings.playback[card_idx].stream.set_skew_all((
+                        (0.0, 0.0),
+                        (1.0, 0.0),
+                        (0.0, 1.0),
+                        (1.0, 1.0),
+                    ));
                 }
             }
             _ => (),
