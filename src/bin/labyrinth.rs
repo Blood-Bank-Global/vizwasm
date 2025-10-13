@@ -79,6 +79,9 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
         "prophetic_make",
         "insincere_cards",
         "insincere_fg",
+        "formidable_scenes",
+        "formidable_top",
+        "formidable_bottom",
     ];
     for vid_name in vid640x480.iter() {
         vids.push(
@@ -162,6 +165,10 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "insincere_cards".to_string(),
         "insincere_fg".to_string(),
         "insincere_combo".to_string(),
+        "formidable_scenes".to_string(),
+        "formidable_top".to_string(),
+        "formidable_bottom".to_string(),
+        "formidable_combo".to_string(),
     ];
     names
 });
@@ -256,6 +263,14 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
         "insincere_cards_overlay",
         "insincere_fg_overlay"
     );
+
+    generate_combo_mix!(
+        "formidable_combo",
+        "formidable_scenes_overlay",
+        "formidable_top_overlay",
+        "formidable_bottom_overlay"
+    );
+
     configs
 });
 
@@ -500,6 +515,7 @@ pub fn mega_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
     day8_cb(all_settings, event);
     prophetic_cb(all_settings, event);
     insincere_cb(all_settings, event);
+    formidable_cb(all_settings, event);
 }
 
 // Generic send for all midi devices to GLSL vars
@@ -832,7 +848,7 @@ pub fn flicker_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
     static SCENE_IDX: LazyLock<Option<usize>> = LazyLock::new(|| {
         let mut idx = None;
         for i in 0..PLAYBACK_NAMES.len() {
-            if PLAYBACK_NAMES[i] == "flicker_scene" {
+            if PLAYBACK_NAMES[i] == "flicker_scenes" {
                 idx.replace(i);
                 break;
             }
@@ -1164,6 +1180,91 @@ pub fn insincere_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
                         (0.0, 1.0),
                         (1.0, 1.0),
                     ));
+                }
+            }
+            _ => (),
+        }
+    }
+}
+
+pub fn formidable_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
+    static _CB_TX: LazyLock<Sender<SendCmd>> = LazyLock::new(|| {
+        let midi_channels = MIDI_CALLBACK_CHANNELS.lock().unwrap();
+        midi_channels.0.clone()
+    });
+
+    static SCENE_IDX: LazyLock<Option<usize>> = LazyLock::new(|| {
+        let mut idx = None;
+        for i in 0..PLAYBACK_NAMES.len() {
+            if PLAYBACK_NAMES[i] == "formidable_scenes" {
+                idx.replace(i);
+                break;
+            }
+        }
+        idx
+    });
+
+    static COMBO_IDX: LazyLock<Option<usize>> = LazyLock::new(|| {
+        let mut idx = None;
+        for i in 0..PLAYBACK_NAMES.len() {
+            if PLAYBACK_NAMES[i] == "formidable_combo" {
+                idx.replace(i);
+                break;
+            }
+        }
+        idx
+    });
+
+    static _TIME_CODES: &[f64] = &[];
+
+    if let (Some(scene_idx), Some(combo_idx)) = (*SCENE_IDX, *COMBO_IDX) {
+        if all_settings.active_idx != scene_idx
+            && all_settings.display_idx != scene_idx
+            && all_settings.active_idx != combo_idx
+            && all_settings.display_idx != combo_idx
+        {
+            return;
+        }
+
+        // INTERNAL MATCHING FOR SETTING MODIFICATION
+        match (
+            event.device.as_str(),
+            event.channel,
+            event.kind,
+            event.key,
+            event.velocity,
+        ) {
+            (IAC, 0, MIDI_CONTROL_CHANGE, 99, v) => {
+                if v > 10 {
+                    let curr = all_settings.playback[scene_idx].stream.real_ts.0 as f64
+                        / all_settings.playback[scene_idx].stream.real_ts.1 as f64;
+                    if curr >= *_TIME_CODES.last().unwrap_or(&0.0) {
+                        all_settings.playback[scene_idx]
+                            .stream
+                            .set_exact_sec(*_TIME_CODES.first().unwrap_or(&1.0));
+                    } else {
+                        for tc in _TIME_CODES.iter() {
+                            if *tc > curr {
+                                all_settings.playback[scene_idx].stream.set_exact_sec(*tc);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            (IAC, 0, MIDI_CONTROL_CHANGE, 0, v) => {
+                if v > 1 {
+                    all_settings.playback[combo_idx]
+                        .stream
+                        .set_warp_level(v as f64 / 127.0 * 0.2);
+                    all_settings.playback[combo_idx]
+                        .stream
+                        .set_warp_selected(6.0);
+                } else {
+                    all_settings.playback[combo_idx]
+                        .stream
+                        .set_warp_selected(0.0);
+                    all_settings.playback[combo_idx].stream.set_warp_level(0.0);
                 }
             }
             _ => (),
