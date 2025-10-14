@@ -1304,7 +1304,7 @@ loops: [{}], loop capture: {}
 {}[12] Scrub {:.3}
  Selected {}
  Duration: {}
- ts: {:-6}/{:-6}
+ ts: {:-6}/{:-6} = {:.3}
 "#,
             self.playback[self.active_idx]
                 .loops
@@ -1633,7 +1633,9 @@ loops: [{}], loop capture: {}
             (vid_info.duration_tbu_q.0 as f64 / vid_info.duration_tbu_q.1 as f64)
                 * (vid_info.timebase_q.0 as f64 / vid_info.timebase_q.1 as f64),
             self.playback[self.active_idx].stream.real_ts.0 as f64,
-            self.playback[self.active_idx].stream.real_ts.1 as f64
+            self.playback[self.active_idx].stream.real_ts.1 as f64,
+            self.playback[self.active_idx].stream.real_ts.0 as f64
+                / self.playback[self.active_idx].stream.real_ts.1 as f64
         )
     }
 

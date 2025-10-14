@@ -82,6 +82,8 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
         "formidable_scenes",
         "formidable_top",
         "formidable_bottom",
+        "obedience_school",
+        "obedience_dark",
     ];
     for vid_name in vid640x480.iter() {
         vids.push(
@@ -169,6 +171,9 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "formidable_top".to_string(),
         "formidable_bottom".to_string(),
         "formidable_combo".to_string(),
+        "obedience_school".to_string(),
+        "obedience_dark".to_string(),
+        "obedience_combo".to_string(),
     ];
     names
 });
@@ -269,6 +274,12 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
         "formidable_scenes_overlay",
         "formidable_top_overlay",
         "formidable_bottom_overlay"
+    );
+
+    generate_combo_mix!(
+        "obedience_combo",
+        "obedience_school_overlay",
+        "obedience_dark_overlay"
     );
 
     configs
@@ -516,6 +527,7 @@ pub fn mega_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
     prophetic_cb(all_settings, event);
     insincere_cb(all_settings, event);
     formidable_cb(all_settings, event);
+    obedience_cb(all_settings, event);
 }
 
 // Generic send for all midi devices to GLSL vars
@@ -1265,6 +1277,88 @@ pub fn formidable_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
                         .stream
                         .set_warp_selected(0.0);
                     all_settings.playback[combo_idx].stream.set_warp_level(0.0);
+                }
+            }
+            _ => (),
+        }
+    }
+}
+
+pub fn obedience_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
+    static _CB_TX: LazyLock<Sender<SendCmd>> = LazyLock::new(|| {
+        let midi_channels = MIDI_CALLBACK_CHANNELS.lock().unwrap();
+        midi_channels.0.clone()
+    });
+
+    static SCHOOL_IDX: LazyLock<Option<usize>> = LazyLock::new(|| {
+        let mut idx = None;
+        for i in 0..PLAYBACK_NAMES.len() {
+            if PLAYBACK_NAMES[i] == "obedience_school" {
+                idx.replace(i);
+                break;
+            }
+        }
+        idx
+    });
+
+    static COMBO_IDX: LazyLock<Option<usize>> = LazyLock::new(|| {
+        let mut idx = None;
+        for i in 0..PLAYBACK_NAMES.len() {
+            if PLAYBACK_NAMES[i] == "obedience_combo" {
+                idx.replace(i);
+                break;
+            }
+        }
+        idx
+    });
+
+    static TIME_CODES: &[f64] = &[
+        1.0, 10.0, 36.0, 48.0, 92.0, 116.0, 132.0, 137.0, 279.5, 296.3, 313.4, 369.0, 378.8,
+        383.867, 388.9,
+    ];
+
+    if let (Some(school_idx), Some(combo_idx)) = (*SCHOOL_IDX, *COMBO_IDX) {
+        if all_settings.active_idx != school_idx
+            && all_settings.display_idx != school_idx
+            && all_settings.active_idx != combo_idx
+            && all_settings.display_idx != combo_idx
+        {
+            return;
+        }
+
+        // INTERNAL MATCHING FOR SETTING MODIFICATION
+        match (
+            event.device.as_str(),
+            event.channel,
+            event.kind,
+            event.key,
+            event.velocity,
+        ) {
+            (IAC, 0, MIDI_CONTROL_CHANGE, 0, v) => {
+                if v > 10 {
+                    let curr = all_settings.playback[school_idx].stream.real_ts.0 as f64
+                        / all_settings.playback[school_idx].stream.real_ts.1 as f64;
+                    if curr >= *TIME_CODES.last().unwrap_or(&0.0) {
+                        all_settings.playback[school_idx]
+                            .stream
+                            .set_exact_sec(*TIME_CODES.first().unwrap_or(&1.0));
+                    } else {
+                        for tc in TIME_CODES.iter() {
+                            if *tc > curr {
+                                all_settings.playback[school_idx].stream.set_exact_sec(*tc);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            (IAC, 0, MIDI_CONTROL_CHANGE, 2, v) => {
+                if v > 1 {
+                    all_settings.playback[school_idx]
+                        .stream
+                        .set_aa(1.0 - 0.9 * (v as f64 / 127.0));
+                } else {
+                    all_settings.playback[school_idx].stream.set_aa(1.0);
                 }
             }
             _ => (),
