@@ -84,6 +84,8 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
         "formidable_bottom",
         "obedience_school",
         "obedience_dark",
+        "artificial_maria",
+        "artificial_titles",
     ];
     for vid_name in vid640x480.iter() {
         vids.push(
@@ -119,62 +121,68 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
 });
 
 static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
-    let names = vec![
-        "castles_final".to_string(),
-        "blank".to_string(),
-        "towers".to_string(),
-        "castle_combo".to_string(),
-        "undead".to_string(),
-        "jester".to_string(),
-        "waves".to_string(),
-        "jester_combo".to_string(),
-        "uncanny".to_string(),
-        "fire".to_string(),
-        "vertigo_dict".to_string(),
-        "vertigo_flowers".to_string(),
-        "vertigo_scenes".to_string(),
-        "vertigo_swirl".to_string(),
-        "vertigo_combo".to_string(),
-        "toxic_bg".to_string(),
-        "toxic_boss".to_string(),
-        "toxic_cans".to_string(),
-        "toxic_door".to_string(),
-        "toxic_dunk".to_string(),
-        "toxic_guy".to_string(),
-        "toxic_mop".to_string(),
-        "toxic_plant".to_string(),
-        "toxic_rat".to_string(),
-        "toxic_static".to_string(),
-        "toxic_truck".to_string(),
-        "toxic_world".to_string(),
-        "toxic_combo".to_string(),
-        "flicker_scene".to_string(),
-        "flicker_book".to_string(),
-        "flicker_combo".to_string(),
-        "day8_agent".to_string(),
-        "day8_fault".to_string(),
-        "day8_flow".to_string(),
-        "day8_ops_err".to_string(),
-        "day8_trace".to_string(),
-        "day8_combo".to_string(),
-        "swol_smoke".to_string(),
-        "swol_how".to_string(),
-        "swol_combo".to_string(),
-        "prophetic_zol".to_string(),
-        "prophetic_card".to_string(),
-        "prophetic_make".to_string(),
-        "prophetic_combo".to_string(),
-        "insincere_cards".to_string(),
-        "insincere_fg".to_string(),
-        "insincere_combo".to_string(),
-        "formidable_scenes".to_string(),
-        "formidable_top".to_string(),
-        "formidable_bottom".to_string(),
-        "formidable_combo".to_string(),
-        "obedience_school".to_string(),
-        "obedience_dark".to_string(),
-        "obedience_combo".to_string(),
-    ];
+    let names = [
+        "castles_final",
+        "blank",
+        "towers",
+        "castle_combo",
+        "undead",
+        "jester",
+        "waves",
+        "jester_combo",
+        "uncanny",
+        "fire",
+        "vertigo_dict",
+        "vertigo_flowers",
+        "vertigo_scenes",
+        "vertigo_swirl",
+        "vertigo_combo",
+        "toxic_bg",
+        "toxic_boss",
+        "toxic_cans",
+        "toxic_door",
+        "toxic_dunk",
+        "toxic_guy",
+        "toxic_mop",
+        "toxic_plant",
+        "toxic_rat",
+        "toxic_static",
+        "toxic_truck",
+        "toxic_world",
+        "toxic_combo",
+        "flicker_scene",
+        "flicker_book",
+        "flicker_combo",
+        "day8_agent",
+        "day8_fault",
+        "day8_flow",
+        "day8_ops_err",
+        "day8_trace",
+        "day8_combo",
+        "swol_smoke",
+        "swol_how",
+        "swol_combo",
+        "prophetic_zol",
+        "prophetic_card",
+        "prophetic_make",
+        "prophetic_combo",
+        "insincere_cards",
+        "insincere_fg",
+        "insincere_combo",
+        "formidable_scenes",
+        "formidable_top",
+        "formidable_bottom",
+        "formidable_combo",
+        "obedience_school",
+        "obedience_dark",
+        "obedience_combo",
+        "artificial_maria",
+        "artificial_titles",
+        "artificial_combo",
+    ]
+    .iter()
+    .map(|s| s.to_string())
+    .collect::<Vec<_>>();
     names
 });
 
@@ -282,6 +290,11 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
         "obedience_dark_overlay"
     );
 
+    generate_combo_mix!(
+        "artificial_combo",
+        "artificial_maria_overlay",
+        "artificial_titles_overlay"
+    );
     configs
 });
 
@@ -528,6 +541,7 @@ pub fn mega_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
     insincere_cb(all_settings, event);
     formidable_cb(all_settings, event);
     obedience_cb(all_settings, event);
+    artificial_cb(all_settings, event);
 }
 
 // Generic send for all midi devices to GLSL vars
@@ -1363,5 +1377,114 @@ pub fn obedience_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
             }
             _ => (),
         }
+    }
+}
+
+macro_rules! cb_boilerplate {
+    ( $all_settings:expr, $midi_event:expr, $bg_name:expr, $combo_name:expr, $time_codes:expr) => {
+        static _CB_TX: LazyLock<Sender<SendCmd>> = LazyLock::new(|| {
+            let midi_channels = MIDI_CALLBACK_CHANNELS.lock().unwrap();
+            midi_channels.0.clone()
+        });
+
+        static BG_IDX: LazyLock<Option<usize>> = LazyLock::new(|| {
+            let mut idx = None;
+            for i in 0..PLAYBACK_NAMES.len() {
+                if PLAYBACK_NAMES[i] == $bg_name {
+                    idx.replace(i);
+                    break;
+                }
+            }
+            idx
+        });
+
+        static COMBO_IDX: LazyLock<Option<usize>> = LazyLock::new(|| {
+            let mut idx = None;
+            for i in 0..PLAYBACK_NAMES.len() {
+                if PLAYBACK_NAMES[i] == $combo_name {
+                    idx.replace(i);
+                    break;
+                }
+            }
+            idx
+        });
+
+        if BG_IDX.is_none() || COMBO_IDX.is_none() {
+            return;
+        }
+
+        if let (Some(bg_idx), Some(combo_idx)) = (*BG_IDX, *COMBO_IDX) {
+            if $all_settings.active_idx != bg_idx
+                && $all_settings.display_idx != bg_idx
+                && $all_settings.active_idx != combo_idx
+                && $all_settings.display_idx != combo_idx
+            {
+                return;
+            }
+
+            // INTERNAL MATCHING FOR SETTING MODIFICATION
+            match (
+                $midi_event.device.as_str(),
+                $midi_event.channel,
+                $midi_event.kind,
+                $midi_event.key,
+                $midi_event.velocity,
+            ) {
+                (IAC, 0, MIDI_CONTROL_CHANGE, 0, v) => {
+                    if v > 10 {
+                        let curr = $all_settings.playback[bg_idx].stream.real_ts.0 as f64
+                            / $all_settings.playback[bg_idx].stream.real_ts.1 as f64;
+                        if curr >= *$time_codes.last().unwrap_or(&0.0) {
+                            $all_settings.playback[bg_idx]
+                                .stream
+                                .set_exact_sec(*$time_codes.first().unwrap_or(&1.0));
+                        } else {
+                            for tc in $time_codes.iter() {
+                                if *tc > curr {
+                                    $all_settings.playback[bg_idx].stream.set_exact_sec(*tc);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+                _ => (),
+            }
+        }
+    };
+}
+
+pub fn artificial_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
+    static ARTIFICIAL_TIME_CODES: &[f64] = &[
+        1.0, 4.0, 6.6, 11.0, 12.28, 16.0, 19.0, 22.8, 30.3, 41.2, 45.2, 53.0, 60.0, 62.2, 72.4,
+        79.2, 90.0, 93.0, 100.0, 106.0, 109.0,
+    ];
+    cb_boilerplate!(
+        all_settings,
+        event,
+        "artificial_maria",
+        "artificial_combo",
+        ARTIFICIAL_TIME_CODES
+    );
+
+    match (
+        event.device.as_str(),
+        event.channel,
+        event.kind,
+        event.key,
+        event.velocity,
+    ) {
+        (IAC, 0, MIDI_CONTROL_CHANGE, 2, v) => {
+            if v > 1 {
+                all_settings.playback[all_settings.active_idx]
+                    .stream
+                    .set_rr(1.0 - 0.9 * (v as f64 / 127.0));
+            } else {
+                all_settings.playback[all_settings.active_idx]
+                    .stream
+                    .set_rr(1.0);
+            }
+        }
+        _ => (),
     }
 }
