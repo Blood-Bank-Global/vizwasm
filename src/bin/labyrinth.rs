@@ -86,6 +86,7 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
         "obedience_dark",
         "artificial_maria",
         "artificial_titles",
+        "exhaustion_scenes",
     ];
     for vid_name in vid640x480.iter() {
         vids.push(
@@ -179,6 +180,8 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "artificial_maria",
         "artificial_titles",
         "artificial_combo",
+        "exhaustion_scenes",
+        "exhaustion_combo",
     ]
     .iter()
     .map(|s| s.to_string())
@@ -295,6 +298,8 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
         "artificial_maria_overlay",
         "artificial_titles_overlay"
     );
+
+    generate_combo_mix!("exhaustion_combo", "exhaustion_scenes_overlay");
     configs
 });
 
@@ -542,6 +547,7 @@ pub fn mega_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
     formidable_cb(all_settings, event);
     obedience_cb(all_settings, event);
     artificial_cb(all_settings, event);
+    exhaustion_cb(all_settings, event);
 }
 
 // Generic send for all midi devices to GLSL vars
@@ -1413,6 +1419,8 @@ macro_rules! cb_boilerplate {
             return;
         }
 
+        static TIME_IDX: LazyLock<Mutex<RefCell<usize>>> =
+            LazyLock::new(|| Mutex::new(RefCell::new(0)));
         if let (Some(bg_idx), Some(combo_idx)) = (*BG_IDX, *COMBO_IDX) {
             if $all_settings.active_idx != bg_idx
                 && $all_settings.display_idx != bg_idx
@@ -1432,20 +1440,12 @@ macro_rules! cb_boilerplate {
             ) {
                 (IAC, 0, MIDI_CONTROL_CHANGE, 0, v) => {
                     if v > 10 {
-                        let curr = $all_settings.playback[bg_idx].stream.real_ts.0 as f64
-                            / $all_settings.playback[bg_idx].stream.real_ts.1 as f64;
-                        if curr >= *$time_codes.last().unwrap_or(&0.0) {
-                            $all_settings.playback[bg_idx]
-                                .stream
-                                .set_exact_sec(*$time_codes.first().unwrap_or(&1.0));
-                        } else {
-                            for tc in $time_codes.iter() {
-                                if *tc > curr {
-                                    $all_settings.playback[bg_idx].stream.set_exact_sec(*tc);
-                                    break;
-                                }
-                            }
-                        }
+                        let lock = TIME_IDX.lock().unwrap();
+                        let mut idx = lock.borrow_mut();
+                        *idx = (*idx + 1) % $time_codes.len();
+                        $all_settings.playback[bg_idx]
+                            .stream
+                            .set_exact_sec(*$time_codes.get(*idx).unwrap_or(&1.0));
                     }
                 }
                 _ => (),
@@ -1484,6 +1484,44 @@ pub fn artificial_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
                     .stream
                     .set_rr(1.0);
             }
+        }
+        _ => (),
+    }
+}
+
+pub fn exhaustion_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
+    static EXHAUSTION_TIME_CODES: &[f64] = &[
+        0.1, 4.3, 7.1, 0.1, 14.0, 17.0, 0.1, 23.0, 25.0, 0.1, 26.0, 30.0, 0.1, 33.0, 39.0, 0.1,
+        45.0, 54.4, 0.1, 56.6, 62.4, 0.1, 70.0, 73.0,
+    ];
+    cb_boilerplate!(
+        all_settings,
+        event,
+        "exhaustion_scenes",
+        "exhaustion_combo",
+        EXHAUSTION_TIME_CODES
+    );
+
+    match (
+        event.device.as_str(),
+        event.channel,
+        event.kind,
+        event.key,
+        event.velocity,
+    ) {
+        (IAC, 0, MIDI_CONTROL_CHANGE, 2, v) => {
+            all_settings.playback[all_settings.active_idx]
+                .stream
+                .set_rr(1.0 - (v as f64 / 127.0));
+            all_settings.playback[all_settings.active_idx]
+                .stream
+                .set_rb(v as f64 / 127.0);
+            all_settings.playback[all_settings.active_idx]
+                .stream
+                .set_bb(1.0 - (v as f64 / 127.0));
+            all_settings.playback[all_settings.active_idx]
+                .stream
+                .set_br(v as f64 / 127.0);
         }
         _ => (),
     }
