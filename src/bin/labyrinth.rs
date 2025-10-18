@@ -87,6 +87,7 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
         "artificial_maria",
         "artificial_titles",
         "exhaustion_scenes",
+        "finite",
     ];
     for vid_name in vid640x480.iter() {
         vids.push(
@@ -182,6 +183,8 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "artificial_combo",
         "exhaustion_scenes",
         "exhaustion_combo",
+        "finite",
+        "finite_combo",
     ]
     .iter()
     .map(|s| s.to_string())
@@ -300,6 +303,9 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
     );
 
     generate_combo_mix!("exhaustion_combo", "exhaustion_scenes_overlay");
+
+    generate_combo_mix!("finite_combo", "finite_overlay");
+
     configs
 });
 
@@ -548,6 +554,7 @@ pub fn mega_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
     obedience_cb(all_settings, event);
     artificial_cb(all_settings, event);
     exhaustion_cb(all_settings, event);
+    finite_cb(all_settings, event);
 }
 
 // Generic send for all midi devices to GLSL vars
@@ -1524,5 +1531,50 @@ pub fn exhaustion_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
                 .set_br(v as f64 / 127.0);
         }
         _ => (),
+    }
+}
+
+pub fn finite_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
+    static FINITE_TIME_CODES: &[f64] = &[0.5, 24.5, 5.0, 24.5, 7.1, 24.5, 11.7, 24.5];
+    cb_boilerplate!(
+        all_settings,
+        event,
+        "finite",
+        "finite_combo",
+        FINITE_TIME_CODES
+    );
+
+    if let Some(idx) = (0..all_settings.playback.len())
+        .find(|&i| all_settings.playback[i].stream.ident.name == "finite")
+    {
+        match (
+            event.device.as_str(),
+            event.channel,
+            event.kind,
+            event.key,
+            event.velocity,
+        ) {
+            (IAC, 0, MIDI_CONTROL_CHANGE, 0, v) => {
+                if v > 10 {
+                    if all_settings.playback[idx].stream.exact_sec() == 24.5 {
+                        all_settings.playback[idx].stream.set_video_key_enable(1);
+                    } else {
+                        all_settings.playback[idx].stream.set_video_key_enable(0);
+                    }
+                }
+            }
+            (IAC, 0, MIDI_CONTROL_CHANGE, 1, v) => {
+                all_settings.playback[idx]
+                    .stream
+                    .set_rr(1.0 - (v as f64 / 127.0));
+                all_settings.playback[idx]
+                    .stream
+                    .set_gg(1.0 + (v as f64 / 127.0));
+                all_settings.playback[idx]
+                    .stream
+                    .set_bb(1.0 - (v as f64 / 127.0));
+            }
+            _ => (),
+        }
     }
 }
