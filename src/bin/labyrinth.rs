@@ -88,6 +88,7 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
         "artificial_titles",
         "exhaustion_scenes",
         "finite",
+        "wail_scenes",
     ];
     for vid_name in vid640x480.iter() {
         vids.push(
@@ -103,7 +104,7 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
                 .build(),
         );
     }
-    let pngs640x480: &[&str] = &[];
+    let pngs640x480: &[&str] = &["wail_text"];
     for png_name in pngs640x480.iter() {
         vids.push(
             Vid::builder()
@@ -185,6 +186,9 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "exhaustion_combo",
         "finite",
         "finite_combo",
+        "wail_scenes",
+        "wail_text",
+        "wail_combo",
     ]
     .iter()
     .map(|s| s.to_string())
@@ -305,6 +309,8 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
     generate_combo_mix!("exhaustion_combo", "exhaustion_scenes_overlay");
 
     generate_combo_mix!("finite_combo", "finite_overlay");
+
+    generate_combo_mix!("wail_combo", "wail_scenes_overlay", "wail_text_overlay");
 
     configs
 });
@@ -555,6 +561,7 @@ pub fn mega_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
     artificial_cb(all_settings, event);
     exhaustion_cb(all_settings, event);
     finite_cb(all_settings, event);
+    wail_cb(all_settings, event);
 }
 
 // Generic send for all midi devices to GLSL vars
@@ -1576,5 +1583,105 @@ pub fn finite_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
             }
             _ => (),
         }
+    }
+}
+
+pub fn wail_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
+    static WAIL_TIME_CODES: LazyLock<Vec<f64>> = LazyLock::new(|| {
+        [
+            "00:00:00:10",
+            "00:00:07:30",
+            "00:00:19:30",
+            "00:00:26:30",
+            "00:00:40:00",
+            "00:01:11:00",
+            "00:01:27:00",
+            "00:01:29:00",
+            "00:01:34:00",
+            "00:01:37:00",
+            "00:01:40:00",
+            "00:01:45:00",
+            "00:01:49:00",
+            "00:01:52:00",
+            "00:01:56:00",
+            "00:01:56:00",
+            "00:01:58:00",
+            "00:02:00:00",
+            "00:02:13:00",
+            "00:02:17:00",
+            "00:02:20:00",
+            "00:02:31:00",
+            "00:03:11:00",
+            "00:03:19:00",
+            "00:03:20:00",
+            "00:03:21:00",
+            "00:03:26:50",
+            "00:03:27:50",
+            "00:03:31:00",
+            "00:03:50:00",
+            "00:03:57:00",
+            "00:04:00:00",
+            "00:04:06:00",
+            "00:04:08:00",
+            "00:05:08:23",
+            "00:05:13:29",
+            "00:05:27:27",
+            "00:06:50:08",
+            "00:07:05:29",
+            "00:07:13:20",
+            "00:07:22:18",
+            "00:07:34:17",
+            "00:07:50:07",
+            "00:08:20:10",
+            "00:08:24:04",
+            "00:08:25:04",
+            "00:08:26:20",
+            "00:08:29:05",
+            "00:08:42:00",
+            "00:08:45:09",
+            "00:08:47:17",
+            "00:08:52:20",
+        ]
+        .iter()
+        .map(|s| {
+            let parts: Vec<&str> = s.split(':').collect();
+            let hours: f64 = parts[0].parse().unwrap_or(0.0);
+            let minutes: f64 = parts[1].parse().unwrap_or(0.0);
+            let seconds: f64 = parts[2].parse().unwrap_or(0.0);
+            let milliseconds: f64 = parts[3].parse().unwrap_or(0.0) * 10.0;
+            hours * 3600.0 + minutes * 60.0 + seconds + milliseconds / 1000.0
+        })
+        .collect::<Vec<_>>()
+    });
+
+    // static WAIL_TIME_CODES: &[f64] = &[
+    //     0.1, 7.3, 19.3, 26.3, 40.0, 71.0, 87.0, 89.0, 94.0, 97.0, 100.0, 105.0, 109.0, 112.0,
+    //     116.0, 116.0, 118.0, 120.0, 133.0, 137.0, 140.0, 151.0, 191.0, 199.0, 200.0, 201.0, 206.5,
+    //     207.5, 211.0, 230.0, 237.0, 240.0, 246.0, 248.0,
+    // ];
+    cb_boilerplate!(
+        all_settings,
+        event,
+        "wail_scenes",
+        "wail_combo",
+        WAIL_TIME_CODES
+    );
+
+    // INTERNAL MATCHING FOR SETTING MODIFICATION
+    match (
+        event.device.as_str(),
+        event.channel,
+        event.kind,
+        event.key,
+        event.velocity,
+    ) {
+        // (IAC, 0, MIDI_NOTE_ON, 36, v) => settings.set_rr(v as f64 / 127.0 + 1.0),
+        // (IAC, 0, MIDI_NOTE_OFF, 36, _) => settings.set_rr(1.0),
+        // (IAC, 0, MIDI_NOTE_ON, 37, v) => settings.set_warp_level(v as f64 / 127.0 * 0.3),
+        // (IAC, 0, MIDI_NOTE_OFF, 37, _) => settings.set_warp_level(0.0),
+        // (IAC, 0, MIDI_NOTE_ON, 38, v) => settings.set_distort_level(v as f64 / 127.0 * 0.3),
+        // (IAC, 0, MIDI_NOTE_OFF, 38, _) => settings.set_distort_level(0.1),
+        // (IAC, 0, MIDI_CONTROL_CHANGE, 0, v) => settings.set_rh(v as f64 / 127.0 * 0.05),
+        _ => (),
     }
 }
