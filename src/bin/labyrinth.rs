@@ -89,6 +89,7 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
         "exhaustion_scenes",
         "finite",
         "wail_scenes",
+        "putrid",
     ];
     for vid_name in vid640x480.iter() {
         vids.push(
@@ -189,6 +190,8 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "wail_scenes",
         "wail_text",
         "wail_combo",
+        "putrid",
+        "putrid_combo",
     ]
     .iter()
     .map(|s| s.to_string())
@@ -312,6 +315,7 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
 
     generate_combo_mix!("wail_combo", "wail_scenes_overlay", "wail_text_overlay");
 
+    generate_combo_mix!("putrid_combo", "putrid_overlay");
     configs
 });
 
@@ -562,6 +566,7 @@ pub fn mega_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
     exhaustion_cb(all_settings, event);
     finite_cb(all_settings, event);
     wail_cb(all_settings, event);
+    putrid_cb(all_settings, event);
 }
 
 // Generic send for all midi devices to GLSL vars
@@ -1684,4 +1689,72 @@ pub fn wail_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
         // (IAC, 0, MIDI_CONTROL_CHANGE, 0, v) => settings.set_rh(v as f64 / 127.0 * 0.05),
         _ => (),
     }
+}
+
+pub fn time_code_2_float<T>(tc: T) -> f64
+where
+    T: AsRef<str>,
+{
+    let parts: Vec<&str> = tc.as_ref().split(':').collect();
+    let hours: f64 = parts[0].parse().unwrap_or(0.0);
+    let minutes: f64 = parts[1].parse().unwrap_or(0.0);
+    let seconds: f64 = parts[2].parse().unwrap_or(0.0);
+    let milliseconds: f64 = parts[3].parse().unwrap_or(0.0) * 10.0;
+    hours * 3600.0 + minutes * 60.0 + seconds + milliseconds / 1000.0
+}
+
+pub fn putrid_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
+    static SLIME_CODES: LazyLock<Vec<f64>> = LazyLock::new(|| {
+        [
+            "00:00:49:03",
+            "00:00:56:20",
+            "00:01:15:10",
+            "00:01:20:04",
+            "00:01:29:02",
+            "00:01:33:26",
+            "00:01:42:00",
+            "00:01:58:01",
+            "00:02:10:26",
+            "00:02:20:08",
+            "00:02:32:05",
+            "00:02:41:18",
+            "00:02:57:11",
+        ]
+        .iter()
+        .map(time_code_2_float)
+        .collect::<Vec<_>>()
+    });
+    static JOKE_CODES: LazyLock<Vec<f64>> = LazyLock::new(|| {
+        [
+            "00:00:00:01",
+            "00:00:08:03",
+            "00:00:11:11",
+            "00:00:17:04",
+            "00:00:19:19",
+            "00:00:24:05",
+            "00:00:30:25",
+            "00:00:38:07",
+        ]
+        .iter()
+        .map(time_code_2_float)
+        .collect::<Vec<_>>()
+    });
+    static PUTRID_TIME_CODES: LazyLock<Vec<f64>> = LazyLock::new(|| {
+        let mut codes = vec![];
+        for i in 0..((SLIME_CODES.len() * JOKE_CODES.len()) / 2) {
+            let slime_idx = i % SLIME_CODES.len();
+            let joke_idx = i % JOKE_CODES.len();
+            codes.push(SLIME_CODES[slime_idx]);
+            codes.push(JOKE_CODES[joke_idx]);
+        }
+        codes
+    });
+
+    cb_boilerplate!(
+        all_settings,
+        event,
+        "putrid",
+        "putrid_combo",
+        PUTRID_TIME_CODES
+    );
 }

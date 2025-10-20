@@ -1,0 +1,1 @@
+color = texture(src_tex0, src_coord0);
