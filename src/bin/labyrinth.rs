@@ -90,6 +90,8 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
         "finite",
         "wail_scenes",
         "putrid",
+        "misunderstood_scenes",
+        "misunderstood_titles",
     ];
     for vid_name in vid640x480.iter() {
         vids.push(
@@ -192,6 +194,9 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "wail_combo",
         "putrid",
         "putrid_combo",
+        "misunderstood_scenes",
+        "misunderstood_titles",
+        "misunderstood_combo",
     ]
     .iter()
     .map(|s| s.to_string())
@@ -316,6 +321,11 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
     generate_combo_mix!("wail_combo", "wail_scenes_overlay", "wail_text_overlay");
 
     generate_combo_mix!("putrid_combo", "putrid_overlay");
+    generate_combo_mix!(
+        "misunderstood_combo",
+        "misunderstood_scenes_overlay",
+        "misunderstood_titles_overlay"
+    );
     configs
 });
 
@@ -567,6 +577,7 @@ pub fn mega_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
     finite_cb(all_settings, event);
     wail_cb(all_settings, event);
     putrid_cb(all_settings, event);
+    misunderstood_cb(all_settings, event);
 }
 
 // Generic send for all midi devices to GLSL vars
@@ -1756,5 +1767,62 @@ pub fn putrid_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
         "putrid",
         "putrid_combo",
         PUTRID_TIME_CODES
+    );
+}
+
+pub fn misunderstood_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
+    static MISUNDERSTOOD_TIME_CODES: LazyLock<Vec<f64>> = LazyLock::new(|| {
+        [
+            "00:00:00:01",
+            "00:00:02:06",
+            "00:00:06:05",
+            "00:00:09:27",
+            "00:00:11:12",
+            "00:00:17:01",
+            "00:00:22:14",
+            "00:00:25:12",
+            "00:00:33:06",
+            "00:00:37:03",
+            "00:00:45:20",
+            "00:00:48:21",
+            "00:00:54:21",
+            "00:00:56:00",
+            "00:00:58:29",
+            "00:01:03:25",
+            "00:01:06:07",
+            "00:01:09:13",
+            "00:01:12:16",
+            "00:01:14:07",
+            "00:01:16:17",
+            "00:01:21:13",
+            "00:01:25:07",
+            "00:01:27:26",
+            "00:01:32:02",
+            "00:01:34:16",
+            "00:01:42:28",
+            "00:01:47:10",
+            "00:01:50:26",
+            "00:01:55:12",
+            "00:02:00:15",
+            "00:02:04:11",
+            "00:02:06:16",
+            "00:02:11:21",
+            "00:02:18:13",
+            "00:02:27:11",
+            "00:02:29:09",
+            "00:02:33:00",
+            "00:02:38:13",
+        ]
+        .iter()
+        .map(time_code_2_float)
+        .collect::<Vec<_>>()
+    });
+
+    cb_boilerplate!(
+        all_settings,
+        event,
+        "misunderstood_scenes",
+        "misunderstood_combo",
+        MISUNDERSTOOD_TIME_CODES
     );
 }
