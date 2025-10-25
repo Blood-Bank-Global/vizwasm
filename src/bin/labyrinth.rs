@@ -92,6 +92,8 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
         "putrid",
         "misunderstood_scenes",
         "misunderstood_titles",
+        "repeal_scenes",
+        "repeal_title",
     ];
     for vid_name in vid640x480.iter() {
         vids.push(
@@ -197,6 +199,9 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "misunderstood_scenes",
         "misunderstood_titles",
         "misunderstood_combo",
+        "repeal_scenes",
+        "repeal_title",
+        "repeal_combo",
     ]
     .iter()
     .map(|s| s.to_string())
@@ -326,6 +331,13 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
         "misunderstood_scenes_overlay",
         "misunderstood_titles_overlay"
     );
+
+    generate_combo_mix!(
+        "repeal_combo",
+        "repeal_scenes_overlay",
+        "repeal_title_overlay"
+    );
+
     configs
 });
 
@@ -578,6 +590,7 @@ pub fn mega_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
     wail_cb(all_settings, event);
     putrid_cb(all_settings, event);
     misunderstood_cb(all_settings, event);
+    repeal_cb(all_settings, event);
 }
 
 // Generic send for all midi devices to GLSL vars
@@ -1710,8 +1723,8 @@ where
     let hours: f64 = parts[0].parse().unwrap_or(0.0);
     let minutes: f64 = parts[1].parse().unwrap_or(0.0);
     let seconds: f64 = parts[2].parse().unwrap_or(0.0);
-    let milliseconds: f64 = parts[3].parse().unwrap_or(0.0) * 10.0;
-    hours * 3600.0 + minutes * 60.0 + seconds + milliseconds / 1000.0
+    let frames: f64 = parts[3].parse().unwrap_or(0.0) * 1.0 / 24.0;
+    hours * 3600.0 + minutes * 60.0 + seconds + frames
 }
 
 pub fn putrid_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
@@ -1823,6 +1836,90 @@ pub fn misunderstood_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
         event,
         "misunderstood_scenes",
         "misunderstood_combo",
+        MISUNDERSTOOD_TIME_CODES
+    );
+}
+
+pub fn repeal_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
+    static MISUNDERSTOOD_TIME_CODES: LazyLock<Vec<f64>> = LazyLock::new(|| {
+        [
+            "00:00:00:01",
+            "00:00:08:01",
+            "00:00:26:20",
+            "00:00:33:19",
+            "00:00:38:01",
+            "00:00:41:05",
+            "00:01:17:16",
+            "00:01:30:07",
+            "00:01:34:07",
+            "00:01:41:19",
+            "00:01:49:08",
+            "00:02:09:17",
+            "00:02:14:23",
+            "00:02:26:05",
+            "00:02:43:16",
+            "00:02:55:18",
+            "00:03:19:11",
+            "00:03:25:12",
+            "00:03:33:04",
+            "00:03:49:15",
+            "00:04:03:22",
+            "00:04:17:22",
+            "00:04:23:19",
+            "00:04:27:05",
+            "00:04:29:00",
+            "00:04:30:15",
+            "00:04:34:03",
+            "00:04:36:23",
+            "00:04:42:13",
+            "00:04:49:00",
+            "00:04:52:03",
+            "00:05:12:16",
+            "00:05:16:01",
+            "00:05:17:07",
+            "00:05:24:02",
+            "00:05:27:22",
+            "00:05:35:09",
+            "00:05:37:23",
+            "00:05:53:23",
+            "00:05:59:08",
+            "00:06:08:13",
+            "00:06:12:17",
+            "00:06:14:11",
+            "00:06:16:06",
+            "00:06:19:17",
+            "00:06:29:15",
+            "00:06:36:10",
+            "00:06:49:06",
+            "00:06:51:21",
+            "00:07:32:13",
+            "00:07:39:19",
+            "00:08:06:07",
+            "00:08:10:14",
+            "00:08:17:02",
+            "00:08:22:01",
+            "00:08:27:08",
+            "00:08:29:04",
+            "00:08:33:04",
+            "00:08:37:15",
+            "00:08:42:05",
+            "00:08:47:00",
+            "00:08:48:19",
+            "00:08:55:01",
+            "00:08:57:15",
+            "00:09:12:02",
+            "00:09:22:14",
+        ]
+        .iter()
+        .map(time_code_2_float)
+        .collect::<Vec<_>>()
+    });
+
+    cb_boilerplate!(
+        all_settings,
+        event,
+        "repeal_scenes",
+        "repeal_combo",
         MISUNDERSTOOD_TIME_CODES
     );
 }

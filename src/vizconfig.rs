@@ -1256,6 +1256,14 @@ impl AllSettings {
             }};
         }
 
+        let tc = self.playback[self.active_idx].stream.real_ts.0 as f64
+            / self.playback[self.active_idx].stream.real_ts.1 as f64;
+
+        let hour = (tc / 3600.0).floor() as u32;
+        let minute = ((tc % 3600.0) / 60.0).floor() as u32;
+        let second = (tc % 60.0).floor() as u32;
+        let frame = ((tc - tc.floor()) * 24.0 as f64).round() as u32;
+
         format!(
             r#"
 loops: [{}], loop capture: {}
@@ -1304,6 +1312,7 @@ loops: [{}], loop capture: {}
 {}[12] Scrub {:.3}
  Selected {}
  Duration: {}
+ Timecode: {:02}:{:02}:{:02}:{:02}
  ts: {:-6}/{:-6} = {:.3}
 "#,
             self.playback[self.active_idx]
@@ -1632,6 +1641,10 @@ loops: [{}], loop capture: {}
             self.selected_knobs,
             (vid_info.duration_tbu_q.0 as f64 / vid_info.duration_tbu_q.1 as f64)
                 * (vid_info.timebase_q.0 as f64 / vid_info.timebase_q.1 as f64),
+            hour,
+            minute,
+            second,
+            frame,
             self.playback[self.active_idx].stream.real_ts.0 as f64,
             self.playback[self.active_idx].stream.real_ts.1 as f64,
             self.playback[self.active_idx].stream.real_ts.0 as f64
