@@ -41,7 +41,7 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
         );
     }
 
-    let vid640x480 = ["castles_final", "towers"];
+    let vid640x480 = ["castles_final", "towers", "clouds"];
     for vid_name in vid640x480.iter() {
         vids.push(
             Vid::builder()
@@ -56,7 +56,7 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
                 .build(),
         );
     }
-    let pngs640x480: &[&str] = &[];
+    let pngs640x480: &[&str] = &["upperdragon", "lowerdragon"];
     for png_name in pngs640x480.iter() {
         vids.push(
             Vid::builder()
@@ -76,10 +76,19 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
 });
 
 static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
-    let names = ["castles_final", "blank", "towers", "castle_combo"]
-        .iter()
-        .map(|s| s.to_string())
-        .collect::<Vec<_>>();
+    let names = [
+        "castles_final",
+        "blank",
+        "towers",
+        "castle_combo",
+        "clouds",
+        "upperdragon",
+        "lowerdragon",
+        "clouds_combo",
+    ]
+    .iter()
+    .map(|s| s.to_string())
+    .collect::<Vec<_>>();
     names
 });
 
@@ -124,6 +133,13 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
     }
 
     generate_combo_mix!("castle_combo", "castles_final_overlay", "towers_overlay");
+
+    generate_combo_mix!(
+        "clouds_combo",
+        "clouds_overlay",
+        "upperdragon_overlay",
+        "lowerdragon_overlay"
+    );
 
     configs
 });
@@ -360,6 +376,7 @@ const MIDI_DEVICE_VARS: LazyLock<HashMap<String, String>> = LazyLock::new(|| {
 
 pub fn mega_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
     glsl_midi_cb(all_settings, event);
+    clouds_cb(all_settings, event);
 }
 
 macro_rules! cb_boilerplate {
@@ -567,4 +584,22 @@ pub fn castle_combo_cb(_all_settings: &mut AllSettings, event: &MidiEvent) {
         // (IAC, 0, MIDI_CONTROL_CHANGE, 0, v) => settings.set_rh(v as f64 / 127.0 * 0.05),
         _ => (),
     }
+}
+
+pub fn clouds_cb(_all_settings: &mut AllSettings, event: &MidiEvent) {
+    static TIME_CODES: LazyLock<Vec<f64>> = LazyLock::new(|| {
+        [
+            "00:00:02:12",
+            "00:00:45:23",
+            "00:01:32:24",
+            "00:02:01:21",
+            "00:02:38:04",
+            "00:03:26:00",
+        ]
+        .iter()
+        .map(|s| time_code_2_float(s))
+        .collect::<Vec<_>>()
+    });
+
+    cb_boilerplate!(_all_settings, event, "clouds", "clouds_combo", *TIME_CODES);
 }
