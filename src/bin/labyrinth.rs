@@ -41,7 +41,7 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
         );
     }
 
-    let vid640x480 = ["castles_final", "towers", "clouds"];
+    let vid640x480 = ["castles_final", "towers", "clouds", "inside", "angels"];
     for vid_name in vid640x480.iter() {
         vids.push(
             Vid::builder()
@@ -85,6 +85,9 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "upperdragon",
         "lowerdragon",
         "clouds_combo",
+        "inside",
+        "angels",
+        "inside_combo",
     ]
     .iter()
     .map(|s| s.to_string())
@@ -140,6 +143,8 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
         "upperdragon_overlay",
         "lowerdragon_overlay"
     );
+
+    generate_combo_mix!("inside_combo", "inside_overlay", "angels_overlay");
 
     configs
 });
@@ -377,6 +382,7 @@ const MIDI_DEVICE_VARS: LazyLock<HashMap<String, String>> = LazyLock::new(|| {
 pub fn mega_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
     glsl_midi_cb(all_settings, event);
     clouds_cb(all_settings, event);
+    inside_cb(all_settings, event);
 }
 
 macro_rules! cb_boilerplate {
@@ -602,4 +608,36 @@ pub fn clouds_cb(_all_settings: &mut AllSettings, event: &MidiEvent) {
     });
 
     cb_boilerplate!(_all_settings, event, "clouds", "clouds_combo", *TIME_CODES);
+}
+
+pub fn inside_cb(_all_settings: &mut AllSettings, event: &MidiEvent) {
+    static TIME_CODES: LazyLock<Vec<f64>> = LazyLock::new(|| {
+        [
+            "00:00:00:01",
+            "00:00:20:04",
+            "00:00:41:15",
+            "00:00:58:04",
+            "00:01:05:19",
+            "00:01:18:23",
+            "00:01:29:08",
+            "00:01:31:23",
+            "00:01:48:11",
+            "00:02:05:16",
+            "00:02:40:12",
+            "00:03:02:14",
+            "00:03:25:06",
+            "00:03:36:22",
+            "00:03:54:02",
+            "00:04:05:04",
+            "00:04:12:10",
+            "00:04:31:10",
+            "00:04:49:05",
+            "00:05:06:08",
+        ]
+        .iter()
+        .map(|s| time_code_2_float(s))
+        .collect::<Vec<_>>()
+    });
+
+    cb_boilerplate!(_all_settings, event, "inside", "inside_combo", *TIME_CODES);
 }
