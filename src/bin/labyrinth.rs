@@ -1,5 +1,5 @@
 use std::{
-    cell::RefCell,
+    // cell::RefCell,
     collections::HashMap,
     error::Error,
     sync::{
@@ -7,6 +7,8 @@ use std::{
         LazyLock, Mutex,
     },
 };
+
+use rand;
 
 #[allow(unused_imports)]
 use sdlrig::gfxinfo::{MIDI_CONTROL_CHANGE, MIDI_NOTE_OFF, MIDI_NOTE_ON};
@@ -41,7 +43,14 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
         );
     }
 
-    let vid640x480 = ["castles_final", "towers", "clouds", "inside", "angels"];
+    let vid640x480 = [
+        "castles_final",
+        "towers",
+        "clouds",
+        "inside",
+        "angels",
+        "library",
+    ];
     for vid_name in vid640x480.iter() {
         vids.push(
             Vid::builder()
@@ -77,17 +86,19 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
 
 static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
     let names = [
-        "castles_final",
         "blank",
+        "castles_final",
         "towers",
         "castle_combo",
+        "library",
+        "library_combo",
+        "inside",
+        "angels",
+        "inside_combo",
         "clouds",
         "upperdragon",
         "lowerdragon",
         "clouds_combo",
-        "inside",
-        "angels",
-        "inside_combo",
     ]
     .iter()
     .map(|s| s.to_string())
@@ -146,6 +157,7 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
 
     generate_combo_mix!("inside_combo", "inside_overlay", "angels_overlay");
 
+    generate_combo_mix!("library_combo", "library_overlay");
     configs
 });
 
@@ -381,8 +393,10 @@ const MIDI_DEVICE_VARS: LazyLock<HashMap<String, String>> = LazyLock::new(|| {
 
 pub fn mega_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
     glsl_midi_cb(all_settings, event);
-    clouds_cb(all_settings, event);
+    //no castle cb
     inside_cb(all_settings, event);
+    library_cb(all_settings, event);
+    clouds_cb(all_settings, event);
 }
 
 macro_rules! cb_boilerplate {
@@ -418,8 +432,8 @@ macro_rules! cb_boilerplate {
             return;
         }
 
-        static TIME_IDX: LazyLock<Mutex<RefCell<usize>>> =
-            LazyLock::new(|| Mutex::new(RefCell::new(0)));
+        // static TIME_IDX: LazyLock<Mutex<RefCell<usize>>> =
+        //     LazyLock::new(|| Mutex::new(RefCell::new(0)));
         if let (Some(bg_idx), Some(combo_idx)) = (*BG_IDX, *COMBO_IDX) {
             if $all_settings.active_idx != bg_idx
                 && $all_settings.display_idx != bg_idx
@@ -439,12 +453,13 @@ macro_rules! cb_boilerplate {
             ) {
                 (IAC, 0, MIDI_CONTROL_CHANGE, 0, v) => {
                     if v > 10 {
-                        let lock = TIME_IDX.lock().unwrap();
-                        let mut idx = lock.borrow_mut();
-                        *idx = (*idx + 1) % $time_codes.len();
+                        // let lock = TIME_IDX.lock().unwrap();
+                        // let mut idx = lock.borrow_mut();
+                        // *idx = (*idx + 1) % $time_codes.len();
+                        let idx = rand::random::<u32>() % $time_codes.len() as u32;
                         $all_settings.playback[bg_idx]
                             .stream
-                            .set_exact_sec(*$time_codes.get(*idx).unwrap_or(&1.0));
+                            .set_exact_sec(*$time_codes.get(idx as usize).unwrap_or(&1.0));
                     }
                 }
                 _ => (),
@@ -640,4 +655,52 @@ pub fn inside_cb(_all_settings: &mut AllSettings, event: &MidiEvent) {
     });
 
     cb_boilerplate!(_all_settings, event, "inside", "inside_combo", *TIME_CODES);
+}
+
+pub fn library_cb(_all_settings: &mut AllSettings, event: &MidiEvent) {
+    static TIME_CODES: LazyLock<Vec<f64>> = LazyLock::new(|| {
+        [
+            "00:00:00:05",
+            "00:00:03:27",
+            "00:00:05:21",
+            "00:00:07:18",
+            "00:00:15:01",
+            "00:00:23:19",
+            "00:00:25:05",
+            "00:00:37:00",
+            "00:00:42:27",
+            "00:00:50:10",
+            "00:00:52:26",
+            "00:00:57:18",
+            "00:01:13:21",
+            "00:01:20:13",
+            "00:01:29:06",
+            "00:01:30:16",
+            "00:01:31:21",
+            "00:01:34:10",
+            "00:01:37:17",
+            "00:01:39:28",
+            "00:01:41:15",
+            "00:01:43:27",
+            "00:01:46:24",
+            "00:01:51:03",
+            "00:01:53:26",
+            "00:01:59:26",
+            "00:02:01:20",
+            "00:02:06:16",
+            "00:02:10:12",
+            "00:02:15:08",
+        ]
+        .iter()
+        .map(|s| time_code_2_float(s))
+        .collect::<Vec<_>>()
+    });
+
+    cb_boilerplate!(
+        _all_settings,
+        event,
+        "library",
+        "library_combo",
+        *TIME_CODES
+    );
 }
