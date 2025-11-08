@@ -1860,9 +1860,9 @@ pub struct StreamSettings {
     boost: f64,
     #[adjustable(k = R, idx = 3, min = 0.0, max = 1.0, step = 0.01, command_simple = (self.main_mix(), "thresh", Float))]
     threshold: f64,
-    #[adjustable(tween = true, command_simple = (self.main_mix(), "distort_level", Float))]
+    #[adjustable(tween = true, min = 0.0, max = 1.0, command_simple = (self.main_mix(), "distort_level", Float))]
     distort_level: f64,
-    #[adjustable(tween = true, command_simple = (self.main_mix(), "warp_level", Float))]
+    #[adjustable(tween = true,  min = 0.0, max = 1.0, command_simple = (self.main_mix(), "warp_level", Float))]
     warp_level: f64,
     #[adjustable(k = CB, idx = 3, kind = toggle, do_not_record = true)]
     distort_warp_select: u8,

@@ -390,6 +390,8 @@ pub fn calculate(
 
 const IAC: &str = "IAC Driver Bus 1";
 const IAC_GLSL: &str = "iac_driver_bus_1";
+const MFT: &str = "Midi Fighter Twister";
+
 const MIDI_DEVICE_VARS: LazyLock<HashMap<String, String>> = LazyLock::new(|| {
     let mut m = HashMap::new();
     m.insert(IAC.to_string(), IAC_GLSL.to_string());
@@ -397,11 +399,104 @@ const MIDI_DEVICE_VARS: LazyLock<HashMap<String, String>> = LazyLock::new(|| {
 });
 
 pub fn mega_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
+    video_fight_cb(all_settings, event);
     glsl_midi_cb(all_settings, event);
+    video_fight_cb(all_settings, event);
     //no castle cb
     inside_cb(all_settings, event);
     library_cb(all_settings, event);
     clouds_cb(all_settings, event);
+}
+
+pub fn video_fight_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
+    let idx = all_settings.active_idx;
+    let stream = &mut all_settings.playback[idx].stream;
+    match (
+        event.device.as_str(),
+        event.channel,
+        event.kind,
+        event.key,
+        event.velocity,
+    ) {
+        //ROW 1
+        (MFT, 0, MIDI_CONTROL_CHANGE, 0, v) => stream.scale_threshold(v as f64 / 127.0),
+        (MFT, 0, MIDI_CONTROL_CHANGE, 1, v) => stream.scale_warp_level(v as f64 / 127.0),
+        (MFT, 0, MIDI_CONTROL_CHANGE, 2, v) => stream.scale_distort_level(v as f64 / 127.0),
+        (MFT, 0, MIDI_CONTROL_CHANGE, 3, v) => stream.scale_sim(v as f64 / 127.0),
+        (MFT, 1, MIDI_CONTROL_CHANGE, 3, 127) => stream.toggle_video_key_enable(),
+        // ROW 2
+        (MFT, 0, MIDI_CONTROL_CHANGE, 4, v) => stream.clamp_set_warp_scan(v as f64),
+        (MFT, 1, MIDI_CONTROL_CHANGE, 4, 127) => stream.set_warp_selected(stream.warp_scan()),
+        (MFT, 0, MIDI_CONTROL_CHANGE, 5, v) => stream.clamp_set_distort_scan(v as f64),
+        (MFT, 1, MIDI_CONTROL_CHANGE, 5, 127) => stream.set_distort_selected(stream.distort_scan()),
+        (MFT, 0, MIDI_CONTROL_CHANGE, 6, v) => stream.clamp_set_distort_edge_scan(v as f64),
+        (MFT, 1, MIDI_CONTROL_CHANGE, 6, 127) => {
+            stream.set_distort_edge_selected(stream.distort_edge_scan())
+        }
+        (MFT, 0, MIDI_CONTROL_CHANGE, 7, v) => stream.clamp_set_lut_scan(v as f64),
+        (MFT, 1, MIDI_CONTROL_CHANGE, 7, 127) => stream.set_lut_selected(stream.lut_scan()),
+        // ROW 3
+        (MFT, 0, MIDI_CONTROL_CHANGE, 8, v) => stream.scale_scroll_h(v as f64 / 127.0),
+        (MFT, 0, MIDI_CONTROL_CHANGE, 9, v) => stream.scale_scroll_v(v as f64 / 127.0),
+        (MFT, 0, MIDI_CONTROL_CHANGE, 10, v) => stream.scale_dx(v as f64 / 127.0),
+        (MFT, 0, MIDI_CONTROL_CHANGE, 11, v) => stream.scale_dy(v as f64 / 127.0),
+        // ROW 4
+        (MFT, 0, MIDI_CONTROL_CHANGE, 12, v) => stream.scale_feedback_rotation(v as f64 / 127.0),
+        (MFT, 0, MIDI_CONTROL_CHANGE, 13, v) => stream.clamp_set_scanlines_scan(v as f64),
+        (MFT, 1, MIDI_CONTROL_CHANGE, 13, 127) => {
+            stream.set_scanlines_selected(stream.scanlines_scan())
+        }
+        (MFT, 0, MIDI_CONTROL_CHANGE, 14, v) => stream.clamp_set_blend_scan(v as f64),
+        (MFT, 1, MIDI_CONTROL_CHANGE, 14, 127) => stream.set_blend_selected(stream.blend_scan()),
+        (MFT, 0, MIDI_CONTROL_CHANGE, 15, v) => stream.clamp_set_overlay_scan(v as f64),
+        (MFT, 1, MIDI_CONTROL_CHANGE, 15, 127) => {
+            stream.set_overlay_selected(stream.overlay_scan())
+        }
+
+        // ROW 5
+        (MFT, 0, MIDI_CONTROL_CHANGE, 16, v) => stream.scale_rr(v as f64 / 127.0),
+        (MFT, 0, MIDI_CONTROL_CHANGE, 17, v) => stream.scale_rg(v as f64 / 127.0),
+        (MFT, 0, MIDI_CONTROL_CHANGE, 18, v) => stream.scale_rb(v as f64 / 127.0),
+        (MFT, 0, MIDI_CONTROL_CHANGE, 19, v) => stream.scale_ra(v as f64 / 127.0),
+        // ROW 6
+        (MFT, 0, MIDI_CONTROL_CHANGE, 20, v) => stream.scale_gr(v as f64 / 127.0),
+        (MFT, 0, MIDI_CONTROL_CHANGE, 21, v) => stream.scale_gg(v as f64 / 127.0),
+        (MFT, 0, MIDI_CONTROL_CHANGE, 22, v) => stream.scale_gb(v as f64 / 127.0),
+        (MFT, 0, MIDI_CONTROL_CHANGE, 23, v) => stream.scale_ga(v as f64 / 127.0),
+        // ROW 7
+        (MFT, 0, MIDI_CONTROL_CHANGE, 24, v) => stream.scale_br(v as f64 / 127.0),
+        (MFT, 0, MIDI_CONTROL_CHANGE, 25, v) => stream.scale_bg(v as f64 / 127.0),
+        (MFT, 0, MIDI_CONTROL_CHANGE, 26, v) => stream.scale_bb(v as f64 / 127.0),
+        (MFT, 0, MIDI_CONTROL_CHANGE, 27, v) => stream.scale_ba(v as f64 / 127.0),
+        // ROW 8
+        (MFT, 0, MIDI_CONTROL_CHANGE, 28, v) => stream.scale_ar(v as f64 / 127.0),
+        (MFT, 0, MIDI_CONTROL_CHANGE, 29, v) => stream.scale_ag(v as f64 / 127.0),
+        (MFT, 0, MIDI_CONTROL_CHANGE, 30, v) => stream.scale_ab(v as f64 / 127.0),
+        (MFT, 0, MIDI_CONTROL_CHANGE, 31, v) => stream.scale_aa(v as f64 / 127.0),
+
+        // ROW 9
+        (MFT, 0, MIDI_CONTROL_CHANGE, 32, v) => stream.scale_rh(v as f64 / 127.0),
+        (MFT, 0, MIDI_CONTROL_CHANGE, 33, v) => stream.scale_rv(v as f64 / 127.0),
+        (MFT, 0, MIDI_CONTROL_CHANGE, 34, v) => stream.scale_skew_x0(v as f64),
+        (MFT, 0, MIDI_CONTROL_CHANGE, 35, v) => stream.scale_skew_y0(v as f64),
+        //ROW 10
+        (MFT, 0, MIDI_CONTROL_CHANGE, 36, v) => stream.scale_gh(v as f64 / 127.0),
+        (MFT, 0, MIDI_CONTROL_CHANGE, 37, v) => stream.scale_gv(v as f64 / 127.0),
+        (MFT, 0, MIDI_CONTROL_CHANGE, 38, v) => stream.scale_skew_x1(v as f64),
+        (MFT, 0, MIDI_CONTROL_CHANGE, 39, v) => stream.scale_skew_y1(v as f64),
+        // ROW 11
+        (MFT, 0, MIDI_CONTROL_CHANGE, 40, v) => stream.scale_bh(v as f64 / 127.0),
+        (MFT, 0, MIDI_CONTROL_CHANGE, 41, v) => stream.scale_bv(v as f64 / 127.0),
+        (MFT, 0, MIDI_CONTROL_CHANGE, 42, v) => stream.scale_skew_x2(v as f64),
+        (MFT, 0, MIDI_CONTROL_CHANGE, 43, v) => stream.scale_skew_y2(v as f64),
+        // ROW 12
+        (MFT, 0, MIDI_CONTROL_CHANGE, 44, v) => stream.scale_ah(v as f64 / 127.0),
+        (MFT, 0, MIDI_CONTROL_CHANGE, 45, v) => stream.scale_av(v as f64 / 127.0),
+        (MFT, 0, MIDI_CONTROL_CHANGE, 46, v) => stream.scale_skew_x3(v as f64),
+        (MFT, 0, MIDI_CONTROL_CHANGE, 47, v) => stream.scale_skew_y3(v as f64),
+
+        _ => (),
+    }
 }
 
 macro_rules! cb_boilerplate {
