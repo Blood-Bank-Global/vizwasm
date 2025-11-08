@@ -50,6 +50,7 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
         "inside",
         "angels",
         "library",
+        "text",
     ];
     for vid_name in vid640x480.iter() {
         vids.push(
@@ -87,6 +88,8 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
 static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
     let names = [
         "blank",
+        "text",
+        "text_combo",
         "castles_final",
         "towers",
         "castle_combo",
@@ -145,6 +148,8 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
             });
         }
     }
+
+    generate_combo_mix!("text_combo", "text_overlay");
 
     generate_combo_mix!("castle_combo", "castles_final_overlay", "towers_overlay");
 

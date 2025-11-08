@@ -1677,6 +1677,7 @@ loops: [{}], loop capture: {}
         let mut stack = vec![root.as_ref().to_string()];
 
         let mut main_mixes = vec![];
+        let mut paused = vec![];
         //recursively add all the other mixes needed to display the overlay
         while let Some(mix_name) = stack.pop() {
             if let Some(mix_config) = self.mix_configs.get(&mix_name) {
@@ -1694,6 +1695,7 @@ loops: [{}], loop capture: {}
                         && self.playback[fidx].stream.exact_sec == 0.0
                         && self.playback[fidx].stream.scrub == 0.0
                     {
+                        paused.push(fidx);
                         continue;
                     }
 
@@ -1759,13 +1761,13 @@ loops: [{}], loop capture: {}
             }
         }
 
-        for i in main_mixes {
-            if self.initial_reset_complete[i] == false {
-                self.initial_reset_complete[i] = true;
+        for i in main_mixes.iter().chain(paused.iter()) {
+            if self.initial_reset_complete[*i] == false {
+                self.initial_reset_complete[*i] = true;
                 specs.extend(
                     (&StreamSettings::ALL_STREAMSETTINGS_UPDATERS)
                         .iter()
-                        .map(|f| f(&self.playback[i].stream))
+                        .map(|f| f(&self.playback[*i].stream))
                         .flatten(),
                 );
             }
