@@ -564,7 +564,12 @@ impl AllSettings {
         // Always capture live events even while recording is playing
         self.update(reg_events, frame, midi_callback)?;
 
-        if self.playback[self.active_idx].was_reset {
+        let active_diff = self.playback[self.active_idx]
+            .stream
+            .diff(&orig[self.active_idx].stream)
+            .into_iter()
+            .collect::<Vec<_>>();
+        if self.playback[self.active_idx].was_reset || active_diff.len() > 0 {
             self.playback[self.active_idx].was_reset = false;
             specs.append(&mut self.reload_encoders_for_active_idx());
         }
@@ -1874,97 +1879,167 @@ impl AllSettings {
     pub fn video_fight_cb(&mut self, event: &MidiEvent) {
         let idx = self.active_idx;
         let stream = &mut self.playback[idx].stream;
-        match (
-            event.device.as_str(),
-            event.channel,
-            event.kind,
-            event.key,
-            event.velocity,
-        ) {
+
+        if event.device != MFT || event.kind != MIDI_CONTROL_CHANGE {
+            return;
+        }
+
+        match (event.channel, event.key, event.velocity) {
             //ROW 1
-            (MFT, 0, MIDI_CONTROL_CHANGE, 0, v) => stream.scale_threshold(v as f64 / 127.0),
-            (MFT, 0, MIDI_CONTROL_CHANGE, 1, v) => stream.scale_distort_level(v as f64 / 127.0),
-            (MFT, 0, MIDI_CONTROL_CHANGE, 2, v) => stream.scale_warp_level(v as f64 / 127.0),
-            (MFT, 0, MIDI_CONTROL_CHANGE, 3, v) => stream.scale_sim(v as f64 / 127.0),
-            (MFT, 1, MIDI_CONTROL_CHANGE, 3, 127) => stream.toggle_video_key_enable(),
+            (0, 0, v) => stream.scale_threshold(v as f64 / 127.0),
+            (1, 0, 127) => stream.set_threshold(0.0),
+
+            (0, 1, v) => stream.scale_distort_level(v as f64 / 127.0),
+            (1, 1, 127) => stream.set_distort_level(0.2),
+
+            (0, 2, v) => stream.scale_warp_level(v as f64 / 127.0),
+            (1, 2, 127) => stream.set_warp_level(0.2),
+
+            (0, 3, v) => stream.scale_sim(v as f64 / 127.0),
+            (1, 3, 127) => stream.toggle_video_key_enable(),
 
             // ROW 2
-            (MFT, 0, MIDI_CONTROL_CHANGE, 4, v) => stream.scale_warp_scan(v as f64 / 127.0),
-            (MFT, 1, MIDI_CONTROL_CHANGE, 4, 127) => stream.set_warp_selected(stream.warp_scan()),
-            (MFT, 0, MIDI_CONTROL_CHANGE, 5, v) => stream.scale_distort_scan(v as f64 / 127.0),
-            (MFT, 1, MIDI_CONTROL_CHANGE, 5, 127) => {
-                stream.set_distort_selected(stream.distort_scan())
-            }
-            (MFT, 0, MIDI_CONTROL_CHANGE, 6, v) => stream.scale_distort_edge_scan(v as f64 / 127.0),
-            (MFT, 1, MIDI_CONTROL_CHANGE, 6, 127) => {
-                stream.set_distort_edge_selected(stream.distort_edge_scan())
-            }
-            (MFT, 0, MIDI_CONTROL_CHANGE, 7, v) => stream.scale_lut_scan(v as f64 / 127.0),
-            (MFT, 1, MIDI_CONTROL_CHANGE, 7, 127) => stream.set_lut_selected(stream.lut_scan()),
+            (0, 4, v) => stream.scale_warp_scan(v as f64 / 127.0),
+            (1, 4, 127) => stream.set_warp_selected(stream.warp_scan()),
+
+            (0, 5, v) => stream.scale_distort_scan(v as f64 / 127.0),
+            (1, 5, 127) => stream.set_distort_selected(stream.distort_scan()),
+
+            (0, 6, v) => stream.scale_distort_edge_scan(v as f64 / 127.0),
+            (1, 6, 127) => stream.set_distort_edge_selected(stream.distort_edge_scan()),
+
+            (0, 7, v) => stream.scale_lut_scan(v as f64 / 127.0),
+            (1, 7, 127) => stream.set_lut_selected(stream.lut_scan()),
+
             // ROW 3
-            (MFT, 0, MIDI_CONTROL_CHANGE, 8, v) => stream.scale_scroll_h(v as f64 / 127.0),
-            (MFT, 0, MIDI_CONTROL_CHANGE, 9, v) => stream.scale_scroll_v(v as f64 / 127.0),
-            (MFT, 0, MIDI_CONTROL_CHANGE, 10, v) => stream.scale_dx(v as f64 / 127.0),
-            (MFT, 0, MIDI_CONTROL_CHANGE, 11, v) => stream.scale_dy(v as f64 / 127.0),
+            (0, 8, v) => stream.scale_scroll_h(v as f64 / 127.0),
+            (1, 8, 127) => stream.set_scroll_h(0.0),
+
+            (0, 9, v) => stream.scale_scroll_v(v as f64 / 127.0),
+            (1, 9, 127) => stream.set_scroll_v(0.0),
+
+            (0, 10, v) => stream.scale_dx(v as f64 / 127.0),
+            (1, 10, 127) => stream.set_dx(0.0),
+
+            (0, 11, v) => stream.scale_dy(v as f64 / 127.0),
+            (1, 11, 127) => stream.set_dy(0.0),
+
             // ROW 4
-            (MFT, 0, MIDI_CONTROL_CHANGE, 12, v) => {
-                stream.scale_feedback_rotation(v as f64 / 127.0)
-            }
-            (MFT, 0, MIDI_CONTROL_CHANGE, 13, v) => stream.scale_scanlines_scan(v as f64 / 127.0),
-            (MFT, 1, MIDI_CONTROL_CHANGE, 13, 127) => {
-                stream.set_scanlines_selected(stream.scanlines_scan())
-            }
-            (MFT, 0, MIDI_CONTROL_CHANGE, 14, v) => stream.scale_blend_scan(v as f64 / 127.0),
-            (MFT, 1, MIDI_CONTROL_CHANGE, 14, 127) => {
-                stream.set_blend_selected(stream.blend_scan())
-            }
-            (MFT, 0, MIDI_CONTROL_CHANGE, 15, v) => stream.scale_overlay_scan(v as f64 / 127.0),
-            (MFT, 1, MIDI_CONTROL_CHANGE, 15, 127) => {
-                stream.set_overlay_selected(stream.overlay_scan())
-            }
+            (0, 12, v) => stream.scale_feedback_rotation(v as f64 / 127.0),
+            (1, 12, 127) => stream.set_feedback_rotation(0.0),
+
+            (0, 13, v) => stream.scale_scanlines_scan(v as f64 / 127.0),
+            (1, 13, 127) => stream.set_scanlines_selected(stream.scanlines_scan()),
+
+            (0, 14, v) => stream.scale_blend_scan(v as f64 / 127.0),
+            (1, 14, 127) => stream.set_blend_selected(stream.blend_scan()),
+
+            (0, 15, v) => stream.scale_overlay_scan(v as f64 / 127.0),
+            (1, 15, 127) => stream.set_overlay_selected(stream.overlay_scan()),
 
             // ROW 5
-            (MFT, 0, MIDI_CONTROL_CHANGE, 16, v) => stream.scale_rr(v as f64 / 127.0),
-            (MFT, 0, MIDI_CONTROL_CHANGE, 17, v) => stream.scale_rg(v as f64 / 127.0),
-            (MFT, 0, MIDI_CONTROL_CHANGE, 18, v) => stream.scale_rb(v as f64 / 127.0),
-            (MFT, 0, MIDI_CONTROL_CHANGE, 19, v) => stream.scale_ra(v as f64 / 127.0),
+            (0, 16, v) => stream.scale_rr(v as f64 / 127.0),
+            (1, 16, 127) => stream.set_rr(1.0),
+
+            (0, 17, v) => stream.scale_rg(v as f64 / 127.0),
+            (1, 17, 127) => stream.set_rg(0.0),
+
+            (0, 18, v) => stream.scale_rb(v as f64 / 127.0),
+            (1, 18, 127) => stream.set_rb(0.0),
+
+            (0, 19, v) => stream.scale_ra(v as f64 / 127.0),
+            (1, 19, 127) => stream.set_ra(0.0),
+
             // ROW 6
-            (MFT, 0, MIDI_CONTROL_CHANGE, 20, v) => stream.scale_gr(v as f64 / 127.0),
-            (MFT, 0, MIDI_CONTROL_CHANGE, 21, v) => stream.scale_gg(v as f64 / 127.0),
-            (MFT, 0, MIDI_CONTROL_CHANGE, 22, v) => stream.scale_gb(v as f64 / 127.0),
-            (MFT, 0, MIDI_CONTROL_CHANGE, 23, v) => stream.scale_ga(v as f64 / 127.0),
+            (0, 20, v) => stream.scale_gr(v as f64 / 127.0),
+            (1, 20, 127) => stream.set_gr(0.0),
+
+            (0, 21, v) => stream.scale_gg(v as f64 / 127.0),
+            (1, 21, 127) => stream.set_gg(1.0),
+
+            (0, 22, v) => stream.scale_gb(v as f64 / 127.0),
+            (1, 22, 127) => stream.set_gb(0.0),
+
+            (0, 23, v) => stream.scale_ga(v as f64 / 127.0),
+            (1, 23, 127) => stream.set_ga(0.0),
+
             // ROW 7
-            (MFT, 0, MIDI_CONTROL_CHANGE, 24, v) => stream.scale_br(v as f64 / 127.0),
-            (MFT, 0, MIDI_CONTROL_CHANGE, 25, v) => stream.scale_bg(v as f64 / 127.0),
-            (MFT, 0, MIDI_CONTROL_CHANGE, 26, v) => stream.scale_bb(v as f64 / 127.0),
-            (MFT, 0, MIDI_CONTROL_CHANGE, 27, v) => stream.scale_ba(v as f64 / 127.0),
+            (0, 24, v) => stream.scale_br(v as f64 / 127.0),
+            (1, 24, 127) => stream.set_br(0.0),
+
+            (0, 25, v) => stream.scale_bg(v as f64 / 127.0),
+            (1, 25, 127) => stream.set_bg(0.0),
+
+            (0, 26, v) => stream.scale_bb(v as f64 / 127.0),
+            (1, 26, 127) => stream.set_bb(1.0),
+
+            (0, 27, v) => stream.scale_ba(v as f64 / 127.0),
+            (1, 27, 127) => stream.set_ba(0.0),
+
             // ROW 8
-            (MFT, 0, MIDI_CONTROL_CHANGE, 28, v) => stream.scale_ar(v as f64 / 127.0),
-            (MFT, 0, MIDI_CONTROL_CHANGE, 29, v) => stream.scale_ag(v as f64 / 127.0),
-            (MFT, 0, MIDI_CONTROL_CHANGE, 30, v) => stream.scale_ab(v as f64 / 127.0),
-            (MFT, 0, MIDI_CONTROL_CHANGE, 31, v) => stream.scale_aa(v as f64 / 127.0),
+            (0, 28, v) => stream.scale_ar(v as f64 / 127.0),
+            (1, 28, 127) => stream.set_ar(0.0),
+
+            (0, 29, v) => stream.scale_ag(v as f64 / 127.0),
+            (1, 29, 127) => stream.set_ag(0.0),
+
+            (0, 30, v) => stream.scale_ab(v as f64 / 127.0),
+            (1, 30, 127) => stream.set_ab(0.0),
+
+            (0, 31, v) => stream.scale_aa(v as f64 / 127.0),
+            (1, 31, 127) => stream.set_aa(1.0),
 
             // ROW 9
-            (MFT, 0, MIDI_CONTROL_CHANGE, 32, v) => stream.scale_rh(v as f64 / 127.0),
-            (MFT, 0, MIDI_CONTROL_CHANGE, 33, v) => stream.scale_rv(v as f64 / 127.0),
-            (MFT, 0, MIDI_CONTROL_CHANGE, 34, v) => stream.scale_skew_x0(v as f64),
-            (MFT, 0, MIDI_CONTROL_CHANGE, 35, v) => stream.scale_skew_y0(v as f64),
-            //ROW 10
-            (MFT, 0, MIDI_CONTROL_CHANGE, 36, v) => stream.scale_gh(v as f64 / 127.0),
-            (MFT, 0, MIDI_CONTROL_CHANGE, 37, v) => stream.scale_gv(v as f64 / 127.0),
-            (MFT, 0, MIDI_CONTROL_CHANGE, 38, v) => stream.scale_skew_x1(v as f64),
-            (MFT, 0, MIDI_CONTROL_CHANGE, 39, v) => stream.scale_skew_y1(v as f64),
-            // ROW 11
-            (MFT, 0, MIDI_CONTROL_CHANGE, 40, v) => stream.scale_bh(v as f64 / 127.0),
-            (MFT, 0, MIDI_CONTROL_CHANGE, 41, v) => stream.scale_bv(v as f64 / 127.0),
-            (MFT, 0, MIDI_CONTROL_CHANGE, 42, v) => stream.scale_skew_x2(v as f64),
-            (MFT, 0, MIDI_CONTROL_CHANGE, 43, v) => stream.scale_skew_y2(v as f64),
-            // ROW 12
-            (MFT, 0, MIDI_CONTROL_CHANGE, 44, v) => stream.scale_ah(v as f64 / 127.0),
-            (MFT, 0, MIDI_CONTROL_CHANGE, 45, v) => stream.scale_av(v as f64 / 127.0),
-            (MFT, 0, MIDI_CONTROL_CHANGE, 46, v) => stream.scale_skew_x3(v as f64),
-            (MFT, 0, MIDI_CONTROL_CHANGE, 47, v) => stream.scale_skew_y3(v as f64),
+            (0, 32, v) => stream.scale_rh(v as f64 / 127.0),
+            (1, 32, 127) => stream.set_rh(0.0),
 
+            (0, 33, v) => stream.scale_rv(v as f64 / 127.0),
+            (1, 33, 127) => stream.set_rv(0.0),
+
+            (0, 34, v) => stream.scale_skew_x0(v as f64 / 127.0),
+            (1, 34, 127) => stream.set_skew_x0(0.0),
+
+            (0, 35, v) => stream.scale_skew_y0(v as f64 / 127.0),
+            (1, 35, 127) => stream.set_skew_y0(0.0),
+
+            //ROW 10
+            (0, 36, v) => stream.scale_gh(v as f64 / 127.0),
+            (1, 36, 127) => stream.set_gh(0.0),
+
+            (0, 37, v) => stream.scale_gv(v as f64 / 127.0),
+            (1, 37, 127) => stream.set_gv(0.0),
+
+            (0, 38, v) => stream.scale_skew_x1(v as f64 / 127.0),
+            (1, 38, 127) => stream.set_skew_x1(1.0),
+
+            (0, 39, v) => stream.scale_skew_y1(v as f64 / 127.0),
+            (1, 39, 127) => stream.set_skew_y1(0.0),
+
+            // ROW 11
+            (0, 40, v) => stream.scale_bh(v as f64 / 127.0),
+            (1, 40, 127) => stream.set_bh(0.0),
+
+            (0, 41, v) => stream.scale_bv(v as f64 / 127.0),
+            (1, 41, 127) => stream.set_bv(0.0),
+
+            (0, 42, v) => stream.scale_skew_x2(v as f64 / 127.0),
+            (1, 42, 127) => stream.set_skew_x2(0.0),
+
+            (0, 43, v) => stream.scale_skew_y2(v as f64 / 127.0),
+            (1, 43, 127) => stream.set_skew_y2(1.0),
+
+            // ROW 12
+            (0, 44, v) => stream.scale_ah(v as f64 / 127.0),
+            (1, 44, 127) => stream.set_ah(0.0),
+
+            (0, 45, v) => stream.scale_av(v as f64 / 127.0),
+            (1, 45, 127) => stream.set_av(0.0),
+
+            (0, 46, v) => stream.scale_skew_x3(v as f64 / 127.0),
+            (1, 46, 127) => stream.set_skew_x3(1.0),
+
+            (0, 47, v) => stream.scale_skew_y3(v as f64 / 127.0),
+            (1, 47, 127) => stream.set_skew_y3(1.0),
             _ => (),
         }
     }
@@ -2064,27 +2139,27 @@ pub struct StreamSettings {
     distort_or_warp_level: (),
     #[adjustable(k = CL, idx = 4, setter = set_skew_selected, do_not_record = true)]
     skew_selected: f64,
-    #[adjustable(k = L, idx = 4, min = -20.0, max = 20.0, step = 0.001, ty = f64, getter = skew_dx, setter = set_skew_dx)]
+    #[adjustable(k = L, idx = 4, min = -1.0, max = 1.0, step = 0.001, ty = f64, getter = skew_dx, setter = set_skew_dx)]
     skew_dx: (),
-    #[adjustable(k = R, idx = 4, min = -20.0, max = 20.0, step = 0.001, ty = f64, getter = skew_dy, setter = set_skew_dy)]
+    #[adjustable(k = R, idx = 4, min = -1.0, max = 1.0, step = 0.001, ty = f64, getter = skew_dy, setter = set_skew_dy)]
     skew_dy: (),
     #[adjustable(k = B, idx = 4, kind = custom, ty = ((f64, f64), (f64, f64) (f64, f64), (f64, f64)), getter = skew_all, setter = set_skew_all)]
     skew_all: (),
-    #[adjustable(command_fn = skew_update, tween = true)]
+    #[adjustable(min = -2.5, max = 2.5, command_fn = skew_update, tween = true)]
     skew_x0: f64,
-    #[adjustable(command_fn = skew_update, tween = true)]
+    #[adjustable(min = -2.5, max = 2.5, command_fn = skew_update, tween = true)]
     skew_y0: f64,
-    #[adjustable(command_fn = skew_update, tween = true)]
+    #[adjustable(min = -2.5, max = 2.5, command_fn = skew_update, tween = true)]
     skew_x1: f64,
-    #[adjustable(command_fn = skew_update, tween = true)]
+    #[adjustable(min = -2.5, max = 2.5, command_fn = skew_update, tween = true)]
     skew_y1: f64,
-    #[adjustable(command_fn = skew_update, tween = true)]
+    #[adjustable(min = -2.5, max = 2.5,   command_fn = skew_update, tween = true)]
     skew_x2: f64,
-    #[adjustable(command_fn = skew_update, tween = true)]
+    #[adjustable(min = -2.5, max = 2.5, command_fn = skew_update, tween = true)]
     skew_y2: f64,
-    #[adjustable(command_fn = skew_update, tween = true)]
+    #[adjustable(min = -2.5, max = 2.5, command_fn = skew_update, tween = true)]
     skew_x3: f64,
-    #[adjustable(command_fn = skew_update, tween = true)]
+    #[adjustable(min = -2.5, max = 2.5, command_fn = skew_update, tween = true)]
     skew_y3: f64,
 
     // VIDEO KEY
@@ -2116,21 +2191,21 @@ pub struct StreamSettings {
     shift_select: f64,
     #[adjustable(k = B, idx = 7, min = -1.0, max = 1.0, step = 0.001, ty = f64, setter = set_color_shift, getter = color_shift)]
     color_shift: (),
-    #[adjustable(tween = true, command_simple = (self.main_mix(), "shift_rh", Float))]
+    #[adjustable(tween = true, min = -1.0, max = 1.0, command_simple = (self.main_mix(), "shift_rh", Float))]
     rh: f64,
-    #[adjustable(tween = true, command_simple = (self.main_mix(), "shift_rv", Float))]
+    #[adjustable(tween = true, min = -1.0, max = 1.0, command_simple = (self.main_mix(), "shift_rv", Float))]
     rv: f64,
-    #[adjustable(tween = true, command_simple = (self.main_mix(), "shift_gh", Float))]
+    #[adjustable(tween = true, min = -1.0, max = 1.0, command_simple = (self.main_mix(), "shift_gh", Float))]
     gh: f64,
-    #[adjustable(tween = true, command_simple = (self.main_mix(), "shift_gv", Float))]
+    #[adjustable(tween = true, min = -1.0, max = 1.0, command_simple = (self.main_mix(), "shift_gv", Float))]
     gv: f64,
-    #[adjustable(tween = true, command_simple = (self.main_mix(), "shift_bh", Float))]
+    #[adjustable(tween = true, min = -1.0, max = 1.0, command_simple = (self.main_mix(), "shift_bh", Float))]
     bh: f64,
-    #[adjustable(tween = true, command_simple = (self.main_mix(), "shift_bv", Float))]
+    #[adjustable(tween = true, min = -1.0, max = 1.0, command_simple = (self.main_mix(), "shift_bv", Float))]
     bv: f64,
-    #[adjustable(tween = true, command_simple = (self.main_mix(), "shift_ah", Float))]
+    #[adjustable(tween = true,min = -1.0, max = 1.0,  command_simple = (self.main_mix(), "shift_ah", Float))]
     ah: f64,
-    #[adjustable(tween = true, command_simple = (self.main_mix(), "shift_av", Float))]
+    #[adjustable(tween = true, min = -1.0, max = 1.0, command_simple = (self.main_mix(), "shift_av", Float))]
     av: f64,
     #[adjustable(kind = toggle, k = CR, idx = 7)]
     shift_enable: u8,
@@ -2478,20 +2553,20 @@ impl StreamSettings {
         let step = inc * 0.001;
         self.set_skew_all((
             (
-                (self.skew_x0 + step).clamp(-20.0, 20.0),
-                (self.skew_y0 + step).clamp(-20.0, 20.0),
+                (self.skew_x0 + step).clamp(-2.5, 2.5),
+                (self.skew_y0 + step).clamp(-2.5, 2.5),
             ),
             (
-                (self.skew_x1 - step).clamp(-20.0, 20.0),
-                (self.skew_y1 + step).clamp(-20.0, 20.0),
+                (self.skew_x1 - step).clamp(-2.5, 2.5),
+                (self.skew_y1 + step).clamp(-2.5, 2.5),
             ),
             (
-                (self.skew_x2 + step).clamp(-20.0, 20.0),
-                (self.skew_y2 - step).clamp(-20.0, 20.0),
+                (self.skew_x2 + step).clamp(-2.5, 2.5),
+                (self.skew_y2 - step).clamp(-2.5, 2.5),
             ),
             (
-                (self.skew_x3 - step).clamp(-20.0, 20.0),
-                (self.skew_y3 - step).clamp(-20.0, 20.0),
+                (self.skew_x3 - step).clamp(-2.5, 2.5),
+                (self.skew_y3 - step).clamp(-2.5, 2.5),
             ),
         ));
     }
