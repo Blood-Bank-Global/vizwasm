@@ -708,6 +708,23 @@ impl AllSettings {
                 }
                 GfxEvent::ReloadEvent() => (), // needs to be handled elsewhere
                 GfxEvent::MidiEvent(me) => {
+                    match (me.device.as_str(), me.kind, me.channel, me.key, me.velocity) {
+                        (MFT, MIDI_CONTROL_CHANGE, 3, 8, _) => {
+                            self.scan_idx = (self.scan_idx + 1).clamp(0, self.playback.len() - 1)
+                        }
+                        (MFT, MIDI_CONTROL_CHANGE, 3, 9, _) => {
+                            self.scan_idx = ((self.scan_idx as i32) - 1)
+                                .clamp(0, self.playback.len() as i32 - 1)
+                                as usize
+                        }
+                        (MFT, MIDI_CONTROL_CHANGE, 3, 11, _) => {
+                            self.active_idx = self.scan_idx;
+                        }
+                        (MFT, MIDI_CONTROL_CHANGE, 3, 12, _) => {
+                            self.display_idx = self.scan_idx;
+                        }
+                        _ => (),
+                    }
                     if let Some(cb) = &midi_callback {
                         cb(self, me);
                     }
@@ -1820,9 +1837,9 @@ impl AllSettings {
             send_midi_mft!(2, (stream.warp_level_pct() * 127.0) as u8),
             send_midi_mft!(3, (stream.sim_pct() * 127.0) as u8),
             // ROW 2
-            send_midi_mft!(4, (stream.warp_scan_pct() * 127.0) as u8),
+            send_midi_mft!(4, (stream.distort_edge_scan_pct() * 127.0) as u8),
             send_midi_mft!(5, (stream.distort_scan_pct() * 127.0) as u8),
-            send_midi_mft!(6, (stream.distort_edge_scan_pct() * 127.0) as u8),
+            send_midi_mft!(6, (stream.warp_scan_pct() * 127.0) as u8),
             send_midi_mft!(7, (stream.lut_scan_pct() * 127.0) as u8),
             // ROW 3
             send_midi_mft!(8, (stream.scroll_h_pct() * 127.0) as u8),
