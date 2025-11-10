@@ -1899,14 +1899,14 @@ impl AllSettings {
             (1, 3, 127) => stream.toggle_video_key_enable(),
 
             // ROW 2
-            (0, 4, v) => stream.scale_warp_scan(v as f64 / 127.0),
-            (1, 4, 127) => stream.set_warp_selected(stream.warp_scan()),
+            (0, 4, v) => stream.scale_distort_edge_scan(v as f64 / 127.0),
+            (1, 4, 127) => stream.set_distort_edge_selected(stream.distort_edge_scan()),
 
             (0, 5, v) => stream.scale_distort_scan(v as f64 / 127.0),
             (1, 5, 127) => stream.set_distort_selected(stream.distort_scan()),
 
-            (0, 6, v) => stream.scale_distort_edge_scan(v as f64 / 127.0),
-            (1, 6, 127) => stream.set_distort_edge_selected(stream.distort_edge_scan()),
+            (0, 6, v) => stream.scale_warp_scan(v as f64 / 127.0),
+            (1, 6, 127) => stream.set_warp_selected(stream.warp_scan()),
 
             (0, 7, v) => stream.scale_lut_scan(v as f64 / 127.0),
             (1, 7, 127) => stream.set_lut_selected(stream.lut_scan()),
@@ -2191,21 +2191,21 @@ pub struct StreamSettings {
     shift_select: f64,
     #[adjustable(k = B, idx = 7, min = -1.0, max = 1.0, step = 0.001, ty = f64, setter = set_color_shift, getter = color_shift)]
     color_shift: (),
-    #[adjustable(tween = true, min = -1.0, max = 1.0, command_simple = (self.main_mix(), "shift_rh", Float))]
+    #[adjustable(tween = true, min = -0.5, max = 0.5, command_simple = (self.main_mix(), "shift_rh", Float))]
     rh: f64,
-    #[adjustable(tween = true, min = -1.0, max = 1.0, command_simple = (self.main_mix(), "shift_rv", Float))]
+    #[adjustable(tween = true, min = -0.5, max = 0.5, command_simple = (self.main_mix(), "shift_rv", Float))]
     rv: f64,
-    #[adjustable(tween = true, min = -1.0, max = 1.0, command_simple = (self.main_mix(), "shift_gh", Float))]
+    #[adjustable(tween = true, min = -0.5, max = 0.5, command_simple = (self.main_mix(), "shift_gh", Float))]
     gh: f64,
-    #[adjustable(tween = true, min = -1.0, max = 1.0, command_simple = (self.main_mix(), "shift_gv", Float))]
+    #[adjustable(tween = true, min = -0.5, max = 0.5, command_simple = (self.main_mix(), "shift_gv", Float))]
     gv: f64,
-    #[adjustable(tween = true, min = -1.0, max = 1.0, command_simple = (self.main_mix(), "shift_bh", Float))]
+    #[adjustable(tween = true, min = -0.5, max = 0.5, command_simple = (self.main_mix(), "shift_bh", Float))]
     bh: f64,
-    #[adjustable(tween = true, min = -1.0, max = 1.0, command_simple = (self.main_mix(), "shift_bv", Float))]
+    #[adjustable(tween = true, min = -0.5, max = 0.5, command_simple = (self.main_mix(), "shift_bv", Float))]
     bv: f64,
-    #[adjustable(tween = true,min = -1.0, max = 1.0,  command_simple = (self.main_mix(), "shift_ah", Float))]
+    #[adjustable(tween = true,min = -0.5, max = 0.5,  command_simple = (self.main_mix(), "shift_ah", Float))]
     ah: f64,
-    #[adjustable(tween = true, min = -1.0, max = 1.0, command_simple = (self.main_mix(), "shift_av", Float))]
+    #[adjustable(tween = true, min = -0.5, max = 0.5, command_simple = (self.main_mix(), "shift_av", Float))]
     av: f64,
     #[adjustable(kind = toggle, k = CR, idx = 7)]
     shift_enable: u8,
