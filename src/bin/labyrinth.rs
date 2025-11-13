@@ -8,6 +8,7 @@ use std::{
 };
 
 use rand;
+use std::cell::RefCell;
 
 #[allow(unused_imports)]
 use sdlrig::gfxinfo::{MIDI_CONTROL_CHANGE, MIDI_NOTE_OFF, MIDI_NOTE_ON};
@@ -410,8 +411,8 @@ macro_rules! cb_boilerplate {
             return;
         }
 
-        // static TIME_IDX: LazyLock<Mutex<RefCell<usize>>> =
-        //     LazyLock::new(|| Mutex::new(RefCell::new(0)));
+        static TIME_IDX: LazyLock<Mutex<RefCell<usize>>> =
+            LazyLock::new(|| Mutex::new(RefCell::new(0)));
         if let (Some(bg_idx), Some(combo_idx)) = (*BG_IDX, *COMBO_IDX) {
             if $all_settings.active_idx != bg_idx
                 && $all_settings.display_idx != bg_idx
@@ -431,13 +432,17 @@ macro_rules! cb_boilerplate {
             ) {
                 (IAC, 0, MIDI_CONTROL_CHANGE, 0, v) => {
                     if v > 10 {
-                        // let lock = TIME_IDX.lock().unwrap();
-                        // let mut idx = lock.borrow_mut();
-                        // *idx = (*idx + 1) % $time_codes.len();
-                        let idx = rand::random::<u32>() % $time_codes.len() as u32;
+                        let lock = TIME_IDX.lock().unwrap();
+                        let mut idx = lock.borrow_mut();
+
+                        let mut next_idx = rand::random::<u32>() % $time_codes.len() as u32;
+                        if next_idx == *idx as u32 {
+                            next_idx = (next_idx + 1) % $time_codes.len() as u32;
+                        }
+                        *idx = next_idx as usize;
                         $all_settings.playback[bg_idx]
                             .stream
-                            .set_exact_sec(*$time_codes.get(idx as usize).unwrap_or(&1.0));
+                            .set_exact_sec(*$time_codes.get(*idx as usize).unwrap_or(&1.0));
                     }
                 }
                 _ => (),
