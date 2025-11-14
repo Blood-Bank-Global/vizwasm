@@ -1903,16 +1903,20 @@ impl AllSettings {
 
         match (event.channel, event.key, event.velocity) {
             //ROW 1
-            (0, 0, v) => stream.scale_threshold(v as f64 / 127.0),
+            (0, 0, 63) => stream.adjust_threshold(-1.0),
+            (0, 0, 65) => stream.adjust_threshold(1.0),
             (1, 0, 127) => stream.set_threshold(0.0),
 
-            (0, 1, v) => stream.scale_distort_level(v as f64 / 127.0),
+            (0, 1, 63) => stream.adjust_distort_level(-1.0),
+            (0, 1, 65) => stream.adjust_distort_level(1.0),
             (1, 1, 127) => stream.set_distort_level(0.2),
 
-            (0, 2, v) => stream.scale_warp_level(v as f64 / 127.0),
+            (0, 2, 63) => stream.adjust_warp_level(-1.0),
+            (0, 2, 65) => stream.adjust_warp_level(1.0),
             (1, 2, 127) => stream.set_warp_level(0.2),
 
-            (0, 3, v) => stream.scale_sim(v as f64 / 127.0),
+            (0, 3, 63) => stream.adjust_sim(-1.0),
+            (0, 3, 65) => stream.adjust_sim(1.0),
             (1, 3, 127) => stream.toggle_video_key_enable(),
 
             // ROW 2
@@ -1929,20 +1933,25 @@ impl AllSettings {
             (1, 7, 127) => stream.set_lut_selected(stream.lut_scan()),
 
             // ROW 3
-            (0, 8, v) => stream.scale_scroll_h(v as f64 / 127.0),
+            (0, 8, 63) => stream.adjust_scroll_h(-1.0),
+            (0, 8, 65) => stream.adjust_scroll_h(1.0),
             (1, 8, 127) => stream.set_scroll_h(0.0),
 
-            (0, 9, v) => stream.scale_scroll_v(v as f64 / 127.0),
+            (0, 9, 63) => stream.adjust_scroll_v(-1.0),
+            (0, 9, 65) => stream.adjust_scroll_v(1.0),
             (1, 9, 127) => stream.set_scroll_v(0.0),
 
-            (0, 10, v) => stream.scale_dx(v as f64 / 127.0),
+            (0, 10, 63) => stream.adjust_dx(-1.0),
+            (0, 10, 65) => stream.adjust_dx(1.0),
             (1, 10, 127) => stream.set_dx(0.0),
 
-            (0, 11, v) => stream.scale_dy(v as f64 / 127.0),
+            (0, 11, 63) => stream.adjust_dy(-1.0),
+            (0, 11, 65) => stream.adjust_dy(1.0),
             (1, 11, 127) => stream.set_dy(0.0),
 
             // ROW 4
-            (0, 12, v) => stream.scale_feedback_rotation(v as f64 / 127.0),
+            (0, 12, 63) => stream.adjust_feedback_rotation(-1.0),
+            (0, 12, 65) => stream.adjust_feedback_rotation(1.0),
             (1, 12, 127) => stream.set_feedback_rotation(0.0),
 
             (0, 13, v) => stream.scale_scanlines_scan(v as f64 / 127.0),
@@ -1955,107 +1964,139 @@ impl AllSettings {
             (1, 15, 127) => stream.set_overlay_selected(stream.overlay_scan()),
 
             // ROW 5
-            (0, 16, v) => stream.scale_rr(v as f64 / 127.0),
+            (0, 16, 63) => stream.adjust_rr(-1.0),
+            (0, 16, 65) => stream.adjust_rr(1.0),
             (1, 16, 127) => stream.set_rr(1.0),
 
-            (0, 17, v) => stream.scale_rg(v as f64 / 127.0),
+            (0, 17, 63) => stream.adjust_rg(-1.0),
+            (0, 17, 65) => stream.adjust_rg(1.0),
             (1, 17, 127) => stream.set_rg(0.0),
 
-            (0, 18, v) => stream.scale_rb(v as f64 / 127.0),
+            (0, 18, 63) => stream.adjust_rb(-1.0),
+            (0, 18, 65) => stream.adjust_rb(1.0),
             (1, 18, 127) => stream.set_rb(0.0),
 
-            (0, 19, v) => stream.scale_ra(v as f64 / 127.0),
+            (0, 19, 63) => stream.adjust_ra(-1.0),
+            (0, 19, 65) => stream.adjust_ra(1.0),
             (1, 19, 127) => stream.set_ra(0.0),
 
             // ROW 6
-            (0, 20, v) => stream.scale_gr(v as f64 / 127.0),
+            (0, 20, 63) => stream.adjust_gr(-1.0),
+            (0, 20, 65) => stream.adjust_gr(1.0),
             (1, 20, 127) => stream.set_gr(0.0),
 
-            (0, 21, v) => stream.scale_gg(v as f64 / 127.0),
+            (0, 21, 63) => stream.adjust_gg(-1.0),
+            (0, 21, 65) => stream.adjust_gg(1.0),
             (1, 21, 127) => stream.set_gg(1.0),
 
-            (0, 22, v) => stream.scale_gb(v as f64 / 127.0),
+            (0, 22, 63) => stream.adjust_gb(-1.0),
+            (0, 22, 65) => stream.adjust_gb(1.0),
             (1, 22, 127) => stream.set_gb(0.0),
 
-            (0, 23, v) => stream.scale_ga(v as f64 / 127.0),
+            (0, 23, 63) => stream.adjust_ga(-1.0),
+            (0, 23, 65) => stream.adjust_ga(1.0),
             (1, 23, 127) => stream.set_ga(0.0),
 
             // ROW 7
-            (0, 24, v) => stream.scale_br(v as f64 / 127.0),
+            (0, 24, 63) => stream.adjust_br(-1.0),
+            (0, 24, 65) => stream.adjust_br(1.0),
             (1, 24, 127) => stream.set_br(0.0),
 
-            (0, 25, v) => stream.scale_bg(v as f64 / 127.0),
+            (0, 25, 63) => stream.adjust_bg(-1.0),
+            (0, 25, 65) => stream.adjust_bg(1.0),
             (1, 25, 127) => stream.set_bg(0.0),
 
-            (0, 26, v) => stream.scale_bb(v as f64 / 127.0),
+            (0, 26, 63) => stream.adjust_bb(-1.0),
+            (0, 26, 65) => stream.adjust_bb(1.0),
             (1, 26, 127) => stream.set_bb(1.0),
 
-            (0, 27, v) => stream.scale_ba(v as f64 / 127.0),
+            (0, 27, 63) => stream.adjust_ba(-1.0),
+            (0, 27, 65) => stream.adjust_ba(1.0),
             (1, 27, 127) => stream.set_ba(0.0),
 
             // ROW 8
-            (0, 28, v) => stream.scale_ar(v as f64 / 127.0),
+            (0, 28, 63) => stream.adjust_ar(-1.0),
+            (0, 28, 65) => stream.adjust_ar(1.0),
             (1, 28, 127) => stream.set_ar(0.0),
 
-            (0, 29, v) => stream.scale_ag(v as f64 / 127.0),
+            (0, 29, 63) => stream.adjust_ag(-1.0),
+            (0, 29, 65) => stream.adjust_ag(1.0),
             (1, 29, 127) => stream.set_ag(0.0),
 
-            (0, 30, v) => stream.scale_ab(v as f64 / 127.0),
+            (0, 30, 63) => stream.adjust_ab(-1.0),
+            (0, 30, 65) => stream.adjust_ab(1.0),
             (1, 30, 127) => stream.set_ab(0.0),
 
-            (0, 31, v) => stream.scale_aa(v as f64 / 127.0),
+            (0, 31, 63) => stream.adjust_aa(-1.0),
+            (0, 31, 65) => stream.adjust_aa(1.0),
             (1, 31, 127) => stream.set_aa(1.0),
 
             // ROW 9
-            (0, 32, v) => stream.scale_rh(v as f64 / 127.0),
+            (0, 32, 63) => stream.adjust_rh(-1.0),
+            (0, 32, 65) => stream.adjust_rh(1.0),
             (1, 32, 127) => stream.set_rh(0.0),
 
-            (0, 33, v) => stream.scale_rv(v as f64 / 127.0),
+            (0, 33, 63) => stream.adjust_rv(-1.0),
+            (0, 33, 65) => stream.adjust_rv(1.0),
             (1, 33, 127) => stream.set_rv(0.0),
 
-            (0, 34, v) => stream.scale_skew_x0(v as f64 / 127.0),
+            (0, 34, 63) => stream.adjust_skew_x0(-1.0),
+            (0, 34, 65) => stream.adjust_skew_x0(1.0),
             (1, 34, 127) => stream.set_skew_x0(0.0),
 
-            (0, 35, v) => stream.scale_skew_y0(v as f64 / 127.0),
+            (0, 35, 63) => stream.adjust_skew_y0(-1.0),
+            (0, 35, 65) => stream.adjust_skew_y0(1.0),
             (1, 35, 127) => stream.set_skew_y0(0.0),
 
             //ROW 10
-            (0, 36, v) => stream.scale_gh(v as f64 / 127.0),
+            (0, 36, 63) => stream.adjust_gh(-1.0),
+            (0, 36, 65) => stream.adjust_gh(1.0),
             (1, 36, 127) => stream.set_gh(0.0),
 
-            (0, 37, v) => stream.scale_gv(v as f64 / 127.0),
+            (0, 37, 63) => stream.adjust_gv(-1.0),
+            (0, 37, 65) => stream.adjust_gv(1.0),
             (1, 37, 127) => stream.set_gv(0.0),
 
-            (0, 38, v) => stream.scale_skew_x1(v as f64 / 127.0),
+            (0, 38, 63) => stream.adjust_skew_x1(-1.0),
+            (0, 38, 65) => stream.adjust_skew_x1(1.0),
             (1, 38, 127) => stream.set_skew_x1(1.0),
 
-            (0, 39, v) => stream.scale_skew_y1(v as f64 / 127.0),
+            (0, 39, 63) => stream.adjust_skew_y1(-1.0),
+            (0, 39, 65) => stream.adjust_skew_y1(1.0),
             (1, 39, 127) => stream.set_skew_y1(0.0),
 
             // ROW 11
-            (0, 40, v) => stream.scale_bh(v as f64 / 127.0),
+            (0, 40, 63) => stream.adjust_bh(-1.0),
+            (0, 40, 65) => stream.adjust_bh(1.0),
             (1, 40, 127) => stream.set_bh(0.0),
 
-            (0, 41, v) => stream.scale_bv(v as f64 / 127.0),
+            (0, 41, 63) => stream.adjust_bv(-1.0),
+            (0, 41, 65) => stream.adjust_bv(1.0),
             (1, 41, 127) => stream.set_bv(0.0),
 
-            (0, 42, v) => stream.scale_skew_x2(v as f64 / 127.0),
+            (0, 42, 63) => stream.adjust_skew_x2(-1.0),
+            (0, 42, 65) => stream.adjust_skew_x2(1.0),
             (1, 42, 127) => stream.set_skew_x2(0.0),
 
-            (0, 43, v) => stream.scale_skew_y2(v as f64 / 127.0),
+            (0, 43, 63) => stream.adjust_skew_y2(-1.0),
+            (0, 43, 65) => stream.adjust_skew_y2(1.0),
             (1, 43, 127) => stream.set_skew_y2(1.0),
 
             // ROW 12
-            (0, 44, v) => stream.scale_ah(v as f64 / 127.0),
+            (0, 44, 63) => stream.adjust_ah(-1.0),
+            (0, 44, 65) => stream.adjust_ah(1.0),
             (1, 44, 127) => stream.set_ah(0.0),
 
-            (0, 45, v) => stream.scale_av(v as f64 / 127.0),
+            (0, 45, 63) => stream.adjust_av(-1.0),
+            (0, 45, 65) => stream.adjust_av(1.0),
             (1, 45, 127) => stream.set_av(0.0),
 
-            (0, 46, v) => stream.scale_skew_x3(v as f64 / 127.0),
+            (0, 46, 63) => stream.adjust_skew_x3(-1.0),
+            (0, 46, 65) => stream.adjust_skew_x3(1.0),
             (1, 46, 127) => stream.set_skew_x3(1.0),
 
-            (0, 47, v) => stream.scale_skew_y3(v as f64 / 127.0),
+            (0, 47, 63) => stream.adjust_skew_y3(-1.0),
+            (0, 47, 65) => stream.adjust_skew_y3(1.0),
             (1, 47, 127) => stream.set_skew_y3(1.0),
             _ => (),
         }
@@ -2146,9 +2187,9 @@ pub struct StreamSettings {
     boost: f64,
     #[adjustable(k = R, idx = 3, min = 0.0, max = 1.0, step = 0.01, command_simple = (self.main_mix(), "thresh", Float))]
     threshold: f64,
-    #[adjustable(tween = true, min = 0.0, max = 1.0, command_simple = (self.main_mix(), "distort_level", Float))]
+    #[adjustable(tween = true, min = 0.0, max = 1.0, step=0.005, command_simple = (self.main_mix(), "distort_level", Float))]
     distort_level: f64,
-    #[adjustable(tween = true,  min = 0.0, max = 1.0, command_simple = (self.main_mix(), "warp_level", Float))]
+    #[adjustable(tween = true,  min = 0.0, max = 1.0, step=0.005, command_simple = (self.main_mix(), "warp_level", Float))]
     warp_level: f64,
     #[adjustable(k = CB, idx = 3, kind = toggle, do_not_record = true)]
     distort_warp_select: u8,
@@ -2162,21 +2203,21 @@ pub struct StreamSettings {
     skew_dy: (),
     #[adjustable(k = B, idx = 4, kind = custom, ty = ((f64, f64), (f64, f64) (f64, f64), (f64, f64)), getter = skew_all, setter = set_skew_all)]
     skew_all: (),
-    #[adjustable(min = -2.5, max = 2.5, command_fn = skew_update, tween = true)]
+    #[adjustable(min = -5.0, max = 5.0, step = 0.001,command_fn = skew_update, tween = true)]
     skew_x0: f64,
-    #[adjustable(min = -2.5, max = 2.5, command_fn = skew_update, tween = true)]
+    #[adjustable(min = -5.0, max = 5.0,step = 0.001, command_fn = skew_update, tween = true)]
     skew_y0: f64,
-    #[adjustable(min = -2.5, max = 2.5, command_fn = skew_update, tween = true)]
+    #[adjustable(min = -5.0, max = 5.0,step = 0.001,command_fn = skew_update, tween = true)]
     skew_x1: f64,
-    #[adjustable(min = -2.5, max = 2.5, command_fn = skew_update, tween = true)]
+    #[adjustable(min = -5.0, max = 5.0,step = 0.001, command_fn = skew_update, tween = true)]
     skew_y1: f64,
-    #[adjustable(min = -2.5, max = 2.5,   command_fn = skew_update, tween = true)]
+    #[adjustable(min = -5.0, max = 5.0, step = 0.001, command_fn = skew_update, tween = true)]
     skew_x2: f64,
-    #[adjustable(min = -2.5, max = 2.5, command_fn = skew_update, tween = true)]
+    #[adjustable(min = -5.0, max = 5.0, step = 0.001,command_fn = skew_update, tween = true)]
     skew_y2: f64,
-    #[adjustable(min = -2.5, max = 2.5, command_fn = skew_update, tween = true)]
+    #[adjustable(min = -5.0, max = 5.0, step = 0.001,command_fn = skew_update, tween = true)]
     skew_x3: f64,
-    #[adjustable(min = -2.5, max = 2.5, command_fn = skew_update, tween = true)]
+    #[adjustable(min = -5.0, max = 5.0, step = 0.001,command_fn = skew_update, tween = true)]
     skew_y3: f64,
 
     // VIDEO KEY
@@ -2208,21 +2249,21 @@ pub struct StreamSettings {
     shift_select: f64,
     #[adjustable(k = B, idx = 7, min = -1.0, max = 1.0, step = 0.001, ty = f64, setter = set_color_shift, getter = color_shift)]
     color_shift: (),
-    #[adjustable(tween = true, min = -0.5, max = 0.5, command_simple = (self.main_mix(), "shift_rh", Float))]
+    #[adjustable(tween = true, min = -1.0, max = 1.0, step = 0.001,  command_simple = (self.main_mix(), "shift_rh", Float))]
     rh: f64,
-    #[adjustable(tween = true, min = -0.5, max = 0.5, command_simple = (self.main_mix(), "shift_rv", Float))]
+    #[adjustable(tween = true, min = -1.0, max = 1.0, step = 0.001,  command_simple = (self.main_mix(), "shift_rv", Float))]
     rv: f64,
-    #[adjustable(tween = true, min = -0.5, max = 0.5, command_simple = (self.main_mix(), "shift_gh", Float))]
+    #[adjustable(tween = true, min = -1.0, max = 1.0, step = 0.001,  command_simple = (self.main_mix(), "shift_gh", Float))]
     gh: f64,
-    #[adjustable(tween = true, min = -0.5, max = 0.5, command_simple = (self.main_mix(), "shift_gv", Float))]
+    #[adjustable(tween = true, min = -1.0, max = 1.0, step = 0.001,  command_simple = (self.main_mix(), "shift_gv", Float))]
     gv: f64,
-    #[adjustable(tween = true, min = -0.5, max = 0.5, command_simple = (self.main_mix(), "shift_bh", Float))]
+    #[adjustable(tween = true, min = -1.0, max = 1.0, step = 0.001,  command_simple = (self.main_mix(), "shift_bh", Float))]
     bh: f64,
-    #[adjustable(tween = true, min = -0.5, max = 0.5, command_simple = (self.main_mix(), "shift_bv", Float))]
+    #[adjustable(tween = true, min = -1.0, max = 1.0, step = 0.001,  command_simple = (self.main_mix(), "shift_bv", Float))]
     bv: f64,
-    #[adjustable(tween = true,min = -0.5, max = 0.5,  command_simple = (self.main_mix(), "shift_ah", Float))]
+    #[adjustable(tween = true, min = -1.0, max = 1.0, step = 0.001,  command_simple = (self.main_mix(), "shift_ah", Float))]
     ah: f64,
-    #[adjustable(tween = true, min = -0.5, max = 0.5, command_simple = (self.main_mix(), "shift_av", Float))]
+    #[adjustable(tween = true, min = -1.0, max = 1.0, step = 0.001,  command_simple = (self.main_mix(), "shift_av", Float))]
     av: f64,
     #[adjustable(kind = toggle, k = CR, idx = 7)]
     shift_enable: u8,
@@ -2570,20 +2611,20 @@ impl StreamSettings {
         let step = inc * 0.001;
         self.set_skew_all((
             (
-                (self.skew_x0 + step).clamp(-2.5, 2.5),
-                (self.skew_y0 + step).clamp(-2.5, 2.5),
+                (self.skew_x0 + step).clamp(-5.0, 5.0),
+                (self.skew_y0 + step).clamp(-5.0, 5.0),
             ),
             (
-                (self.skew_x1 - step).clamp(-2.5, 2.5),
-                (self.skew_y1 + step).clamp(-2.5, 2.5),
+                (self.skew_x1 - step).clamp(-5.0, 5.0),
+                (self.skew_y1 + step).clamp(-5.0, 5.0),
             ),
             (
-                (self.skew_x2 + step).clamp(-2.5, 2.5),
-                (self.skew_y2 - step).clamp(-2.5, 2.5),
+                (self.skew_x2 + step).clamp(-5.0, 5.0),
+                (self.skew_y2 - step).clamp(-5.0, 5.0),
             ),
             (
-                (self.skew_x3 - step).clamp(-2.5, 2.5),
-                (self.skew_y3 - step).clamp(-2.5, 2.5),
+                (self.skew_x3 - step).clamp(-5.0, 5.0),
+                (self.skew_y3 - step).clamp(-5.0, 5.0),
             ),
         ));
     }
