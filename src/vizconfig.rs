@@ -561,6 +561,13 @@ impl AllSettings {
         };
 
         let mut specs = vec![];
+        // Add any events to send midi to shader uniforms
+        for ge in reg_events {
+            if let GfxEvent::MidiEvent(me) = ge {
+                specs.append(&mut self.midi_to_glsl(me));
+            }
+        }
+
         // Always capture live events even while recording is playing
         self.update(reg_events, frame, midi_callback)?;
 
@@ -1811,7 +1818,87 @@ loops: [{}], loop capture: {}
     }
 }
 
-const MFT: &str = "Midi Fighter Twister";
+pub fn time_code_2_float<T>(tc: T) -> f64
+where
+    T: AsRef<str>,
+{
+    let parts: Vec<&str> = tc.as_ref().split(':').collect();
+    let hours: f64 = parts[0].parse().unwrap_or(0.0);
+    let minutes: f64 = parts[1].parse().unwrap_or(0.0);
+    let seconds: f64 = parts[2].parse().unwrap_or(0.0);
+    let frames: f64 = parts[3].parse().unwrap_or(0.0) * 1.0 / 24.0;
+    hours * 3600.0 + minutes * 60.0 + seconds + frames
+}
+
+#[macro_export]
+macro_rules! beat_time_boilerplate {
+    ( $all_settings:expr, $midi_event:expr, $bg_name:expr, $combo_name:expr, $time_codes:expr) => {
+        static BG_IDX: std::sync::LazyLock<Option<usize>> = std::sync::LazyLock::new(|| {
+            let mut idx = None;
+            for i in 0..PLAYBACK_NAMES.len() {
+                if PLAYBACK_NAMES[i] == $bg_name {
+                    idx.replace(i);
+                    break;
+                }
+            }
+            idx
+        });
+
+        static COMBO_IDX: std::sync::LazyLock<Option<usize>> = std::sync::LazyLock::new(|| {
+            let mut idx = None;
+            for i in 0..PLAYBACK_NAMES.len() {
+                if PLAYBACK_NAMES[i] == $combo_name {
+                    idx.replace(i);
+                    break;
+                }
+            }
+            idx
+        });
+
+        if BG_IDX.is_none() || COMBO_IDX.is_none() {
+            return;
+        }
+
+        static TIME_IDX: std::sync::LazyLock<Mutex<std::cell::RefCell<usize>>> =
+            std::sync::LazyLock::new(|| Mutex::new(std::cell::RefCell::new(0)));
+        if let (Some(bg_idx), Some(combo_idx)) = (*BG_IDX, *COMBO_IDX) {
+            if $all_settings.active_idx != bg_idx
+                && $all_settings.display_idx != bg_idx
+                && $all_settings.active_idx != combo_idx
+                && $all_settings.display_idx != combo_idx
+            {
+                return;
+            }
+
+            // INTERNAL MATCHING FOR SETTING MODIFICATION
+            match (
+                $midi_event.device.as_str(),
+                $midi_event.channel,
+                $midi_event.kind,
+                $midi_event.key,
+                $midi_event.velocity,
+            ) {
+                (IAC, 0, MIDI_CONTROL_CHANGE, 0, v) => {
+                    if v > 10 {
+                        let lock = TIME_IDX.lock().unwrap();
+                        let mut idx = lock.borrow_mut();
+
+                        let mut next_idx = rand::random::<u32>() % $time_codes.len() as u32;
+                        if next_idx == *idx as u32 {
+                            next_idx = (next_idx + 1) % $time_codes.len() as u32;
+                        }
+                        *idx = next_idx as usize;
+                        $all_settings.playback[bg_idx]
+                            .stream
+                            .set_exact_sec(*$time_codes.get(*idx as usize).unwrap_or(&1.0));
+                    }
+                }
+                _ => (),
+            }
+        }
+    };
+}
+
 macro_rules! send_midi_mft {
     ($k:expr, $v:expr) => {
         RenderSpec::SendMidi(SendMidi {
@@ -1826,6 +1913,18 @@ macro_rules! send_midi_mft {
         })
     };
 }
+
+const IAC: &str = "IAC Driver Bus 1";
+const IAC_GLSL: &str = "iac_driver_bus_1";
+const MFT: &str = "Midi Fighter Twister";
+const MFT_GLSL: &str = "midi_fighter_twister";
+
+const MIDI_DEVICE_VARS: LazyLock<HashMap<String, String>> = LazyLock::new(|| {
+    let mut m = HashMap::new();
+    m.insert(IAC.to_string(), IAC_GLSL.to_string());
+    m.insert(MFT.to_string(), MFT_GLSL.to_string());
+    m
+});
 
 impl AllSettings {
     pub fn reload_encoders_for_active_idx(&self) -> Vec<RenderSpec> {
@@ -2100,6 +2199,85 @@ impl AllSettings {
             (1, 47, 127) => stream.set_skew_y3(1.0),
             _ => (),
         }
+    }
+
+    // Generic send for all midi devices to GLSL vars
+    pub fn midi_to_glsl(&mut self, event: &MidiEvent) -> Vec<RenderSpec> {
+        let debug_kind = match event.kind {
+            MIDI_NOTE_ON => "note",
+            MIDI_NOTE_OFF => "note",
+            MIDI_CONTROL_CHANGE => "cc",
+            _ => "???",
+        };
+
+        let on_off = match event.kind {
+            MIDI_NOTE_ON => "_on",
+            MIDI_NOTE_OFF => "_off",
+            _ => "",
+        };
+        let debug_device = MIDI_DEVICE_VARS
+            .get(&event.device)
+            .cloned()
+            .or_else(|| Some("???".to_string()))
+            .unwrap();
+
+        eprintln!(
+            "{debug_kind}_{debug_device}_{}_{}{} = {}",
+            event.channel, event.key, on_off, event.velocity
+        );
+
+        let mut cmds = vec![];
+        if let Some(glsl_device) = MIDI_DEVICE_VARS.get(&event.device) {
+            for mix in self.playback_names.iter() {
+                match event.kind {
+                    MIDI_NOTE_ON => {
+                        cmds.push(RenderSpec::SendCmd(SendCmd {
+                            mix: format!("{mix}_mix").to_string(),
+                            name: format!("note_{}_{}_{}", glsl_device, event.channel, event.key)
+                                .to_string(),
+                            value: SendValue::Float(event.velocity as f32),
+                        }));
+                        cmds.push(RenderSpec::SendCmd(SendCmd {
+                            mix: format!("{mix}_mix").to_string(),
+                            name: format!(
+                                "note_{}_{}_{}_on",
+                                glsl_device, event.channel, event.key
+                            )
+                            .to_string(),
+                            value: SendValue::Unsigned(1),
+                        }));
+                    }
+                    MIDI_NOTE_OFF => {
+                        cmds.push(RenderSpec::SendCmd(SendCmd {
+                            mix: format!("{mix}_mix").to_string(),
+                            name: format!("note_{}_{}_{}", glsl_device, event.channel, event.key)
+                                .to_string(),
+                            value: SendValue::Float(0.0),
+                        }));
+                        cmds.push(RenderSpec::SendCmd(SendCmd {
+                            mix: format!("{mix}_mix").to_string(),
+                            name: format!(
+                                "note_{}_{}_{}_on",
+                                glsl_device, event.channel, event.key
+                            )
+                            .to_string(),
+                            value: SendValue::Unsigned(0),
+                        }));
+                    }
+                    MIDI_CONTROL_CHANGE => {
+                        cmds.push(RenderSpec::SendCmd(SendCmd {
+                            mix: format!("{mix}_mix").to_string(),
+                            name: format!("cc_{}_{}_{}", glsl_device, event.channel, event.key)
+                                .to_string(),
+                            value: SendValue::Float(event.velocity as f32),
+                        }));
+                    }
+                    _ => (),
+                }
+            }
+        }
+
+        return cmds;
     }
 }
 

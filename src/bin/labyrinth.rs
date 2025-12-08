@@ -7,18 +7,16 @@ use std::{
     },
 };
 
-use rand;
-use std::cell::RefCell;
-
 #[allow(unused_imports)]
 use sdlrig::gfxinfo::{MIDI_CONTROL_CHANGE, MIDI_NOTE_OFF, MIDI_NOTE_ON};
 
 use sdlrig::{
     gfxinfo::{Asset, GfxEvent, GfxInfo, MidiEvent, Vid, VidMixer},
-    renderspec::{Mix, RenderSpec, SendCmd, SendValue},
+    renderspec::{Mix, RenderSpec, SendCmd},
 };
 
-use vizwasm::vizconfig::{AllSettings, MixConfig};
+use vizwasm::beat_time_boilerplate;
+use vizwasm::vizconfig::{time_code_2_float, AllSettings, MixConfig};
 fn main() {}
 
 static STREAM_PATH: &'static str = "/Users/ttie/Desktop/labyrinth/streams";
@@ -359,199 +357,11 @@ pub fn calculate(
 }
 
 const IAC: &str = "IAC Driver Bus 1";
-const IAC_GLSL: &str = "iac_driver_bus_1";
-const MFT: &str = "Midi Fighter Twister";
-const MFT_GLSL: &str = "midi_fighter_twister";
-
-const MIDI_DEVICE_VARS: LazyLock<HashMap<String, String>> = LazyLock::new(|| {
-    let mut m = HashMap::new();
-    m.insert(IAC.to_string(), IAC_GLSL.to_string());
-    m.insert(MFT.to_string(), MFT_GLSL.to_string());
-    m
-});
-
 pub fn mega_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
-    glsl_midi_cb(all_settings, event);
     //no castle cb
     inside_cb(all_settings, event);
     library_cb(all_settings, event);
     clouds_cb(all_settings, event);
-}
-
-macro_rules! cb_boilerplate {
-    ( $all_settings:expr, $midi_event:expr, $bg_name:expr, $combo_name:expr, $time_codes:expr) => {
-        static _CB_TX: LazyLock<Sender<SendCmd>> = LazyLock::new(|| {
-            let midi_channels = MIDI_CALLBACK_CHANNELS.lock().unwrap();
-            midi_channels.0.clone()
-        });
-
-        static BG_IDX: LazyLock<Option<usize>> = LazyLock::new(|| {
-            let mut idx = None;
-            for i in 0..PLAYBACK_NAMES.len() {
-                if PLAYBACK_NAMES[i] == $bg_name {
-                    idx.replace(i);
-                    break;
-                }
-            }
-            idx
-        });
-
-        static COMBO_IDX: LazyLock<Option<usize>> = LazyLock::new(|| {
-            let mut idx = None;
-            for i in 0..PLAYBACK_NAMES.len() {
-                if PLAYBACK_NAMES[i] == $combo_name {
-                    idx.replace(i);
-                    break;
-                }
-            }
-            idx
-        });
-
-        if BG_IDX.is_none() || COMBO_IDX.is_none() {
-            return;
-        }
-
-        static TIME_IDX: LazyLock<Mutex<RefCell<usize>>> =
-            LazyLock::new(|| Mutex::new(RefCell::new(0)));
-        if let (Some(bg_idx), Some(combo_idx)) = (*BG_IDX, *COMBO_IDX) {
-            if $all_settings.active_idx != bg_idx
-                && $all_settings.display_idx != bg_idx
-                && $all_settings.active_idx != combo_idx
-                && $all_settings.display_idx != combo_idx
-            {
-                return;
-            }
-
-            // INTERNAL MATCHING FOR SETTING MODIFICATION
-            match (
-                $midi_event.device.as_str(),
-                $midi_event.channel,
-                $midi_event.kind,
-                $midi_event.key,
-                $midi_event.velocity,
-            ) {
-                (IAC, 0, MIDI_CONTROL_CHANGE, 0, v) => {
-                    if v > 10 {
-                        let lock = TIME_IDX.lock().unwrap();
-                        let mut idx = lock.borrow_mut();
-
-                        let mut next_idx = rand::random::<u32>() % $time_codes.len() as u32;
-                        if next_idx == *idx as u32 {
-                            next_idx = (next_idx + 1) % $time_codes.len() as u32;
-                        }
-                        *idx = next_idx as usize;
-                        $all_settings.playback[bg_idx]
-                            .stream
-                            .set_exact_sec(*$time_codes.get(*idx as usize).unwrap_or(&1.0));
-                    }
-                }
-                _ => (),
-            }
-        }
-    };
-}
-
-pub fn time_code_2_float<T>(tc: T) -> f64
-where
-    T: AsRef<str>,
-{
-    let parts: Vec<&str> = tc.as_ref().split(':').collect();
-    let hours: f64 = parts[0].parse().unwrap_or(0.0);
-    let minutes: f64 = parts[1].parse().unwrap_or(0.0);
-    let seconds: f64 = parts[2].parse().unwrap_or(0.0);
-    let frames: f64 = parts[3].parse().unwrap_or(0.0) * 1.0 / 24.0;
-    hours * 3600.0 + minutes * 60.0 + seconds + frames
-}
-
-// Generic send for all midi devices to GLSL vars
-pub fn glsl_midi_cb(_all_settings: &mut AllSettings, event: &MidiEvent) {
-    static CB_TX: LazyLock<Sender<SendCmd>> = LazyLock::new(|| {
-        let midi_channels = MIDI_CALLBACK_CHANNELS.lock().unwrap();
-        midi_channels.0.clone()
-    });
-
-    let debug_kind = match event.kind {
-        MIDI_NOTE_ON => "note",
-        MIDI_NOTE_OFF => "note",
-        MIDI_CONTROL_CHANGE => "cc",
-        _ => "???",
-    };
-
-    let on_off = match event.kind {
-        MIDI_NOTE_ON => "_on",
-        MIDI_NOTE_OFF => "_off",
-        _ => "",
-    };
-    let debug_device = MIDI_DEVICE_VARS
-        .get(&event.device)
-        .cloned()
-        .or_else(|| Some("???".to_string()))
-        .unwrap();
-
-    eprintln!(
-        "{debug_kind}_{debug_device}_{}_{}{} = {}",
-        event.channel, event.key, on_off, event.velocity
-    );
-
-    if let Some(glsl_device) = MIDI_DEVICE_VARS.get(&event.device) {
-        for mix in PLAYBACK_NAMES.iter() {
-            match event.kind {
-                MIDI_NOTE_ON => {
-                    let cmd = SendCmd {
-                        mix: format!("{mix}_mix").to_string(),
-                        name: format!("note_{}_{}_{}", glsl_device, event.channel, event.key)
-                            .to_string(),
-                        value: SendValue::Float(event.velocity as f32),
-                    };
-                    // eprintln!("Sending MIDI Note ON command to glsl: {:?}", cmd);
-                    CB_TX.send(cmd).ok();
-                    CB_TX
-                        .send(SendCmd {
-                            mix: format!("{mix}_mix").to_string(),
-                            name: format!(
-                                "note_{}_{}_{}_on",
-                                glsl_device, event.channel, event.key
-                            )
-                            .to_string(),
-                            value: SendValue::Unsigned(1),
-                        })
-                        .ok();
-                }
-                MIDI_NOTE_OFF => {
-                    let cmd = SendCmd {
-                        mix: format!("{mix}_mix").to_string(),
-                        name: format!("note_{}_{}_{}", glsl_device, event.channel, event.key)
-                            .to_string(),
-                        value: SendValue::Float(0.0),
-                    };
-                    // eprintln!("Sending MIDI Note OFF command to glsl: {:?}", cmd);
-                    CB_TX.send(cmd).ok();
-                    CB_TX
-                        .send(SendCmd {
-                            mix: format!("{mix}_mix").to_string(),
-                            name: format!(
-                                "note_{}_{}_{}_on",
-                                glsl_device, event.channel, event.key
-                            )
-                            .to_string(),
-                            value: SendValue::Unsigned(0),
-                        })
-                        .ok();
-                }
-                MIDI_CONTROL_CHANGE => {
-                    let cmd = SendCmd {
-                        mix: format!("{mix}_mix").to_string(),
-                        name: format!("cc_{}_{}_{}", glsl_device, event.channel, event.key)
-                            .to_string(),
-                        value: SendValue::Float(event.velocity as f32),
-                    };
-                    // eprintln!("Sending MIDI CC command to glsl: {:?}", cmd);
-                    CB_TX.send(cmd).ok();
-                }
-                _ => (),
-            }
-        }
-    }
 }
 
 // MIDI callback function for castle_combo
@@ -563,7 +373,7 @@ pub fn castle_combo_cb(_all_settings: &mut AllSettings, event: &MidiEvent) {
             .collect::<Vec<_>>()
     });
 
-    cb_boilerplate!(
+    beat_time_boilerplate!(
         _all_settings,
         event,
         "castles_final",
@@ -605,7 +415,7 @@ pub fn clouds_cb(_all_settings: &mut AllSettings, event: &MidiEvent) {
         .collect::<Vec<_>>()
     });
 
-    cb_boilerplate!(_all_settings, event, "clouds", "clouds_combo", *TIME_CODES);
+    beat_time_boilerplate!(_all_settings, event, "clouds", "clouds_combo", *TIME_CODES);
 }
 
 pub fn inside_cb(_all_settings: &mut AllSettings, event: &MidiEvent) {
@@ -637,7 +447,7 @@ pub fn inside_cb(_all_settings: &mut AllSettings, event: &MidiEvent) {
         .collect::<Vec<_>>()
     });
 
-    cb_boilerplate!(_all_settings, event, "inside", "inside_combo", *TIME_CODES);
+    beat_time_boilerplate!(_all_settings, event, "inside", "inside_combo", *TIME_CODES);
 }
 
 pub fn library_cb(_all_settings: &mut AllSettings, event: &MidiEvent) {
@@ -679,7 +489,7 @@ pub fn library_cb(_all_settings: &mut AllSettings, event: &MidiEvent) {
         .collect::<Vec<_>>()
     });
 
-    cb_boilerplate!(
+    beat_time_boilerplate!(
         _all_settings,
         event,
         "library",
