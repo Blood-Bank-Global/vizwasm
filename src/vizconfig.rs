@@ -1918,11 +1918,14 @@ const IAC: &str = "IAC Driver Bus 1";
 const IAC_GLSL: &str = "iac_driver_bus_1";
 const MFT: &str = "Midi Fighter Twister";
 const MFT_GLSL: &str = "midi_fighter_twister";
+const MPK: &str = "MPK mini 3";
+const MPK_GLSL: &str = "mpk_mini_3";
 
 const MIDI_DEVICE_VARS: LazyLock<HashMap<String, String>> = LazyLock::new(|| {
     let mut m = HashMap::new();
     m.insert(IAC.to_string(), IAC_GLSL.to_string());
     m.insert(MFT.to_string(), MFT_GLSL.to_string());
+    m.insert(MPK.to_string(), MPK_GLSL.to_string());
     m
 });
 
@@ -2218,7 +2221,7 @@ impl AllSettings {
         let debug_device = MIDI_DEVICE_VARS
             .get(&event.device)
             .cloned()
-            .or_else(|| Some("???".to_string()))
+            .or_else(|| Some(format!("???({})", event.device).to_string()))
             .unwrap();
 
         eprintln!(
