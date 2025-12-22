@@ -1,3 +1,6 @@
+// let akai = await midin('MPK mini 3');
+// $: s("dungeon_keys:6").note("0".add(akai(70).range(0,64))).beat("0,8",16).penv(akai(71)).att(.4).rel(akai(72)).dec(.8)
+
 setCps(135 / 60 / 4);
 
 $: stack(
