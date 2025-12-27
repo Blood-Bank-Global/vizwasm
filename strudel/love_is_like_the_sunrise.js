@@ -2,14 +2,9 @@ setCps(135 / 60 / 4);
 
 const akai = midin("MPK mini 3")
 
-// $: s("bd").bank("tr909").beat("0,8", 16).dec(.4);
-// $: s("[hh hh]!4").bank("tr909").att(.1).dec(2);
-// $: s("cp").bank("tr909").beat("0,2,4", 32).slow(2).att(.075);
-
-
 $: s("dungeon_perc:9").beat("0,8", 16).dec(.4);
-$: s("[hh hh]!4").bank("tr808").att(.1).dec(2);
-$: s("cp").bank("tr909")
+$: s("hh").fast(8).bank("tr909").n(irand(4).seg(8)).rib(0, 2).att(.1).dec(2);
+$: s("tr909_cp:4")
     .sometimesBy(.25, x => x.mask())
     .beat("0,2,4", 32)
     .slow(2)
@@ -45,5 +40,7 @@ $: note(chooseCycles(
     "<b3,e3,g3>",
     "<b3,e3,g3,c2>"))
     .s("dungeon_lead:2").att(.15).dec(.5).rel(.4).sus(.4).gain(.1)
-    .rib(92, 16)
+    .room(1)
+    .phaser(4)
+    .rib(0, 16)
     ._scope();
