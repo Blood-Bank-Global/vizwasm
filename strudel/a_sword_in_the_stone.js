@@ -31,7 +31,7 @@ $: note(
   .sus(.3)
   .rel(1 / 16)
   .gain(.7)
-  .degradeBy(slider(0.209, 0, 1))
+  .degradeBy(slider(0.455, 0, 1))
   .sometimes(ply(2))
   .room(1)
   .rib(20, 8)
