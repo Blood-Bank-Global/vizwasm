@@ -1,7 +1,15 @@
-setCps(135 / 60 / 4);
+setCpm(135 / 4);
 
 $: s("dungeon_perc:9").beat("0,8", 16).dec(.4);
-$: s("hh").fast(8).bank("tr909").n(irand(4).seg(8)).rib(0, 2).att(.1).dec(2);
+$: s("hh")
+    .fast(8)
+    .bank("tr909")
+    .n(irand(4).seg(8))
+    .rib(0, 4)
+    .att(.1)
+    .dec(2)
+    .gain(.6);
+
 $: s("tr909_cp:4")
     .sometimesBy(.25, x => x.mask())
     .beat("0,2,4", 32)
@@ -31,6 +39,7 @@ $: note(chooseCycles(
     .rib(92, 16)
     .orbit(2)
     ._scope();
+
 
 
 let iac = await midin('IAC Driver Bus 1');
