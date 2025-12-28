@@ -19,7 +19,7 @@ use vizwasm::beat_time_boilerplate;
 use vizwasm::vizconfig::{time_code_2_float, AllSettings, MixConfig};
 fn main() {}
 
-static STREAM_PATH: &'static str = "/Users/ttie/Desktop/labyrinth/streams";
+static STREAM_PATH: &'static str = "/Users/ttie/Desktop/dungeon/streams";
 static ASSET_PATH: &'static str = "/Users/ttie/Desktop/common_data";
 
 static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
@@ -41,7 +41,7 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
         );
     }
 
-    let vid640x480 = ["clouds"];
+    let vid640x480 = ["a_sword_in_the_stone", "arthur"];
     for vid_name in vid640x480.iter() {
         vids.push(
             Vid::builder()
@@ -56,7 +56,7 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
                 .build(),
         );
     }
-    let pngs640x480: &[&str] = &["upperdragon", "lowerdragon"];
+    let pngs640x480: &[&str] = &[];
     for png_name in pngs640x480.iter() {
         vids.push(
             Vid::builder()
@@ -78,10 +78,9 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
 static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
     let names = [
         "blank",
-        "clouds",
-        "upperdragon",
-        "lowerdragon",
-        "clouds_combo",
+        "a_sword_in_the_stone",
+        "arthur",
+        "a_sword_in_the_stone_combo",
     ]
     .iter()
     .map(|s| s.to_string())
@@ -130,10 +129,9 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
     }
 
     generate_combo_mix!(
-        "clouds_combo",
-        "clouds_overlay",
-        "upperdragon_overlay",
-        "lowerdragon_overlay"
+        "a_sword_in_the_stone_combo",
+        "a_sword_in_the_stone_overlay",
+        "arthur_overlay",
     );
 
     configs
@@ -333,23 +331,37 @@ pub fn calculate(
 
 const IAC: &str = "IAC Driver Bus 1";
 pub fn mega_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
-    clouds_cb(all_settings, event);
+    a_sword_in_the_stone_cb(all_settings, event);
 }
 
-pub fn clouds_cb(_all_settings: &mut AllSettings, event: &MidiEvent) {
-    static TIME_CODES: LazyLock<Vec<f64>> = LazyLock::new(|| {
-        [
-            "00:00:02:12",
-            "00:00:45:23",
-            "00:01:32:24",
-            "00:02:01:21",
-            "00:02:38:04",
-            "00:03:26:00",
-        ]
-        .iter()
-        .map(|s| time_code_2_float(s))
-        .collect::<Vec<_>>()
-    });
+pub fn a_sword_in_the_stone_cb(_all_settings: &mut AllSettings, event: &MidiEvent) {
+    let time_codes = [
+        "00:00:35:21",
+        "00:00:43:20",
+        "00:00:47:15",
+        "00:00:54:15",
+        "00:01:00:18",
+        "00:01:07:00",
+        "00:01:11:03",
+        "00:01:31:18",
+        "00:01:36:50",
+        "00:01:39:37",
+        "00:01:48:14",
+        "00:01:55:39",
+        "00:02:00:22",
+        "00:02:05:36",
+        "00:02:15:05",
+        "00:02:20:32",
+    ]
+    .iter()
+    .map(|s| time_code_2_float(s))
+    .collect::<Vec<_>>();
 
-    beat_time_boilerplate!(_all_settings, event, "clouds", "clouds_combo", *TIME_CODES);
+    beat_time_boilerplate!(
+        _all_settings,
+        event,
+        "a_sword_in_the_stone",
+        "a_sword_in_the_stone_combo",
+        time_codes
+    );
 }
