@@ -1,4 +1,4 @@
-setCpm(135 / 4);
+setCpm(155 / 4);
 
 let akai = await midin('MPK mini 3');
 
@@ -19,7 +19,6 @@ $: "0"
   .midi('IAC Driver Bus 1');
 
 /////////////////////////// TOMS
-let tom_beat = beat("0,2,4,6,8,10,12,14", 16);
 let tom_degrade = "1".sub(akai(71));
 let tom_beat2 = x => {
   return x
@@ -80,7 +79,7 @@ let pluck_beat = x => {
     .rib(20, 8)
 }
 $: pluck_beat(note(
-  "c1!8".add(irand(5)))
+  "c1!4".add(irand(5)))
   .s("dungeon_plucked:<4,5>")
   .gain("{.4 .6}%8")
   .clip(.6)
@@ -88,7 +87,7 @@ $: pluck_beat(note(
   .room(.5))
   ._punchcard();
 
-$: pluck_beat("0!8")
+$: pluck_beat("0!4")
   .add.squeeze(
     stepcat([15 / 16, ".2"], [1 / 16, "0"])
   )
@@ -99,7 +98,7 @@ $: pluck_beat("0!8")
 $: "0"
   .when(pluck_degrade.lt(.95), x => x.mask())
   .ccv()
-  .ccn(5)
+  .ccn("5")
   .midi('IAC Driver Bus 1');
 
 ///////////////////// SHAKER
@@ -120,7 +119,7 @@ $: shaker_beat(s("casio:2!8")
   .clip(.25)
   .hpf(8000)
   .fit()
-  .gain(slider(0.7725, 0, 2.5)))
+  .gain(.5))
   ._punchcard();
 
 $: shaker_beat("0!8")
