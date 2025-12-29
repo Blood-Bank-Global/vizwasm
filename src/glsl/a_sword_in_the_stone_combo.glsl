@@ -18,8 +18,12 @@ if (cc_iac_driver_bus_1_0_7 > 5.0) {
     base_coord = base_coord + offset;
 }
 
-if (cc_iac_driver_bus_1_0_5 > 5.0 || cc_iac_driver_bus_1_0_6 > 5.0) {
+if (cc_iac_driver_bus_1_0_5 > 5.0) {
     base_coord.x += 0.025 * (0.0 - step(0.5, fract(base_coord.y / 0.025)));
+}
+
+if (cc_iac_driver_bus_1_0_6 > 5.0) {
+    base_coord.y += 0.025 * (0.0 - step(0.5, fract(base_coord.x / 0.025)));
 }
 
 color = vec4(handle_edge(src_tex0, base_coord, EDGE_MODE_MIRROR), 1.0);
