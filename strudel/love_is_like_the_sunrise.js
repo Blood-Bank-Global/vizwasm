@@ -1,8 +1,8 @@
 setCpm(135 / 4);
 
 const mk_signal = (beat, gain, signal, n) => {
-    return "0"
-        .apply(beat)
+    return beat
+        .fmap(v => 0)
         .when(gain.lt(.1), x => x.mask())
         .add.squeeze(signal)
         .ccv()
@@ -13,52 +13,54 @@ const mk_signal = (beat, gain, signal, n) => {
 let akai = await midin('MPK mini 3');
 
 ///////////// DRUMS
-let drum_beat = beat("0,8", 16);
+let drum_beat = "dungeon_perc:9".beat("0,8", 16);
 let drum_gain = akai(70, 0);
-DRUM: s("dungeon_perc:9")
-    .apply(drum_beat)
+$DRUM: drum_beat
+    .s()
     .dec(.4)
     .gain(drum_gain);
 
-DRUM_SIG: mk_signal(drum_beat, drum_gain, "1 0", "0");
+$DRUM_SIG: mk_signal(drum_beat, drum_gain, "1 0", "0");
 
 //////////////// CLAPS
-let clap_beat = x => x
+let clap_beat = "tr909_cp:4"
     .sometimesBy(.25, x => x.mask())
     .beat("0,2,4", 32)
     .slow(2)
     .rib(0, 8);
 let clap_gain = akai(71, 0);
-CLAPS: s("tr909_cp:4")
+
+$CLAPS: clap_beat
+    .s()
     .att(.05)
     .gain(clap_gain)
-    .apply(clap_beat)
     ._punchcard();
 
-CLAP_SIG: mk_signal(clap_beat, clap_gain, "1 0", "1");
+$CLAP_SIG: mk_signal(clap_beat, clap_gain, "1 0", "1");
 
 //////////////// HATS
-let hat_beat = x => x.fast(8).rib(0, 4);
+let hat_beat = "hh!8".n(irand(4).seg(8)).rib(0, 4);
 let hat_gain = akai(72, 0);
 
-HATS: s("hh")
+$HATS: hat_beat
+    .s()
     .bank("tr909")
-    .n(irand(4).seg(8))
     .att(.1)
     .dec(2)
-    .gain(hat_gain)
-    .apply(hat_beat);
-
-HAT_SIG: mk_signal(hat_beat, hat_gain, "1 0", "2")
+    .gain(hat_gain)._punchcard();
+$HAT_SIG: mk_signal(hat_beat, hat_gain, "1 0", "2")
 
 /////////////// LEAD
-let lead_beat = x => x
-    .slow(2)
-    .degradeBy(.1)
-    .rib(0, 8);
+let lead_beat =
+    "c3 a3 b3 [a3 d3] g3 b3 [a3 b3] a3"
+        .note()
+        .slow(2)
+        .degradeBy(.1)
+        .rib(0, 8);
+
 let lead_gain = akai(73, 0);
 
-LEAD: note("c3 a3 b3 [a3 d3] g3 b3 [a3 b3] a3")
+$LEAD: lead_beat
     .s("dungeon_lead:0")
     .att(.7)
     .dec(1)
@@ -66,35 +68,33 @@ LEAD: note("c3 a3 b3 [a3 d3] g3 b3 [a3 b3] a3")
     .room(.8)
     .duckorbit(2)
     .gain(lead_gain)
-    .apply(lead_beat)
     ._punchcard();
 
-LEAD_SIG: mk_signal(
-    x => x.struct("x x x [x x] x x [x x] x").apply(lead_beat),
-    lead_gain,
-    "1 0",
-    "3"
-);
+$LEAD_SIG: mk_signal(lead_beat, lead_gain, "1 0", "3");
+
 
 /////////////// CHORDS
-let chord_gain = akai(74, 0);
-CHORDS: note(chooseCycles(
+let chord_seq = chooseCycles(
     "<c3,b3,e3,c2>",
     "<a3,g3,f3,c4>",
     "<b3,e3,g3>",
-    "<b3,e3,g3,c2>"))
+    "<b3,e3,g3,c2>")
+    .rib(92, 16);
+let chord_gain = akai(74, 0);
+
+$CHORDS: chord_seq
+    .note()
     .s(sine)
     .att(.15)
     .dec(.5)
     .rel(.4)
     .sus(.4)
     .gain(chord_gain)
-    .rib(92, 16)
     .orbit(2)
     ._scope();
 
-CHORD_SIG: mk_signal(
-    beat("0", 1),
+$CHORDS_SIG: mk_signal(
+    chord_seq,
     chord_gain,
     stepcat([15 / 16, isaw.seg(8)], [1 / 16, "0"]),
     "4"
@@ -102,10 +102,10 @@ CHORD_SIG: mk_signal(
 
 //////////////// CHOIR
 
-let choir_chord = akai(-1, 0, 'notes', true);
+let choir_seq = akai(-1, 0, 'notes', true);
 let choir_gain = akai(75, 0);
 
-CHOIR: choir_chord
+$CHOIR: choir_seq
     .note()
     .s("gm_pad_choir:5")
     .att(.3)
@@ -117,7 +117,12 @@ CHOIR: choir_chord
     .phaser(4)
     ._pianoroll();
 
+$CHOIR_SIG: mk_signal(
+    choir_seq,
+    choir_gain,
+    stepcat([15 / 16, isaw.seg(8)], [1 / 16, "0"]),
+    "5"
+);
 
-
-CLEAR: "~".when(akai(20, 9).gt(0), x => akai(-1, 0, 'clear'));
+$CLEAR: "~".when(akai(20, 9).gt(0), x => akai(-1, 0, 'clear'));
 
