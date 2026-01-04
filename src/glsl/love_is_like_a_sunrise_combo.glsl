@@ -12,17 +12,22 @@
 #define PEAK_H 30.0
 #define PEAK_W 50.0
 
-color = vec4(0.0);
+color = vec4(0.0, 0.0, 0.0, 1.0);
 
 if (src_coord0.y <= HORIZON) {
     float flicker = ((1.0 + sin((fract(iTime / SPEED / 2.0)+src_coord0.y) * 2*M_PI))/2.0) * .05;
     vec2 px = vec2(src_coord0.x * iResolution.x, src_coord0.y * iResolution.y);
     vec2 center = vec2(0.5, HORIZON) * iResolution.xy;
     float radius = distance(px, center);
-    float cloud = smoothstep(pow(SUN_RAD,2.0), 0.0, pow(radius,2));
-    color = vec4(cloud * (0.5 + flicker), cloud * 0.25, cloud * (0.1 + flicker), 1.0);
-
-    
+    if (radius <= SUN_RAD) {
+        float cloud = smoothstep(pow(SUN_RAD,2.0), 0.0, pow(radius,2));
+        color.rgb = blend_by_mode(
+            vec4(0.0,0.0,0.0,1.0),
+            vec4(0.5, 0.25, 0.1, clamp((cloud + flicker), 0.0, 1.0)),
+            BLEND_ALPHA
+        ).rgb;
+        color.a = 1.0;
+    }
     float peak = HORIZON - (PEAK_H / iResolution.y)*abs(PEAK_W/2.0 - mod((src_coord0.x * iResolution.x), PEAK_W))/PEAK_W;
     if (src_coord0.y >= peak) {
         color = vec4(0.4, 0.0, 0.4, 1.0);
