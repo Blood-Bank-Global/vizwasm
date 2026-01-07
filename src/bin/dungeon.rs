@@ -81,7 +81,8 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "a_sword_in_the_stone",
         "arthur",
         "a_sword_in_the_stone_combo",
-        "love_is_like_a_sunrise_combo",
+        "sunrise_scene",
+        "sunrise_combo",
     ]
     .iter()
     .map(|s| s.to_string())
@@ -135,7 +136,8 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
         "arthur_overlay",
     );
 
-    generate_combo_mix!("love_is_like_a_sunrise_combo", "blank_overlay");
+    generate_combo_mix!("sunrise_scene", "blank_overlay");
+    generate_combo_mix!("sunrise_combo", "sunrise_scene_overlay");
 
     configs
 });

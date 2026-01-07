@@ -24,7 +24,7 @@ $DRUM: stack(
     .lpf(200)
     ._punchcard();
 
-$KICK: "bd".beat("0,4,8,12", 16).duckorbit(2)
+$KICK: "bd".beat("0,4,8,12", 16)
     .bank("tr909")
     .s()
     .att(.01)
@@ -32,18 +32,19 @@ $KICK: "bd".beat("0,4,8,12", 16).duckorbit(2)
     .dec(.3)
     .bpf("300:1");
 
-$ARPS: "<e3!16>"
+$ARPS: "e3"
     .add(saw.range(0, 4).floor().seg(16))
     .note()
     .s("gm_pad_new_age:0")
-    .struct("<x ~ ~ ~ x ~ ~ ~ x x ~ ~ ~ ~ ~ ~>*8")
+    .struct("[x ~ ~ ~ ~ ~ ~ ~ [x ~ ~ ~] [x? ~] ~ ~ ~ ~ ~ x]/2")
     .dec(.3)
     .rel(.5)
     .sus(.5)
-    .room(.5)
+    .room(2)
+    .roomsize(6)
     .delay(0)
     .rib(0, 8)
-    .gain(slider(0, 0, 1))
+    .gain(slider(0, 0, 2))
     .hpf(1500)
     ._punchcard();
 
@@ -57,9 +58,13 @@ $LEAD: chooseCycles(
     .s("gm_synth_strings_1")
     .orbit(2)
     .room(2)
+    .roomsize(6)
     .gain(slider(0, 0, 1))
     .bpf("800:1.5")
     ._punchcard();
 
-$DRONE: s("dungeon_sfx:1").loopAt(8).loop(1).gain(slider(0, 0, 1)).lpf(100)
+$DRONE: s("dungeon_sfx:1")
+    .cpm(5)
+    .gain(slider(0, 0, 1))
+    .lpf(100)
     ._scope();
