@@ -1,8 +1,10 @@
 setCpm(135 / 4);
 let akai = await midin('MPK mini 3');
 
-//DJF
-$DJF: djf(akai(1, 1))
+//SWITCHBOARD
+let djf_value = akai(1, 0).range(.25, .75);
+$DJF1: "0".gain(0).orbit(1).djf(djf_value);
+$DJF2: "0".gain(0).orbit(2).djf(djf_value);
 
 ///////////// DRUMS
 let drum_beat = "dungeon_perc:0".beat("0,8", 16);
@@ -11,11 +13,12 @@ $DRUM: drum_beat
     .s()
     .dec(1)
     .lpf(100)
+    .orbit(1)
     .gain(drum_gain);
 
 //////////////// CLAPS
 let clap_beat = "tr909_cp:4"
-    .sometimesBy(akai(81, 0), x => x.mask())
+    .sometimesBy(akai(81), x => x.mask())
     .beat("0,2,4", 32)
     .slow(2)
     .rib(0, 8);
@@ -31,7 +34,7 @@ $CLAPS: clap_beat
 //////////////// HATS
 let hat_beat = "hh!8"
     .n(irand(4).seg(8))
-    .degradeBy(akai(82, 0))
+    .degradeBy(akai(82))
     .rib(0, 4);
 let hat_gain = akai(72, 0);
 
@@ -59,8 +62,7 @@ $LEAD: lead_beat
     .att(.7)
     .dec(1)
     .rel(.3)
-    .room(.8)
-    .hpf("500".add(akai(83, 0).mul(1000)))
+    .hpf("500".add(akai(83).mul(1000)))
     .duckorbit(2)
     .gain(lead_gain)
     ._punchcard();
@@ -96,8 +98,8 @@ let choir_gain = akai(75, 0);
 $CHOIR: choir_seq
     .note()
     .s("gm_pad_choir:5")
-    .cpm(5)
-    .att(.3)
+    .cpm(10)
+    .att(2)
     .dec(.8)
     .rel(.5)
     .sus(.4)
@@ -111,11 +113,15 @@ $CLEAR: "~".when(akai(20, 9).gt(0), x => akai(-1, 0, 'clear'));
 
 ////////////////// KEYS
 let keys_beat = "dungeon_keys:7"
-    .struct("[x - - - - - - - x - - - - - x]")
-    .degradeBy(0.5)
+    .struct("[x ~ ~ ~ x ~ ~ ~ x ~ ~ ~ ~ ~ ~ x]")
+    // .struct("[x!16]")
+    .delay(.1)
+    .delayfb(.1)
+    .room(1)
+    .size(4)
     .rib(40, 4);
 
-let keys_gain = akai(76, 0);
+let keys_gain = akai(76);
 
 KEYS: keys_beat
     .s()
@@ -123,14 +129,16 @@ KEYS: keys_beat
     .hpf(1000)
     .att(.025)
     .gain(keys_gain)
+    .delay(.1)
+    .delayfeedback(.2)
     ._punchcard();
 
 ////// EEPS
 let eep_beat = "a4 c5 b4 g4 e4 a4 c5 d5"
-    .degradeBy(.8)
+    .degradeBy(.2)
     .rib(0, 4);
 
-let eep_gain = akai(77, 0)
+let eep_gain = akai(77)
 $EEPS: eep_beat
     .slow(2)
     .s("gm_pad_new_age")
