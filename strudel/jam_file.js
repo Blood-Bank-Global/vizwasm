@@ -1,5 +1,35 @@
 setCpm(135 / 4);
-let akai = await midin('MPK mini 3');
+const mock_akai = (cc, chan, kind, latch) => {
+    if (kind == 'notes') {
+        return "c4,g4,e4";
+        // return "~";
+    }
+    if (cc == 1 && chan == 0) { //DJF
+        return "0.5";
+    } else if (cc == 20 && chan == 9) { //CLEAR
+        return "0";
+    } else if (cc == 70) { // DRUMS
+        return "1";
+    } else if (cc == 71) { // CLAPS
+        return "0";
+    } else if (cc == 72) { // HATS
+        return "0";
+    } else if (cc == 73) { // LEADS
+        return "0";
+    } else if (cc == 74) { // CHORDS
+        return "0";
+    } else if (cc == 75) { // CHOIR
+        return "1";
+    } else if (cc == 76) { // KEYS
+        return "0";
+    } else if (cc == 77) { // EEPS
+        return "0";
+    } else {
+        return "0";
+    }
+}
+
+let akai = mock_akai; //await midin('MPK mini 3');
 
 //SWITCHBOARD
 let djf_value = akai(1, 0).range(.25, .75);
@@ -113,7 +143,7 @@ $CLEAR: "~".when(akai(20, 9).gt(0), x => akai(-1, 0, 'clear'));
 
 ////////////////// KEYS
 let keys_beat = "dungeon_keys:7"
-    .struct("[x ~ ~ ~ x ~ ~ ~ x ~ ~ ~ ~ ~ ~ x]")
+    .struct("[x ~ ~ ~ x ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ x]")
     // .struct("[x!16]")
     .delay(.1)
     .delayfb(.1)
@@ -142,7 +172,7 @@ let eep_gain = akai(77)
 $EEPS: eep_beat
     .slow(2)
     .s("gm_pad_new_age")
-    .n("3") //4,5 yeah
+    .n("4,3") //3,4,5 yeah
     .note()
     .gain(eep_gain)
     ._pianoroll();
