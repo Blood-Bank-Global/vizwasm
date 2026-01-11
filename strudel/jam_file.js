@@ -1,31 +1,41 @@
 setCpm(135 / 4);
+
+const CC_MAP = {
+    DRUMS: 70,
+    MORE_DRUMS: 78,
+    CLAPS: 71,
+    HATS: 72,
+    LEADS: 73,
+    CHORDS: 74,
+    CHOIR: 75,
+    KEYS: 76,
+    MORE_KEYS: 79,
+    EEPS: 77,
+};
+
+const MOCK_VALS = {};
+MOCK_VALS[CC_MAP.DRUMS] = "0";
+MOCK_VALS[CC_MAP.MORE_DRUMS] = "0";
+MOCK_VALS[CC_MAP.CLAPS] = "0";
+MOCK_VALS[CC_MAP.HATS] = "0"
+MOCK_VALS[CC_MAP.LEADS] = "0";
+MOCK_VALS[CC_MAP.CHORDS] = "0";
+MOCK_VALS[CC_MAP.CHOIR] = "0";
+MOCK_VALS[CC_MAP.KEYS] = "0";
+MOCK_VALS[CC_MAP.MORE_KEYS] = "1";
+MOCK_VALS[CC_MAP.EEPS] = "0";
+
 const mock_akai = (cc, chan, kind, latch) => {
     if (kind == 'notes') {
-        return "c4,g4,e4";
+        return "c3,g3,e3";
         // return "~";
     }
     if (cc == 1 && chan == 0) { //DJF
         return "0.5";
     } else if (cc == 20 && chan == 9) { //CLEAR
         return "0";
-    } else if (cc == 70) { // DRUMS
-        return "1";
-    } else if (cc == 71) { // CLAPS
-        return "0";
-    } else if (cc == 72) { // HATS
-        return "0";
-    } else if (cc == 73) { // LEADS
-        return "0";
-    } else if (cc == 74) { // CHORDS
-        return "0";
-    } else if (cc == 75) { // CHOIR
-        return "1";
-    } else if (cc == 76) { // KEYS
-        return "0";
-    } else if (cc == 77) { // EEPS
-        return "0";
     } else {
-        return "0";
+        return MOCK_VALS[cc] || "0";
     }
 }
 
@@ -37,14 +47,23 @@ $DJF1: "0".gain(0).orbit(1).djf(djf_value);
 $DJF2: "0".gain(0).orbit(2).djf(djf_value);
 
 ///////////// DRUMS
-let drum_beat = "dungeon_perc:0".beat("0,8", 16);
-let drum_gain = akai(70, 0);
-$DRUM: drum_beat
+let drums_beat = "dungeon_perc:0".beat("0,8", 16);
+let drums_gain = akai(CC_MAP.DRUMS, 0);
+$DRUM: drums_beat
     .s()
     .dec(1)
     .lpf(100)
-    .orbit(1)
-    .gain(drum_gain);
+    .gain(drums_gain);
+
+///////////// MORE DRUMS
+let more_drums_beat = "dark_perc:2".beat("0", 16);
+let more_drums_gain = akai(CC_MAP.MORE_DRUMS, 0);
+$DRUM: more_drums_beat
+    .slow(4)
+    .s()
+    .lpf(500)
+    .gain(more_drums_gain);
+
 
 //////////////// CLAPS
 let clap_beat = "tr909_cp:4"
@@ -52,7 +71,7 @@ let clap_beat = "tr909_cp:4"
     .beat("0,2,4", 32)
     .slow(2)
     .rib(0, 8);
-let clap_gain = akai(71, 0);
+let clap_gain = akai(CC_MAP.CLAP, 0);
 
 $CLAPS: clap_beat
     .s()
@@ -66,7 +85,7 @@ let hat_beat = "hh!8"
     .n(irand(4).seg(8))
     .degradeBy(akai(82))
     .rib(0, 4);
-let hat_gain = akai(72, 0);
+let hat_gain = akai(CC_MAP.HATS, 0);
 
 $HATS: hat_beat
     .s()
@@ -85,14 +104,14 @@ let lead_beat =
         .degradeBy(.1)
         .rib(0, 8);
 
-let lead_gain = akai(73, 0);
+let lead_gain = akai(CC_MAP.LEADS, 0);
 
 $LEAD: lead_beat
     .s("dungeon_lead:0")
     .att(.7)
     .dec(1)
     .rel(.3)
-    .hpf("500".add(akai(83).mul(1000)))
+    .hpf("500")
     .duckorbit(2)
     .gain(lead_gain)
     ._punchcard();
@@ -105,7 +124,7 @@ let chord_seq = chooseCycles(
     "<b3,e3,g3,c2>")
     .add("0")
     .rib(92, 16);
-let chord_gain = akai(74, 0);
+let chord_gain = akai(CC_MAP.CHORDS, 0);
 
 $CHORDS: chord_seq
     .note()
@@ -123,11 +142,11 @@ $CHORDS: chord_seq
 //////////////// CHOIR
 
 let choir_seq = akai(-1, 0, 'notes', true);
-let choir_gain = akai(75, 0);
+let choir_gain = akai(CC_MAP.CHOIR, 0);
 
 $CHOIR: choir_seq
     .note()
-    .s("gm_pad_choir:5")
+    .s("gm_pad_choir:5") //dark_organ:5 | gm_pad_choir:5
     .cpm(10)
     .att(2)
     .dec(.8)
@@ -143,7 +162,7 @@ $CLEAR: "~".when(akai(20, 9).gt(0), x => akai(-1, 0, 'clear'));
 
 ////////////////// KEYS
 let keys_beat = "dungeon_keys:7"
-    .struct("[x ~ ~ ~ x ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ x]")
+    .struct("[x ~ ~ ~ ~ ~ ~ ~ x ~ ~ ~ ~ ~ ~ ~ x]/2")
     // .struct("[x!16]")
     .delay(.1)
     .delayfb(.1)
@@ -151,9 +170,8 @@ let keys_beat = "dungeon_keys:7"
     .size(4)
     .rib(40, 4);
 
-let keys_gain = akai(76);
-
-KEYS: keys_beat
+let keys_gain = akai(CC_MAP.KEYS, 0);
+$KEYS: keys_beat
     .s()
     .note("c3".add.squeeze(saw.range(0, 8).seg(16)))
     .hpf(1000)
@@ -163,16 +181,33 @@ KEYS: keys_beat
     .delayfeedback(.2)
     ._punchcard();
 
+////////////////// MORE KEYS
+let more_keys_beat = "dark_key"
+    .n("")
+    .struct("[x!8]/2")
+    .degradeBy(.7)
+    .rib(40, 8);
+
+let more_keys_gain = akai(CC_MAP.MORE_KEYS, 0);
+
+
+$MORE_KEYS: more_keys_beat
+    .s()
+    .note("c3".add.squeeze(saw.range(0, 8).seg(16)))
+    .gain(more_keys_gain)
+    ._punchcard();
+
 ////// EEPS
 let eep_beat = "a4 c5 b4 g4 e4 a4 c5 d5"
     .degradeBy(.2)
     .rib(0, 4);
 
-let eep_gain = akai(77)
+let eep_gain = akai(CC_MAP.EEPS, 0);
 $EEPS: eep_beat
     .slow(2)
-    .s("gm_pad_new_age")
-    .n("4,3") //3,4,5 yeah
+    .s("dark_pad") //gm_pad_new_age
+    .n("2") //3,4,5 yeah
     .note()
+    .dec(1)
     .gain(eep_gain)
     ._pianoroll();
