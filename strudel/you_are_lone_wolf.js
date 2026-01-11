@@ -10,13 +10,13 @@ $HATS: stack(
     .rib(0, 4)
     .s()
     .bank("tr909")
-    .gain(slider(0, 0, 1))
+    .gain(slider(1, 0, 1))
     .bpf(1500, 200)
     ._punchcard();
 
 $DRUM: stack(
     "dungeon_perc:6".beat("0,8", 16),
-    "dungeon_perc:5".beat("2,10", 16).degradeBy(.5)
+    "dungeon_perc:5".beat("2,10", 16).degradeBy(.25)
 )
     .rib(0, 4)
     .gain(slider(0, 0, 1))
@@ -24,27 +24,25 @@ $DRUM: stack(
     .lpf(200)
     ._punchcard();
 
-$KICK: "bd".beat("0,4,8,12", 16)
+$KICK: "bd".beat("0,4,8,12,14", 16)
     .bank("tr909")
     .s()
     .att(.01)
-    .gain(slider(0, 0, 1))
+    .gain(slider(1, 0, 1))
     .dec(.3)
     .bpf("300:1");
 
 $ARPS: "e3"
     .add(saw.range(0, 4).floor().seg(16))
     .note()
-    .s("gm_pad_new_age:0")
-    .struct("[x ~ ~ ~ ~ ~ ~ ~ [x ~ ~ ~] [x? ~] ~ ~ ~ ~ ~ x]/2")
+    .s("dark_key:4")
+    .struct("[x ~ ~ ~ x ~ ~ ~ [x ~ x ~] ~ ~ ~ x ~ ~ x]/2")
+    .att(.1)
     .dec(.3)
-    .rel(.5)
-    .sus(.5)
-    .room(2)
-    .roomsize(6)
-    .delay(0)
+    .delay(.2)
+    .delayfb(.2)
     .rib(0, 8)
-    .gain(slider(0, 0, 2))
+    .gain(slider(2, 0, 2))
     .hpf(1500)
     ._punchcard();
 
@@ -59,7 +57,7 @@ $LEAD: chooseCycles(
     .orbit(2)
     .room(2)
     .roomsize(6)
-    .gain(slider(0, 0, 1))
+    .gain(slider(1, 0, 1))
     .bpf("800:1.5")
     ._punchcard();
 
