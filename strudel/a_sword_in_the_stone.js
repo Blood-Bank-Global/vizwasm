@@ -4,7 +4,7 @@ let akai = await midin('MPK mini 3');
 
 /////////////////////// BASS DRUM
 let bd_beat = beat("0.1,8.1", 16);
-let bd_gain = akai(70) /* slider(0.4665, 0, 1.5)*/;
+let bd_gain = akai(70);
 $: "dungeon_perc:3"
   .s()
   .apply(bd_beat)
@@ -81,10 +81,9 @@ let pluck_beat = x => {
 $: pluck_beat(note(
   "c1!4".add(irand(5)))
   .s("dungeon_plucked:<4,5>")
-  .gain("{.4 .6}%8")
+  .gain("{.8 1.2}%8")
   .clip(.6)
-  .penv(pm(4, rand.mul(2).seg(32)))
-  .room(.5))
+  .penv(pm(4, rand.mul(2).seg(32))))
   ._punchcard();
 
 $: pluck_beat("0!4")
@@ -110,7 +109,7 @@ let shaker_beat = x => {
     .rib(100, 4)
 }
 
-$: shaker_beat(s("casio:2!8")
+$: shaker_beat(s("casio:2!4")
   .speed("{1 -1}%4")
   .att(.1)
   .dec(.1)
@@ -119,7 +118,7 @@ $: shaker_beat(s("casio:2!8")
   .clip(.25)
   .hpf(8000)
   .fit()
-  .gain(.5))
+  .gain(1))
   ._punchcard();
 
 $: shaker_beat("0!8")
