@@ -15,16 +15,16 @@ const CC_MAP = {
 };
 
 const CC_VALS = {};
-CC_VALS[CC_MAP.DRUMS] = "1";
-CC_VALS[CC_MAP.MORE_DRUMS] = ".5"; // no knob
-CC_VALS[CC_MAP.CLAPS] = "1";
-CC_VALS[CC_MAP.HATS] = "1"
-CC_VALS[CC_MAP.LEADS] = "1";
-CC_VALS[CC_MAP.CHORDS] = "1";
-CC_VALS[CC_MAP.CHOIR] = "1";
-CC_VALS[CC_MAP.KEYS] = "1";
+CC_VALS[CC_MAP.DRUMS] = "0";
+CC_VALS[CC_MAP.MORE_DRUMS] = "0"; // no knob
+CC_VALS[CC_MAP.CLAPS] = "0";
+CC_VALS[CC_MAP.HATS] = "0"
+CC_VALS[CC_MAP.LEADS] = "0";
+CC_VALS[CC_MAP.CHORDS] = "0";
+CC_VALS[CC_MAP.CHOIR] = "0";
+CC_VALS[CC_MAP.KEYS] = "0";
 CC_VALS[CC_MAP.MORE_KEYS] = "0"; // no knob
-CC_VALS[CC_MAP.EEPS] = "1";
+CC_VALS[CC_MAP.EEPS] = "0";
 
 let akai = await midin('MPK mini 3');
 
