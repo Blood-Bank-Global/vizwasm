@@ -8,7 +8,7 @@
 #define HORIZON_PX (HORIZON * iResolution.y)
 #define STRETCH 3.5
 #define BLOCK_PX 10.0
-#define SUN_RAD 200.0
+#define SUN_RAD 250.0
 #define SPEED (1/(160.0/60.0/4.0) * (4 * BLOCK_PX/iResolution.y))
 #define PEAK_H 30.0
 #define PEAK_W 50.0
@@ -54,9 +54,40 @@ if (src_coord0.y <= HORIZON) {
     }
 
     // Mountains
-    float peak = HORIZON - (PEAK_H / iResolution.y)*abs(PEAK_W/2.0 - mod((src_coord0.x * iResolution.x), PEAK_W))/PEAK_W;
+    // peak_points - array of x ranging from 0 to 1.0 for mountain peaks sorted smallest to largest
+    float peak_points[10] = float[10](0.0, 0.15, 0.25, 0.4, 0.55, 0.65, 0.75, 0.85, 0.9, 1.0);
+    // peak_heights - array of heights for each peak point between 0 and 0.09
+    float peak_heights[10] = float[10](0.075, 0.03, 0.05, 0.08, 0.06, 0.03, 0.062, 0.04, 0.02, 0.07);
+
+    float curr_h = 0.0;
+    float r = 0.0;
+    float g = 0.0;
+    if (src_coord0.x <= peak_points[0]) {
+        curr_h = peak_heights[0];
+    } else if (src_coord0.x >= peak_points[9]) {
+        curr_h = peak_heights[9];
+    } else {
+        // find the two peak points src_coord0.x is between
+        
+        for (int i = 0; i < 10; i++) {
+            if (mod(i,2) == 0) {
+                g = 0.5;
+            } else {
+                g = 0.0;
+            }
+
+            r += 0.1;
+            if (src_coord0.x <= peak_points[i]) {
+                float ss = smoothstep(peak_points[i-1], peak_points[i], src_coord0.x);
+                curr_h = mix(peak_heights[i-1], peak_heights[i], ss);
+                break;
+            }
+        }
+    }
+    
+    float peak = HORIZON - curr_h;
     if (src_coord0.y >= peak) {
-        color = vec4(0.4, 0.0, 0.4, 1.0);
+        color = vec4(r, g, r, 1.0);
     }
 } else {
 
