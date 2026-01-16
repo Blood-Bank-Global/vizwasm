@@ -59,3 +59,65 @@ $CHOIR: choir_seq
     ._pianoroll();
 
 $CLEAR: "~".when(get_cc(20, 9).gt(0), x => get_cc(-1, 0, 'clear'));
+
+setCpm(155 / 4)
+const kicks = arrange(
+    [2, "bd!4"],
+    [1, "[bd bd] [bd bd] bd bd"],
+    [4, "bd!4"],
+    [1, "bd [bd bd bd] [bd bd] bd"],
+).s().bank("tr909");
+
+const knocks = arrange(
+    [1, "[rim!3 -] - - -"],
+    [3, "-"]
+).s().bank("tr909");
+const claps = arrange(
+    [1, "-"],
+    [1, "cp cp cp cp"],
+    [7, "-"]
+).s().bank("tr909")
+    .sometimesBy(.7, x => x.ply(2))
+    .rib(30, 8);
+
+const keyb_seq = arrange(
+    [3, "c2 g2 a2 d2"],
+    [1, "c2!2 a2!2"]
+)
+    .note()
+    .s("dark_key")
+    .n("9")
+    .fast(2)
+    .degradeBy(.5)
+    .dec(.3)
+    .delay(.3)
+    .delayfb(.7)
+    .rib(45, 16)
+    .gain(1)
+    ._punchcard();
+
+const horn = arrange(
+    [1, note("c0")],
+    [15, "-"]
+).s("bard_wind")
+    .hpf(800)
+    .n(0)
+    .gain(2);
+
+const inp = await midikeys('MPK mini 3');
+const keyboard_inp = inp()
+    .s("dark_chord")
+    .n("0")
+    .room(2)
+    .roomsize(3)
+    .gain(4)
+    .sus(.9)
+    .rel(8)
+    ._scope();
+
+$: horn
+$: keyb_seq
+$: claps
+$: knocks
+$: kicks
+$: keyboard_inp
