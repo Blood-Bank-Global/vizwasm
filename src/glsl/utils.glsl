@@ -504,3 +504,23 @@ vec3 rgb2hsv(vec3 c)
     float e = 1.0e-10;
     return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
 }
+
+
+bool pointInRhombus(vec2 point, mat4x2 corners) {
+    bool inside = false;
+    vec2[][] sides = vec2[4][2](
+        vec2[2](corners[0], corners[1]),
+        vec2[2](corners[1], corners[3]),
+        vec2[2](corners[3], corners[2]),
+        vec2[2](corners[2], corners[0])
+    );
+    for (int i = 0; i < 4; i++) {
+        vec2 p1 = sides[i][0];
+        vec2 p2 = sides[i][1];
+        if (((p1.y <= point.y && p2.y >= point.y) || (p1.y >= point.y && p2.y <= point.y)) &&
+            (point.x < (p2.x - p1.x) * (point.y - p1.y) / (p2.y - p1.y) + p1.x)) {
+            inside = !inside;
+        }
+    }
+    return inside;
+}

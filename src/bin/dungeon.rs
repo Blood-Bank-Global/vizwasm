@@ -84,7 +84,6 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "sunrise_scene",
         "sunrise_combo",
         "jam",
-        "jam_combo",
     ]
     .iter()
     .map(|s| s.to_string())
@@ -141,8 +140,27 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
     generate_combo_mix!("sunrise_scene", "blank_overlay");
     generate_combo_mix!("sunrise_combo", "sunrise_scene_overlay");
 
-    generate_combo_mix!("jam", "blank_overlay");
-    generate_combo_mix!("jam_combo", "jam_overlay");
+    // And config for the jam
+    let blank_vid = STREAM_DEFS.iter().find(|v| v.name == "blank");
+    if let Some(vid) = blank_vid {
+        configs.push(MixConfig {
+            def: VidMixer::builder()
+                .name("jam_mix")
+                .width(vid.resolution.0 as u32)
+                .height(vid.resolution.1 as u32)
+                .header(concat!(
+                    include_str!("../glsl/utils.glsl"),
+                    include_str!("../glsl/patch_check_scroll_px.glsl")
+                ))
+                .body(include_str!("../glsl/jam.glsl"))
+                .build(),
+            mix: Mix::builder()
+                .name("jam_mix")
+                .mixed("blank_overlay")
+                .no_display(true)
+                .build(),
+        });
+    }
     configs
 });
 
