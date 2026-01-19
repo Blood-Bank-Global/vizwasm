@@ -524,3 +524,20 @@ bool pointInRhombus(vec2 point, mat4x2 corners) {
     }
     return inside;
 }
+
+float quadratic_mix(float v0, float v1, float v2, float f) {
+    float P = v2 - 2.0 * v1 + v0;
+    float Q = 2.0 * (v1 - v0);
+    float R = v0;
+
+    return P * f * f + Q * f + R;
+}
+
+float bicubic_mix(float v0, float v1, float v2, float v3, float f) {
+    float P = (-v0 + 3.0 * v1 - 3.0 * v2 + v3) / 2.0;
+    float Q = (2.0 * v0 - 5.0 * v1 + 4.0 * v2 - v3) / 2.0;
+    float R = (-v0 + v2) / 2.0;
+    float S = v1;
+
+    return P * f * f * f + Q * f * f + R * f + S;
+}
