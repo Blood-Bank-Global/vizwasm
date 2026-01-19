@@ -22,24 +22,32 @@
 #define HEIGHT (iResolution.y)
 
 vec2 uv = src_coord0.xy * RESOLUTION;
-color = patch_check_scroll_px(
-    uv,                       // coord in px
-    RESOLUTION,           // resolution
-    vec4(0.0, 0.0, 0.0, 1.0), // color in
-    vec4(0.0, 1.0, 0.0, 1.0), // square1
-    vec4(0.0, 0.5, 1.0, 1.0), // square2
-    vec2(10.0, 10.0),         // block dim in px
-    vec2(0.0, -fract(iTime/5.0) * HEIGHT), // offset
-    mat4x2(                   // corners
-        0.0, HEIGHT * 0.65,
-        WIDTH, HEIGHT * 0.65,
-        -1250.0, HEIGHT,
-        WIDTH + 1250.0, HEIGHT)
-);
+color = texture(src_tex2, src_coord2);
+if (true) {
+    vec4 s1 = texture(src_tex3, src_coord3);
+    s1.rgb *= 0.8;
+    vec4 s2 = texture(src_tex3, src_coord3);
+    s2.rgb *= 1.2;
+    color = patch_check_scroll_px(
+        uv,                       // coord in px
+        RESOLUTION,           // resolution
+        color, // color in
+        s1,//vec4(0.0, 0.3, 0.05, 1.0), // square1
+        s2,//vec4(0.0, 0.35, 0.0, 1.0), // square2
+        vec2(10.0, 10.0),         // block dim in px
+        vec2(0.0, -fract(iTime/5.0) * HEIGHT), // offset
+        mat4x2(                   // corners
+            0.0, HEIGHT * 0.65,
+            WIDTH, HEIGHT * 0.65,
+            -1250.0, HEIGHT,
+            WIDTH + 1250.0, HEIGHT)
+    );
+}
 
 if (true) {
     vec2 scale = vec2(1.0, 1.0);
     vec2 uv = uv * scale;
+    uv.y -= 0.0;
     vec2 center = RESOLUTION * vec2(0.5, 0.5) * scale;
     float rad = 190.0;
     vec4 blob_color = texture(src_tex1, src_coord1.xy);

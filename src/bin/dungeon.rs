@@ -20,6 +20,7 @@ use vizwasm::vizconfig::{time_code_2_float, AllSettings, MixConfig};
 fn main() {}
 
 static STREAM_PATH: &'static str = "/Users/ttie/Desktop/dungeon/streams";
+static TECH_PATH: &'static str = "/Users/ttie/Desktop/tech_streams";
 static ASSET_PATH: &'static str = "/Users/ttie/Desktop/common_data";
 
 static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
@@ -56,6 +57,43 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
                 .build(),
         );
     }
+
+    let tech_vids640x480 = [
+        "blur_lights",
+        "burns",
+        "circles",
+        "clock",
+        "corp",
+        "cube",
+        "epic",
+        "fluffy_clouds",
+        "holo_city",
+        "horizon",
+        "night_sky",
+        "old_clouds",
+        "silver_lining",
+        "smoke",
+        "stars",
+        "target",
+        "tube",
+        "vestial1",
+        "vestial2",
+    ];
+    for vid_name in tech_vids640x480.iter() {
+        vids.push(
+            Vid::builder()
+                .name(vid_name)
+                .path(format!("{TECH_PATH}/{}.mp4", vid_name))
+                .resolution((640, 480))
+                .tbq((1, 12800))
+                .pix_fmt("yuv420p")
+                .repeat(true)
+                .realtime(false)
+                .hardware_decode(true)
+                .build(),
+        );
+    }
+
     let pngs640x480: &[&str] = &[];
     for png_name in pngs640x480.iter() {
         vids.push(
@@ -84,6 +122,25 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "sunrise_scene",
         "sunrise_combo",
         "jam",
+        "blur_lights",
+        "burns",
+        "circles",
+        "clock",
+        "corp",
+        "cube",
+        "epic",
+        "fluffy_clouds",
+        "holo_city",
+        "horizon",
+        "night_sky",
+        "old_clouds",
+        "silver_lining",
+        "smoke",
+        "stars",
+        "target",
+        "tube",
+        "vestial1",
+        "vestial2",
     ]
     .iter()
     .map(|s| s.to_string())
@@ -158,6 +215,8 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
             mix: Mix::builder()
                 .name("jam_mix")
                 .mixed("blank_overlay")
+                .mixed("circles_overlay")
+                .mixed("epic_overlay")
                 .mixed("a_sword_in_the_stone_overlay")
                 .no_display(true)
                 .build(),
