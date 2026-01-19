@@ -17,18 +17,39 @@
 //     color.rgb = vec3(1.0, 1.0, 1.0);
 // }
 
+#define RESOLUTION (iResolution.xy)
+#define WIDTH (iResolution.x)
+#define HEIGHT (iResolution.y)
 
-vec2 uv = src_coord0.xy * iResolution.xy;
+vec2 uv = src_coord0.xy * RESOLUTION;
 color = patch_check_scroll_px(
+    uv,                       // coord in px
+    RESOLUTION,           // resolution
     vec4(0.0, 0.0, 0.0, 1.0), // color in
     vec4(0.0, 1.0, 0.0, 1.0), // square1
     vec4(0.0, 0.5, 1.0, 1.0), // square2
-    uv,                       // coord in px
     vec2(10.0, 10.0),         // block dim in px
-    vec2(0.0, -fract(iTime/5.0) * iResolution.y),           // offset
-    mat4x2(
-        0.0, iResolution.y * 0.65,
-        iResolution.x, iResolution.y * 0.65,
-        -1250.0, iResolution.y,
-        iResolution.x + 1250.0, iResolution.y)
+    vec2(0.0, -fract(iTime/5.0) * HEIGHT), // offset
+    mat4x2(                   // corners
+        0.0, HEIGHT * 0.65,
+        WIDTH, HEIGHT * 0.65,
+        -1250.0, HEIGHT,
+        WIDTH + 1250.0, HEIGHT)
 );
+
+if (true) {
+    vec2 scale = vec2(1.0, 1.0);
+    vec2 uv = uv * scale;
+    vec2 center = RESOLUTION * vec2(0.5, 0.5) * scale;
+    float rad = 190.0;
+    vec4 blob_color = texture(src_tex1, src_coord1.xy);
+    color = patch_blob_px(
+        uv,                          // coord in px
+        RESOLUTION,                  // resolution
+        color,                       // color in
+        blob_color,    // blob color
+        center, // blob center
+        rad,                        // blob radius
+        iTime                // offset
+    );
+}

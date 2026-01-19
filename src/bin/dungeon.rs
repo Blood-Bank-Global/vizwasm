@@ -150,13 +150,15 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
                 .height(vid.resolution.1 as u32)
                 .header(concat!(
                     include_str!("../glsl/utils.glsl"),
-                    include_str!("../glsl/patch_check_scroll_px.glsl")
+                    include_str!("../glsl/patch_check_scroll_px.glsl"),
+                    include_str!("../glsl/patch_blob_px.glsl")
                 ))
                 .body(include_str!("../glsl/jam.glsl"))
                 .build(),
             mix: Mix::builder()
                 .name("jam_mix")
                 .mixed("blank_overlay")
+                .mixed("a_sword_in_the_stone_overlay")
                 .no_display(true)
                 .build(),
         });
