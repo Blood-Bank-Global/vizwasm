@@ -26,13 +26,13 @@ static ASSET_PATH: &'static str = "/Users/ttie/Desktop/common_data";
 static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
     let mut vids = vec![];
 
-    let vid640x320 = ["blank"];
-    for vid_name in vid640x320.iter() {
+    let vid720x480 = ["blank"];
+    for vid_name in vid720x480.iter() {
         vids.push(
             Vid::builder()
                 .name(vid_name)
                 .path(format!("{STREAM_PATH}/{}.mp4", vid_name))
-                .resolution((640, 320))
+                .resolution((720, 480))
                 .tbq((1, 12800))
                 .pix_fmt("yuv420p")
                 .repeat(true)
@@ -42,7 +42,7 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
         );
     }
 
-    let vid640x480 = ["a_sword_in_the_stone", "arthur"];
+    let vid640x480 = ["a_sword_in_the_stone", "arthur", "columns"];
     for vid_name in vid640x480.iter() {
         vids.push(
             Vid::builder()
@@ -121,6 +121,7 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "a_sword_in_the_stone_combo",
         "sunrise_scene",
         "sunrise_combo",
+        "columns",
         "jam",
         "blur_lights",
         "burns",
@@ -207,6 +208,7 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
                 .height(vid.resolution.1 as u32)
                 .header(concat!(
                     include_str!("../glsl/utils.glsl"),
+                    include_str!("../glsl/strings.glsl"),
                     include_str!("../glsl/patch_check_scroll_px.glsl"),
                     include_str!("../glsl/patch_blob_px.glsl")
                 ))
@@ -215,9 +217,10 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
             mix: Mix::builder()
                 .name("jam_mix")
                 .mixed("blank_overlay")
-                .mixed("circles_overlay")
+                .mixed("vestial1_overlay")
+                // .mixed("night_sky_overlay")
                 .mixed("epic_overlay")
-                .mixed("a_sword_in_the_stone_overlay")
+                .mixed("columns_overlay")
                 .no_display(true)
                 .build(),
         });
