@@ -42,7 +42,7 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
         );
     }
 
-    let vid640x480 = ["a_sword_in_the_stone", "arthur", "columns"];
+    let vid640x480 = ["a_sword_in_the_stone", "arthur", "columns", "facade"];
     for vid_name in vid640x480.iter() {
         vids.push(
             Vid::builder()
@@ -122,6 +122,7 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "sunrise_scene",
         "sunrise_combo",
         "columns",
+        "facade",
         "jam",
         "blur_lights",
         "burns",
@@ -218,9 +219,10 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
                 .name("jam_mix")
                 .mixed("blank_overlay")
                 .mixed("vestial1_overlay")
-                // .mixed("night_sky_overlay")
                 .mixed("epic_overlay")
                 .mixed("columns_overlay")
+                .mixed("facade_overlay")
+                .mixed("night_sky_overlay")
                 .no_display(true)
                 .build(),
         });
