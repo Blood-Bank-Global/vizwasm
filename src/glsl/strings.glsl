@@ -287,7 +287,6 @@ vec4 draw_text(in vec4 in_color, in vec2 uv_in, in vec2 pos_in, in vec2 resoluti
 
     int charIndex = (uv.x - pos.x) / 8;
     int charCode = int( textData[ uint(charIndex) ] & 0xFFu );
-    //uint( iTime ) % 255u
     int onGlyph = fontRef(charCode, ivec2(mod(uv.x - pos.x, 8), mod(uv.y - pos.y, 16)) );
     vec3 col = vec3( 0.0f );
     switch ( onGlyph ) {

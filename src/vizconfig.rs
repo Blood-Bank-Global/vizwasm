@@ -196,7 +196,7 @@ impl AllSettings {
                 Vid::builder()
                     .name("blank")
                     .path(format!("REPLACE/overlays/blank.mp4"))
-                    .resolution((1280, 720))
+                    .resolution((640, 480))
                     .tbq((1, 12800))
                     .pix_fmt("yuv420p")
                     .repeat(true)
@@ -370,7 +370,7 @@ impl AllSettings {
                     Vid::builder()
                         .name(s)
                         .path(&format!("{asset_path}/distorts/{s}.mp4"))
-                        .resolution((720, 480))
+                        .resolution((640, 480))
                         .tbq((1, 12800))
                         .pix_fmt("yuv420p")
                         .repeat(true)
@@ -386,7 +386,7 @@ impl AllSettings {
                 MixConfig {
                     def: VidMixer::builder()
                         .name(format!("{s}_mix"))
-                        .width(720)
+                        .width(640)
                         .height(480)
                         .build(),
                     mix: Mix::builder()
@@ -424,7 +424,7 @@ impl AllSettings {
                 MixConfig {
                     def: VidMixer::builder()
                         .name(format!("{s}_mix"))
-                        .width(720)
+                        .width(640)
                         .height(480)
                         .build(),
                     mix: Mix::builder()

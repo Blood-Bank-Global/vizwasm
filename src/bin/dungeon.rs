@@ -26,23 +26,29 @@ static ASSET_PATH: &'static str = "/Users/ttie/Desktop/common_data";
 static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
     let mut vids = vec![];
 
-    let vid720x480 = ["blank"];
-    for vid_name in vid720x480.iter() {
-        vids.push(
-            Vid::builder()
-                .name(vid_name)
-                .path(format!("{STREAM_PATH}/{}.mp4", vid_name))
-                .resolution((720, 480))
-                .tbq((1, 12800))
-                .pix_fmt("yuv420p")
-                .repeat(true)
-                .realtime(false)
-                .hardware_decode(true)
-                .build(),
-        );
-    }
+    // let vid720x480 = ["blank"];
+    // for vid_name in vid720x480.iter() {
+    //     vids.push(
+    //         Vid::builder()
+    //             .name(vid_name)
+    //             .path(format!("{STREAM_PATH}/{}.mp4", vid_name))
+    //             .resolution((720, 480))
+    //             .tbq((1, 12800))
+    //             .pix_fmt("yuv420p")
+    //             .repeat(true)
+    //             .realtime(false)
+    //             .hardware_decode(true)
+    //             .build(),
+    //     );
+    // }
 
-    let vid640x480 = ["a_sword_in_the_stone", "arthur", "columns", "facade"];
+    let vid640x480 = [
+        "a_sword_in_the_stone",
+        "arthur",
+        "columns",
+        "facade",
+        "wonderboy",
+    ];
     for vid_name in vid640x480.iter() {
         vids.push(
             Vid::builder()
@@ -59,6 +65,7 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
     }
 
     let tech_vids640x480 = [
+        "blank",
         "blur_lights",
         "burns",
         "circles",
@@ -124,6 +131,7 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "columns",
         "facade",
         "jam",
+        "quest_message",
         "blur_lights",
         "burns",
         "circles",
@@ -143,6 +151,7 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "tube",
         "vestial1",
         "vestial2",
+        "wonderboy",
     ]
     .iter()
     .map(|s| s.to_string())
@@ -223,10 +232,36 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
                 .mixed("columns_overlay")
                 .mixed("facade_overlay")
                 .mixed("night_sky_overlay")
+                .mixed("quest_message_overlay")
                 .no_display(true)
                 .build(),
         });
     }
+
+    // And config for the quest_message
+    let blank_vid = STREAM_DEFS.iter().find(|v| v.name == "blank");
+    if let Some(vid) = blank_vid {
+        configs.push(MixConfig {
+            def: VidMixer::builder()
+                .name("quest_message_mix")
+                .width(vid.resolution.0 as u32)
+                .height(vid.resolution.1 as u32)
+                .header(concat!(
+                    include_str!("../glsl/utils.glsl"),
+                    include_str!("../glsl/strings.glsl"),
+                    // include_str!("../glsl/patch_check_scroll_px.glsl"),
+                    // include_str!("../glsl/patch_blob_px.glsl")
+                ))
+                .body(include_str!("../glsl/quest_message.glsl"))
+                .build(),
+            mix: Mix::builder()
+                .name("quest_message_mix")
+                .mixed("blank_overlay")
+                .no_display(true)
+                .build(),
+        });
+    }
+
     configs
 });
 
