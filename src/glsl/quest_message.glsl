@@ -89,7 +89,10 @@ if (true) {
         quest_message_t(quest6, quest6_length),
         quest_message_t(quest7, quest7_length),
     };
-    int qindex = int(floor((1+randf(int(floor(iTime))) / 2.0) * 8.0));
+    int qindex = int(floor((1.0 + randf(uint(iTime)))/2.0 * 8.0));
+
+
+
     quest_message_t qmsg = quest_messages[qindex];
 
     float scale = iResolution.x / (float(QUEST_LINE_LEN) * 16.0);

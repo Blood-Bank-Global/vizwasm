@@ -5,6 +5,11 @@
 //!VAR vec3 iResolution4 1.0 1.0 1.0
 //!VAR vec3 iResolution5 1.0 1.0 1.0
 //!VAR vec3 iResolution6 1.0 1.0 1.0
+//!VAR float cc_iac_driver_bus_1_0_0 0.0
+//!VAR float cc_iac_driver_bus_1_0_1 0.0
+//!VAR float cc_iac_driver_bus_1_0_2 0.0
+//!VAR float cc_iac_driver_bus_1_0_3 0.0
+//!VAR float cc_iac_driver_bus_1_0_4 0.0
 
 #define VIEW_RESOLUTION (iResolution.xy)
 #define BLANK_RESOLUTION (iResolution0.xy)  
@@ -36,11 +41,15 @@
 #define HEIGHT (iResolution.y)
 
 vec2 uv = src_coord.xy * VIEW_RESOLUTION;
+
 color = texture(CLOUD_TEX, (CLOUD_COORD.xy * VIEW_RESOLUTION.x) / CLOUD_RESOLUTION.xy * (CLOUD_RESOLUTION.x / VIEW_RESOLUTION.x));
+vec3 hsv = rgb2hsv(color.rgb);
+color.rgb = hsv2rgb(vec3(hsv.x, hsv.y, hsv.z + cc_iac_driver_bus_1_0_0/127.0));
+
 
 if (true) {
-    vec4 s1 = vec4(0.25, 0.25, 0.25, 1.0);
-    vec4 s2 = vec4(0.35, 0.35, 0.35, 1.0);
+    vec4 s1 = vec4(0.85, 0.25, 0.25, 1.0);
+    vec4 s2 = vec4(0.35, 0.35, 0.75, 1.0);
     color = patch_check_scroll_px(
         uv,                       // coord in px
         VIEW_RESOLUTION,           // resolution
@@ -128,6 +137,15 @@ if (false) {
 if (true) {
     vec4 quest_color = texture(QUEST_TEX, QUEST_COORD.xy);
     if (distance(quest_color.rgb, vec3(0.0, 0.0, 0.0))   > 0.1) {
-        color = quest_color;
+        color.rgb = blend_by_mode(color, quest_color, BLEND_ALPHA).rgb;
     }
+}
+
+//!STR cc_value "cc=000"
+if (false) {
+    float v = cc_iac_driver_bus_1_0_0;
+    cc_value[3] = 0x30 + int(mod(v/100.0, 10.0));
+    cc_value[4] = 0x30 + int(mod(v/10.0, 10.0));
+    cc_value[5] = 0x30 + int(mod(v, 10.0));
+    color = draw_text(color, uv, vec2(100,10), VIEW_RESOLUTION.xy, cc_value, cc_value_length);
 }
