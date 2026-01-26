@@ -1,12 +1,12 @@
 //!VAR vec3 iResolution0 1.0 1.0 1.0
-////////////// 1234567890ABCDE_1234567890ABCDE_1234567890ABCDE_
+////////////// 1234567890ABCDE_1234567890ABCDE_1234567890ABCDE_1234567890ABCDE_1234567890ABCDE_
 //!STR quest0 "Welcome,        Adventurer"
 //!STR quest1 "A Quest, should you accept it."
-//!STR quest2 "Fear not danger you see, unleashdanger within!"
-//!STR quest3 "Restore the     reliquary,      heal the spirit."
+//!STR quest2 "Fear not the    danger you see, unleash the     danger within!"
+//!STR quest3 "Restore the     reliquary,      Discover truth."
 //!STR quest4 "The enemy does  not come in     dragon form."
-//!STR quest5 "                      AMBUSH!"
-//!STR quest6 "                      PINCER!"
+//!STR quest5 "Is the treasure cursed, or is   the curse the   treasure itself?"
+//!STR quest6 "Do not be       fooled by those who would say   your power is a  prison."
 //!STR quest7 "A TRAP HAS BEEN       SPRUNG!    "
 //!STR stats_nmcl "Nm: ____ Cl: ____"
 //!STR stats_hpmp "HP: 0000 MP: 0000"

@@ -26,28 +26,14 @@ static ASSET_PATH: &'static str = "/Users/ttie/Desktop/common_data";
 static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
     let mut vids = vec![];
 
-    // let vid720x480 = ["blank"];
-    // for vid_name in vid720x480.iter() {
-    //     vids.push(
-    //         Vid::builder()
-    //             .name(vid_name)
-    //             .path(format!("{STREAM_PATH}/{}.mp4", vid_name))
-    //             .resolution((720, 480))
-    //             .tbq((1, 12800))
-    //             .pix_fmt("yuv420p")
-    //             .repeat(true)
-    //             .realtime(false)
-    //             .hardware_decode(true)
-    //             .build(),
-    //     );
-    // }
-
     let vid640x480 = [
         "a_sword_in_the_stone",
         "arthur",
         "columns",
         "facade",
         "wonderboy",
+        "statue",
+        "the_moon",
     ];
     for vid_name in vid640x480.iter() {
         vids.push(
@@ -152,6 +138,8 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "vestial1",
         "vestial2",
         "wonderboy",
+        "statue",
+        "the_moon",
     ]
     .iter()
     .map(|s| s.to_string())
@@ -227,12 +215,13 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
             mix: Mix::builder()
                 .name("jam_mix")
                 .mixed("blank_overlay")
-                .mixed("vestial1_overlay")
+                .mixed("statue_overlay")
                 .mixed("epic_overlay")
                 .mixed("columns_overlay")
                 .mixed("facade_overlay")
                 .mixed("night_sky_overlay")
                 .mixed("quest_message_overlay")
+                .mixed("horizon_overlay")
                 .no_display(true)
                 .build(),
         });

@@ -13,7 +13,7 @@
 
 #define VIEW_RESOLUTION (iResolution.xy)
 #define BLANK_RESOLUTION (iResolution0.xy)  
-#define VESTIAL1_RESOLUTION (iResolution1.xy)
+#define STATUE_RESOLUTION (iResolution1.xy)
 #define CLOUD_RESOLUTION (iResolution2.xy)
 #define COL_RESOLUTION (iResolution3.xy)
 #define FACADE_RESOLUTION (iResolution4.xy)
@@ -22,7 +22,7 @@
 
 #define VIEW_COORD (src_coord.xy)
 #define BLANK_COORD (src_coord0.xy)
-#define VESTIAL1_COORD (src_coord1.xy)
+#define STATUE_COORD (src_coord1.xy)
 #define CLOUD_COORD (src_coord2.xy)
 #define COL_COORD (src_coord3.xy)
 #define FACADE_COORD (src_coord4.xy)
@@ -30,7 +30,7 @@
 #define QUEST_COORD (src_coord6.xy)
 
 #define BLAN_TEX (src_tex0)
-#define VESTIAL1_TEX (src_tex1)
+#define STATUE_TEX (src_tex1)
 #define CLOUD_TEX (src_tex2)
 #define COL_TEX (src_tex3)
 #define FACADE_TEX (src_tex4)
@@ -40,16 +40,24 @@
 #define WIDTH (iResolution.x)
 #define HEIGHT (iResolution.y)
 
+
+
+//////////// GET TO PIXELS
 vec2 uv = src_coord.xy * VIEW_RESOLUTION;
+color = vec4(0.0, 0.0, 0.0, 1.0);
 
-color = texture(CLOUD_TEX, (CLOUD_COORD.xy * VIEW_RESOLUTION.x) / CLOUD_RESOLUTION.xy * (CLOUD_RESOLUTION.x / VIEW_RESOLUTION.x));
-vec3 hsv = rgb2hsv(color.rgb);
-color.rgb = hsv2rgb(vec3(hsv.x, hsv.y, hsv.z + cc_iac_driver_bus_1_0_0/127.0));
-
-
+//////////// BACKGROUND 
 if (true) {
-    vec4 s1 = vec4(0.85, 0.25, 0.25, 1.0);
-    vec4 s2 = vec4(0.35, 0.35, 0.75, 1.0);
+    vec2 coord = CLOUD_COORD * 0.75 + vec2(0.125, 0.125);
+    color = texture(CLOUD_TEX, (coord.xy * VIEW_RESOLUTION.x) / CLOUD_RESOLUTION.xy * (CLOUD_RESOLUTION.x / VIEW_RESOLUTION.x));
+    vec3 hsv = rgb2hsv(color.rgb);
+    color.rgb = hsv2rgb(vec3(hsv.x, hsv.y, hsv.z + cc_iac_driver_bus_1_0_0/127.0));
+}
+
+//////////// GROND SCROLL
+if (true) {
+    vec4 s1 = vec4(0.0, 0.0, 0.0, 1.0);
+    vec4 s2 = vec4(0.0, 0.0, 0.15, 1.0);
     color = patch_check_scroll_px(
         uv,                       // coord in px
         VIEW_RESOLUTION,           // resolution
@@ -66,20 +74,26 @@ if (true) {
     );
 }
 
-if (true) {
+
+//////////// VISUBLOB
+#if 1
+#define BLOB_BG_TEX NIGHT_SKY_TEX
+#define BLOB_BG_COORD NIGHT_SKY_COORD
+#define BLOB_BG_RESOLUTION NIGHT_SKY_RESOLUTION
+#else
+#define BLOB_BG_TEX STATUE_TEX
+#define BLOB_BG_COORD STATUE_COORD
+#define BLOB_BG_RESOLUTION STATUE_RESOLUTION
+#endif
+if (false) {
     vec2 scale = vec2(1.0, 1.0);
     vec2 uv = uv * scale;
     uv.y -= 50.0;
     vec2 center = VIEW_RESOLUTION * vec2(0.5, 0.5) * scale;
     float rad = 300.0 * mix(0.1, 1.0, (1.0 + sin(fract(iTime/10.0) * M_PI * 2.0)/2.0));
 
-    vec2 blob_bg_resolution = NIGHT_SKY_RESOLUTION;
-    vec2 blob_bg_coord = NIGHT_SKY_COORD;
-#define BLOB_BG_TEX NIGHT_SKY_TEX
-
-    // vec2 blob_bg_resolution = VESTIAL1_RESOLUTION;
-    // vec2 blob_bg_coord = VESTIAL1_COORD;
-    // sampler2D blob_tex = VESTIAL1_TEX;
+    vec2 blob_bg_resolution = BLOB_BG_RESOLUTION;
+    vec2 blob_bg_coord = BLOB_BG_COORD;
 
     vec2 blob_bg_tx = (blob_bg_coord * VIEW_RESOLUTION.xy) / blob_bg_resolution.xy * blob_bg_resolution.x / VIEW_RESOLUTION.x;
     vec4 blob_color = texture(BLOB_BG_TEX, blob_bg_tx);
@@ -95,11 +109,22 @@ if (true) {
     );
 }
 
+
+//////////// FOREGROUND LAYER
+#if 0
+#define FG_RESOLUTION FACADE_RESOLUTION
+#define FG_COORD FACADE_COORD
+#define FG_TEX FACADE_TEX
+#else
+#define FG_RESOLUTION COL_RESOLUTION
+#define FG_COORD COL_COORD
+#define FG_TEX COL_TEX
+#endif
 if (true) {
-    float scale = FACADE_RESOLUTION.x / VIEW_RESOLUTION.x;
-    vec2 fg_coord = (FACADE_COORD * VIEW_RESOLUTION / FACADE_RESOLUTION) 
-        *  scale - vec2(0.0, (FACADE_RESOLUTION.y * scale - VIEW_RESOLUTION.y)/VIEW_RESOLUTION.y);
-    vec4 fg_color = vec4(handle_edge(FACADE_TEX, fg_coord, EDGE_MODE_MIRROR), 1.0);
+    float scale = FG_RESOLUTION.x / VIEW_RESOLUTION.x;
+    vec2 fg_coord = (FG_COORD * VIEW_RESOLUTION / FG_RESOLUTION) 
+        *  scale - vec2(0.0, (FG_RESOLUTION.y * scale - VIEW_RESOLUTION.y)/VIEW_RESOLUTION.y);
+    vec4 fg_color = vec4(handle_edge(FG_TEX, fg_coord, EDGE_MODE_MIRROR), 1.0);
 
     // float scale =  float(VIEW_RESOLUTION.x) / float(COL_RESOLUTION.x);
     // vec2 fg_coord = (COL_COORD / scale);
@@ -134,7 +159,7 @@ if (false) {
     color = draw_text(color, uv, vec2(100,10), VIEW_RESOLUTION.xy, debug_str, debug_str_length);
 }
 
-if (true) {
+if (false) {
     vec4 quest_color = texture(QUEST_TEX, QUEST_COORD.xy);
     if (distance(quest_color.rgb, vec3(0.0, 0.0, 0.0))   > 0.1) {
         color.rgb = blend_by_mode(color, quest_color, BLEND_ALPHA).rgb;
