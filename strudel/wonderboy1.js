@@ -9,12 +9,12 @@ const p1_4 = ".55 .50 .50 - .55 .545 .50 - ";
 const p1_5 = "[.50!2] [.55!2] .50@2 [.50!2] .55 .50  - ";
 
 $: arrange(
-    [0, wb.scrub(p1_0)],
-    [0, wb.scrub(p1_1)],
-    [0, wb.scrub(p1_3)],
-    [0, wb.scrub(p1_4)],
-    [0, wb.scrub(p1_5)],
-    [0, wb.scrub(p1_1)],
+    [1, wb.scrub(p1_0)],
+    [1, wb.scrub(p1_1)],
+    [1, wb.scrub(p1_3)],
+    [1, wb.scrub(p1_4)],
+    [1, wb.scrub(p1_5)],
+    [1, wb.scrub(p1_1)],
 )
     .lpf(2400)
     .hpf(2200)
@@ -31,10 +31,10 @@ const p2_0 = ".2 .2 .25 .2 .25 .25 -@2";
 const p2_1 = ".275 .2 .25 .275 .2 .25 .2 -";
 const p2_2 = ".275 [.2!2] .25 .275 - .25 .2 -";
 
-_$: arrange(
-    [2, wb.scrub(p2_0)],
-    [1, wb.scrub(p2_1)],
-    [2, wb.scrub(p2_0)],
+$: arrange(
+    [1, wb.scrub(p2_0)],
+    [2, wb.scrub(p2_1)],
+    [1, wb.scrub(p2_0)],
     [1, wb.scrub(p2_2)],
 )
     .lpf(900)
@@ -47,7 +47,7 @@ _$: arrange(
     .roomsize(3)
     ._scope()
 
-_$: arrange(
+$: arrange(
     [0, "bd".struct("[1 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0]")],
     [0, "bd".struct("[1 0 0 0 1 0 0 0 1 0 0 1 1 0 0 0]")],
     [1, "bd".struct("[1 1 1 0 1 0 0 0 1 0 0 0 1 0 0 0]")]
@@ -56,7 +56,7 @@ _$: arrange(
     .bank("tr909")
     .lpf(200)
 
-_$: arrange(
+$: arrange(
     [1, "cp".struct("[0 0 1 1 0 0 0 0 0 0 0 0 1 1 1 0]")],
     [0, "-"]
 )
