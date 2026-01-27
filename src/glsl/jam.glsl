@@ -10,7 +10,7 @@
 //!VAR float cc_iac_driver_bus_1_0_2 0.0
 //!VAR float cc_iac_driver_bus_1_0_3 0.0
 //!VAR float cc_iac_driver_bus_1_0_4 0.0
-//!VAR float usr_var 0
+//!VAR int usr_var 0
 
 #define VIEW_RESOLUTION (iResolution.xy)
 #define BLANK_RESOLUTION (iResolution0.xy)  
