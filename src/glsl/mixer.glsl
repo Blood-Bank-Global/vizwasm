@@ -129,31 +129,23 @@ if (color_key_enable > 0) {
 
 // distort feedback
 
-vec2 distort_coord = src_coord0.xy;
-// rotation
-mat2 rot = mat2(
-    cos(feedback_rotation), -sin(feedback_rotation),
-    sin(feedback_rotation),  cos(feedback_rotation)
-);
-
-vec2 center = vec2(0.5, 0.5);
-distort_coord -= center;
-distort_coord *= rot;
-distort_coord += center;
-
-vec4 distort_dx_combined = vec4(distort_coord.x - distort_dx) + vec4(distort(distort_coord, src_tex2, distort_level), 0.0);
-vec4 distort_dy_combined = vec4(distort_coord.y - distort_dy) + vec4(distort(distort_coord, src_tex3, distort_level), 0.0);
-mat4x2 distort_matrix = mat4x2(
-    distort_dx_combined[0], distort_dy_combined[0],
-    distort_dx_combined[1], distort_dy_combined[1],
-    distort_dx_combined[2], distort_dy_combined[2],
-    distort_dx_combined[3], distort_dy_combined[3]
-);
-
-vec4 feedback = vec4(handle_edge(src_tex0, distort_matrix[0], distort_edge).r,
-                     handle_edge(src_tex0, distort_matrix[1], distort_edge).g,
-                     handle_edge(src_tex0, distort_matrix[2], distort_edge).b,
-                     texture(src_tex0, distort_matrix[3]).a);
+#ifdef CUSTOM_FEEDBACK_TRANSFORM
+    // use custom transform if provided - it should have access to all the mixer uniforms
+    vec4 feedback = CUSTOM_FEEDBACK_TRANSFORM();
+#else
+//default is to just do distortion, rotation, translation
+    vec4 feedback = patch_rototrans(
+        src_coord0.xy,
+        src_tex0,
+        src_tex2,
+        src_tex3,
+        feedback_rotation,
+        distort_dx,
+        distort_dy,
+        distort_level,
+        distort_edge
+    );
+#endif
 
 // underlay feedback
 color = blend_by_mode(feedback, base, BLEND_ALPHA);

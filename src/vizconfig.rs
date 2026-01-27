@@ -91,7 +91,10 @@ impl MixerGraph {
                     .name(format!("{}_main_mix", name.as_ref()))
                     .width(width)
                     .height(height)
-                    .header(include_str!("glsl/utils.glsl"))
+                    .header(concat!(
+                        include_str!("glsl/utils.glsl"),
+                        include_str!("glsl/patch_rototrans.glsl")
+                    ))
                     .body(include_str!("glsl/mixer.glsl"))
                     .build(),
                 mix: Mix::builder()

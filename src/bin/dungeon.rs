@@ -302,6 +302,18 @@ pub fn asset_list(fps: i64) -> Vec<Asset> {
         }
     }
 
+    for mix in ["jam_main_mix", "the_moon_main_mix"] {
+        if let Some(mix) = settings.mix_configs.get_mut(mix) {
+            mix.def.header.replace(
+                (&[
+                    mix.def.header.as_deref().unwrap_or(""),
+                    include_str!("../glsl/jam_feedback.glsl"),
+                ])
+                    .join("\n"),
+            );
+        }
+    }
+
     settings.asset_list(fps)
 }
 
