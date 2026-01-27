@@ -124,6 +124,11 @@ if (true) {
     float scale = FG_RESOLUTION.x / VIEW_RESOLUTION.x;
     vec2 fg_coord = (FG_COORD * VIEW_RESOLUTION / FG_RESOLUTION) 
         *  scale - vec2(0.0, (FG_RESOLUTION.y * scale - VIEW_RESOLUTION.y)/VIEW_RESOLUTION.y);
+    vec2 fg_uv = fg_coord * FG_RESOLUTION;
+
+    fg_coord = patch_warp_px(fg_uv, vec2(10.0, 10.0), 0.001, FG_RESOLUTION, iTime/5.0);
+    
+    // fg_coord = fg_uv / FG_RESOLUTION;
     vec4 fg_color = vec4(handle_edge(FG_TEX, fg_coord, EDGE_MODE_MIRROR), 1.0);
 
     // float scale =  float(VIEW_RESOLUTION.x) / float(COL_RESOLUTION.x);

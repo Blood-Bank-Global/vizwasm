@@ -208,7 +208,8 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
                     include_str!("../glsl/utils.glsl"),
                     include_str!("../glsl/strings.glsl"),
                     include_str!("../glsl/patch_check_scroll_px.glsl"),
-                    include_str!("../glsl/patch_blob_px.glsl")
+                    include_str!("../glsl/patch_blob_px.glsl"),
+                    include_str!("../glsl/patch_warp_px.glsl")
                 ))
                 .body(include_str!("../glsl/jam.glsl"))
                 .build(),
