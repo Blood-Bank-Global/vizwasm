@@ -10,6 +10,7 @@
 //!VAR float cc_iac_driver_bus_1_0_2 0.0
 //!VAR float cc_iac_driver_bus_1_0_3 0.0
 //!VAR float cc_iac_driver_bus_1_0_4 0.0
+//!VAR float usr_var 0
 
 #define VIEW_RESOLUTION (iResolution.xy)
 #define BLANK_RESOLUTION (iResolution0.xy)  
@@ -124,9 +125,12 @@ if (true) {
     float scale = FG_RESOLUTION.x / VIEW_RESOLUTION.x;
     vec2 fg_coord = (FG_COORD * VIEW_RESOLUTION / FG_RESOLUTION) 
         *  scale - vec2(0.0, (FG_RESOLUTION.y * scale - VIEW_RESOLUTION.y)/VIEW_RESOLUTION.y);
+    
     vec2 fg_uv = fg_coord * FG_RESOLUTION;
 
-    fg_coord = patch_warp_px(fg_uv, vec2(10.0, 10.0), 0.001, FG_RESOLUTION, iTime/5.0);
+    fg_uv = patch_warp_px(fg_uv, vec2(25.0, 25.0), float(abs(usr_var))/100.0, FG_RESOLUTION, iTime/5.0);
+    fg_coord = fg_uv / FG_RESOLUTION;
+    // fg_coord = patch_warp_px(fg_coord, vec2(50.0, 50.0)/FG_RESOLUTION, 1.0, vec2(1.0,1.0), iTime/5.0);
     
     // fg_coord = fg_uv / FG_RESOLUTION;
     vec4 fg_color = vec4(handle_edge(FG_TEX, fg_coord, EDGE_MODE_MIRROR), 1.0);
