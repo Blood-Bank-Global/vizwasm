@@ -15,7 +15,7 @@ vec2 patch_warp_px(vec2 uv, vec2 size, float strength, vec2 resolution, float se
                 rounded.x + float(i - 1.0) * size.x,
                 rounded.y + float(j - 1.0) * size.y
             );
-
+            
             int gx = int(floor(uv.x/size.x)) + i - 1;
             int gy = int(floor(uv.y/size.y)) + j - 1;
             int h = (gx * 73856093) ^ (gy * 19349663);
@@ -37,19 +37,26 @@ vec2 patch_warp_px(vec2 uv, vec2 size, float strength, vec2 resolution, float se
             );
         }
     }
-    
-    vec2 x_interps[4];
-    float fx = fract(uv.x / size.x);
-    for (int j = 0; j < 4; j++) {
-        x_interps[j] = vec2(
-            bicubic_mix(web[0][j].x, web[1][j].x, web[2][j].x, web[3][j].x, fx),
-            bicubic_mix(web[0][j].y, web[1][j].y, web[2][j].y, web[3][j].y, fx)
-        );
+    float x_vals[4];
+    for (int i = 0; i < 4; i++)  {
+        x_vals[i] = bicubic_mix(web[0][i].x,
+                                web[1][i].x,
+                                web[2][i].x,
+                                web[3][i].x,
+                                fract(uv.x / size.x));
     }
-    
-    float fy = fract(uv.y / size.y);
+    float y_vals[4];
+    for (int i = 0; i < 4; i++)  {
+        y_vals[i] = bicubic_mix(web[i][0].y,
+                                web[i][1].y,
+                                web[i][2].y,
+                                web[i][3].y,
+                                fract(uv.y / size.y));
+    }
+
     return vec2(
-        bicubic_mix(x_interps[0].x, x_interps[1].x, x_interps[2].x, x_interps[3].x, fy),
-        bicubic_mix(x_interps[0].y, x_interps[1].y, x_interps[2].y, x_interps[3].y, fy)
+        bicubic_mix(x_vals[0], x_vals[1], x_vals[2], x_vals[3], fract(uv.y / size.y)),
+        bicubic_mix(y_vals[0], y_vals[1], y_vals[2], y_vals[3], fract(uv.x / size.x))
     );
+
 }
