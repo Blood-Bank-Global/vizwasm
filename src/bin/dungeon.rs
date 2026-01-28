@@ -34,6 +34,7 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
         "wonderboy",
         "statue",
         "the_moon",
+        "the_snow_queen",
     ];
     for vid_name in vid640x480.iter() {
         vids.push(
@@ -140,6 +141,7 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "wonderboy",
         "statue",
         "the_moon",
+        "the_snow_queen",
     ]
     .iter()
     .map(|s| s.to_string())
@@ -223,6 +225,7 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
                 .mixed("night_sky_overlay")
                 .mixed("quest_message_overlay")
                 .mixed("horizon_overlay")
+                .mixed("the_snow_queen_overlay")
                 .no_display(true)
                 .build(),
         });
@@ -302,15 +305,16 @@ pub fn asset_list(fps: i64) -> Vec<Asset> {
         }
     }
 
-    for mix in ["jam_main_mix", "the_moon_main_mix"] {
+    for mix in [
+        "jam_main_mix",
+        "the_moon_main_mix",
+        "the_snow_queen_main_mix",
+    ]
+    .iter()
+    .cloned()
+    {
         if let Some(mix) = settings.mix_configs.get_mut(mix) {
-            mix.def.header.replace(
-                (&[
-                    mix.def.header.as_deref().unwrap_or(""),
-                    include_str!("../glsl/jam_feedback.glsl"),
-                ])
-                    .join("\n"),
-            );
+            mix.add_header(include_str!("../glsl/jam_feedback.glsl"));
         }
     }
 

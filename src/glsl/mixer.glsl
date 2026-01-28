@@ -38,6 +38,7 @@
 //!VAR float scrolled_h 0.0
 //!VAR float scrolled_v 0.0
 //!VAR uint flash_enable 0
+//!VAR int usr_var 0
 
 vec2 base_coord = src_coord0.xy;
 
@@ -131,7 +132,7 @@ if (color_key_enable > 0) {
 
 #ifdef CUSTOM_FEEDBACK_TRANSFORM
     // use custom transform if provided - it should have access to all the mixer uniforms
-    vec4 feedback = CUSTOM_FEEDBACK_TRANSFORM();
+    color = CUSTOM_FEEDBACK_TRANSFORM(base);
 #else
 //default is to just do distortion, rotation, translation
     vec4 feedback = patch_rototrans(
@@ -145,7 +146,7 @@ if (color_key_enable > 0) {
         distort_level,
         distort_edge
     );
-#endif
 
-// underlay feedback
-color = blend_by_mode(feedback, base, BLEND_ALPHA);
+    // underlay feedback
+    color = blend_by_mode(feedback, base, BLEND_ALPHA);
+#endif

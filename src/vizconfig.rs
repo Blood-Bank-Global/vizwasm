@@ -77,6 +77,14 @@ pub struct MixConfig {
     pub mix: Mix,
 }
 
+impl MixConfig {
+    pub fn add_header<T: AsRef<str>>(&mut self, header: T) {
+        let h = header.as_ref();
+        let o = self.def.header.as_deref().unwrap_or_default();
+        self.def.header.replace([o, h].join("\n"));
+    }
+}
+
 pub struct MixerGraph {
     main_mix: MixConfig,
     feedback: MixConfig,

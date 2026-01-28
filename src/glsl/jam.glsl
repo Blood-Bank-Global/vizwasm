@@ -5,11 +5,15 @@
 //!VAR vec3 iResolution4 1.0 1.0 1.0
 //!VAR vec3 iResolution5 1.0 1.0 1.0
 //!VAR vec3 iResolution6 1.0 1.0 1.0
+//!VAR vec3 iResolution7 1.0 1.0 1.0
+//!VAR vec3 iResolution8 1.0 1.0 1.0
+
 //!VAR float cc_iac_driver_bus_1_0_0 0.0
 //!VAR float cc_iac_driver_bus_1_0_1 0.0
 //!VAR float cc_iac_driver_bus_1_0_2 0.0
 //!VAR float cc_iac_driver_bus_1_0_3 0.0
 //!VAR float cc_iac_driver_bus_1_0_4 0.0
+
 //!VAR int usr_var 0
 
 #define VIEW_RESOLUTION (iResolution.xy)
@@ -20,6 +24,9 @@
 #define FACADE_RESOLUTION (iResolution4.xy)
 #define NIGHT_SKY_RESOLUTION (iResolution5.xy)
 #define QUEST_RESOLUTION (iResolution6.xy)
+#define HORIZON_RESOLUTION (iResolution7.xy)
+#define QUEEN_RESOLUTION (iResolution8.xy)
+
 
 #define VIEW_COORD (src_coord.xy)
 #define BLANK_COORD (src_coord0.xy)
@@ -29,6 +36,8 @@
 #define FACADE_COORD (src_coord4.xy)
 #define NIGHT_SKY_COORD (src_coord5.xy)
 #define QUEST_COORD (src_coord6.xy)
+#define HORIZON_COORD (src_coord7.xy)
+#define QUEEN_COORD (src_coord8.xy)
 
 #define BLAN_TEX (src_tex0)
 #define STATUE_TEX (src_tex1)
@@ -37,6 +46,8 @@
 #define FACADE_TEX (src_tex4)
 #define NIGHT_SKY_TEX (src_tex5)
 #define QUEST_TEX (src_tex6)
+#define HORIZON_TEX (src_tex7)
+#define QUEEN_TEX (src_tex8)
 
 #define WIDTH (iResolution.x)
 #define HEIGHT (iResolution.y)
@@ -55,10 +66,10 @@ if (true) {
     color.rgb = hsv2rgb(vec3(hsv.x, hsv.y, hsv.z + cc_iac_driver_bus_1_0_0/127.0));
 }
 
-//////////// GROND SCROLL
+//////////// GROUND SCROLL
 if (true) {
-    vec4 s1 = vec4(0.0, 0.0, 0.0, 1.0);
-    vec4 s2 = vec4(0.0, 0.0, 0.15, 1.0);
+    vec4 s1 = vec4(0.0, 0.0, 0.20, 1.0);
+    vec4 s2 = vec4(0.0, 0.15, 0.35, 1.0);
     color = patch_check_scroll_px(
         uv,                       // coord in px
         VIEW_RESOLUTION,           // resolution
@@ -77,21 +88,25 @@ if (true) {
 
 
 //////////// VISUBLOB
-#if 1
+#if 0
 #define BLOB_BG_TEX NIGHT_SKY_TEX
 #define BLOB_BG_COORD NIGHT_SKY_COORD
 #define BLOB_BG_RESOLUTION NIGHT_SKY_RESOLUTION
+#elif 1
+#define BLOB_BG_TEX QUEEN_TEX
+#define BLOB_BG_COORD QUEEN_COORD
+#define BLOB_BG_RESOLUTION QUEEN_RESOLUTION
 #else
 #define BLOB_BG_TEX STATUE_TEX
 #define BLOB_BG_COORD STATUE_COORD
 #define BLOB_BG_RESOLUTION STATUE_RESOLUTION
 #endif
-if (false) {
+if (true) {
     vec2 scale = vec2(1.0, 1.0);
     vec2 uv = uv * scale;
-    uv.y -= 50.0;
+    uv.y -= 20.0;
     vec2 center = VIEW_RESOLUTION * vec2(0.5, 0.5) * scale;
-    float rad = 300.0 * mix(0.1, 1.0, (1.0 + sin(fract(iTime/10.0) * M_PI * 2.0)/2.0));
+    float rad = 250.0 * mix(0.3, 1.0, (1.0 + sin(fract(iTime/10.0) * M_PI * 2.0)/2.0));
 
     vec2 blob_bg_resolution = BLOB_BG_RESOLUTION;
     vec2 blob_bg_coord = BLOB_BG_COORD;
@@ -112,7 +127,7 @@ if (false) {
 
 
 //////////// FOREGROUND LAYER
-#if 0
+#if 1
 #define FG_RESOLUTION FACADE_RESOLUTION
 #define FG_COORD FACADE_COORD
 #define FG_TEX FACADE_TEX
@@ -121,7 +136,7 @@ if (false) {
 #define FG_COORD COL_COORD
 #define FG_TEX COL_TEX
 #endif
-if (true) {
+if (false) {
     float scale = FG_RESOLUTION.x / VIEW_RESOLUTION.x;
     vec2 fg_coord = (FG_COORD * VIEW_RESOLUTION / FG_RESOLUTION) 
         *  scale - vec2(0.0, (FG_RESOLUTION.y * scale - VIEW_RESOLUTION.y)/VIEW_RESOLUTION.y);
