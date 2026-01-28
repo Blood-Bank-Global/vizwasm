@@ -208,10 +208,15 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
                 .height(vid.resolution.1 as u32)
                 .header(concat!(
                     include_str!("../glsl/utils.glsl"),
+                    "\n",
                     include_str!("../glsl/strings.glsl"),
+                    "\n",
                     include_str!("../glsl/patch_check_scroll_px.glsl"),
+                    "\n",
                     include_str!("../glsl/patch_blob_px.glsl"),
-                    include_str!("../glsl/patch_warp_px.glsl")
+                    "\n",
+                    include_str!("../glsl/patch_warp_px.glsl"),
+                    "\n",
                 ))
                 .body(include_str!("../glsl/jam.glsl"))
                 .build(),
@@ -241,7 +246,9 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
                 .height(vid.resolution.1 as u32)
                 .header(concat!(
                     include_str!("../glsl/utils.glsl"),
+                    "\n",
                     include_str!("../glsl/strings.glsl"),
+                    "\n",
                     // include_str!("../glsl/patch_check_scroll_px.glsl"),
                     // include_str!("../glsl/patch_blob_px.glsl")
                 ))
@@ -302,19 +309,6 @@ pub fn asset_list(fps: i64) -> Vec<Asset> {
                     settings.playback[j].stream.ident = ident;
                 }
             }
-        }
-    }
-
-    for mix in [
-        "jam_main_mix",
-        "the_moon_main_mix",
-        "the_snow_queen_main_mix",
-    ]
-    .iter()
-    .cloned()
-    {
-        if let Some(mix) = settings.mix_configs.get_mut(mix) {
-            mix.add_header(include_str!("../glsl/jam_feedback.glsl"));
         }
     }
 

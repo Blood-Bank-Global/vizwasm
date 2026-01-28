@@ -38,7 +38,9 @@
 //!VAR float scrolled_h 0.0
 //!VAR float scrolled_v 0.0
 //!VAR uint flash_enable 0
+//!VAR uint feedback_mode_selected 0
 //!VAR int usr_var 0
+//!VAR ivec4 usr_vec 0 0 0 0
 
 vec2 base_coord = src_coord0.xy;
 
@@ -135,18 +137,20 @@ if (color_key_enable > 0) {
     color = CUSTOM_FEEDBACK_TRANSFORM(base);
 #else
 //default is to just do distortion, rotation, translation
-    vec4 feedback = patch_rototrans(
-        src_coord0.xy,
-        src_tex0,
-        src_tex2,
-        src_tex3,
-        feedback_rotation,
-        distort_dx,
-        distort_dy,
-        distort_level,
-        distort_edge
-    );
+    // vec4 feedback = patch_rototrans(
+    //     src_coord0.xy,
+    //     src_tex0,
+    //     src_tex2,
+    //     src_tex3,
+    //     feedback_rotation,
+    //     distort_dx,
+    //     distort_dy,
+    //     distort_level,
+    //     distort_edge
+    // );
 
-    // underlay feedback
-    color = blend_by_mode(feedback, base, BLEND_ALPHA);
+    // // underlay feedback
+    // color = blend_by_mode(feedback, base, BLEND_ALPHA);
+
+    color = patch_feedback(base);
 #endif

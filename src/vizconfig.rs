@@ -101,7 +101,11 @@ impl MixerGraph {
                     .height(height)
                     .header(concat!(
                         include_str!("glsl/utils.glsl"),
-                        include_str!("glsl/patch_rototrans.glsl")
+                        "\n",
+                        include_str!("glsl/patch_rototrans.glsl"),
+                        "\n",
+                        include_str!("glsl/patch_feedback.glsl"),
+                        "\n",
                     ))
                     .body(include_str!("glsl/mixer.glsl"))
                     .build(),
@@ -158,6 +162,7 @@ pub struct AllSettings {
     pub overlay_names: Vec<String>,
     pub lut_names: Vec<String>,
     pub blend_modes: Vec<String>,
+    pub feedback_modes: Vec<String>,
     pub colors: Vec<(String, String)>,
     pub asset_path: String,
     pub active_idx: usize,
@@ -337,6 +342,10 @@ impl AllSettings {
         ]
     }
 
+    pub fn feedback_modes() -> &'static [&'static str] {
+        &["basic", "jam"]
+    }
+
     pub fn new<
         S: AsRef<str>,
         SI: IntoIterator,
@@ -451,6 +460,11 @@ impl AllSettings {
             .map(|s| s.to_string())
             .collect::<Vec<_>>();
 
+        let feedback_modes = Self::feedback_modes()
+            .iter()
+            .map(|s| s.to_string())
+            .collect::<Vec<_>>();
+
         let colors = Self::colors()
             .iter()
             .map(|(n, c)| (n.to_string(), c.to_string()))
@@ -530,6 +544,7 @@ impl AllSettings {
             mix_configs,
             playback_names,
             blend_modes,
+            feedback_modes,
             overlay_names,
             distort_names,
             distort_edge_types,
@@ -1073,7 +1088,7 @@ impl AllSettings {
                             down: true,
                             ..
                         } => {
-                            self.selected_knobs = (self.selected_knobs + 1).clamp(1, 12);
+                            self.selected_knobs = (self.selected_knobs + 1).clamp(1, 13);
                         }
                         KeyEvent {
                             key: KeyCode::SDLK_UP,
@@ -1081,7 +1096,7 @@ impl AllSettings {
                             ..
                         } => {
                             self.selected_knobs =
-                                (self.selected_knobs as i32 - 1 as i32).clamp(1, 12) as usize;
+                                (self.selected_knobs as i32 - 1 as i32).clamp(1, 13) as usize;
                         }
                         KeyEvent {
                             key: KeyCode::SDLK_LEFT,
@@ -1356,7 +1371,6 @@ loops: [{}], loop capture: {}
 {}[10] LUT({:10}): {:10} >{:10}< {:10}
       Stream({:10}): {:10} >{:10}< {:10}
       Displayed({})
-      Style({:.0}): {:.0}
 
 {}[11] Scanlines({:10}): {:10} >{:10}< {:10}
       Blend({:10}): {:10} >{:10}< {:10}
@@ -1367,6 +1381,8 @@ loops: [{}], loop capture: {}
  Duration: {}
  Timecode: {:02}:{:02}:{:02}:{:02}
  ts: {:-6}/{:-6} = {:.3}
+
+{}[13] Feedback({}): {}
 "#,
             self.playback[self.active_idx]
                 .loops
@@ -1641,8 +1657,6 @@ loops: [{}], loop capture: {}
                 ""
             },
             &self.playback_names[self.display_idx],
-            get!(feedback_style_selected),
-            get!(feedback_style_scan),
             //SCANLINES MODES
             if self.selected_knobs == 11 { ">" } else { " " },
             &self.blend_modes[get!(scanlines_selected) as usize],
@@ -1701,7 +1715,12 @@ loops: [{}], loop capture: {}
             self.playback[self.active_idx].stream.real_ts.0 as f64,
             self.playback[self.active_idx].stream.real_ts.1 as f64,
             self.playback[self.active_idx].stream.real_ts.0 as f64
-                / self.playback[self.active_idx].stream.real_ts.1 as f64
+                / self.playback[self.active_idx].stream.real_ts.1 as f64,
+            // FEEDBACK STYLE
+            if self.selected_knobs == 13 { ">" } else { " " },
+            self.feedback_modes
+                [self.playback[self.active_idx].stream.feedback_mode_selected as usize],
+            self.feedback_modes[self.playback[self.active_idx].stream.feedback_mode_scan as usize],
         )
     }
 
@@ -2526,10 +2545,10 @@ pub struct StreamSettings {
     pause: u8,
 
     // FEEDBACK
-    #[adjustable(k = R, idx = 13, min = 0.0, max = 1.0, step = 1.0, do_not_record = true)]
-    feedback_style_scan: f64,
-    #[adjustable(kind = assign, k = CR, idx = 13,  from = self.feedback_style_scan)]
-    feedback_style_selected: f64,
+    #[adjustable(k = B, idx = 13, min = 0.0, max = 1.0, step = 1.0)]
+    feedback_mode_scan: f64,
+    #[adjustable(kind = assign, k = CB, idx = 13,  from = self.feedback_mode_scan, command_simple = (self.main_mix(), "feedback_mode_selected", Unsigned))]
+    feedback_mode_selected: f64,
 }
 
 impl StreamSettings {
@@ -2631,8 +2650,8 @@ impl StreamSettings {
             lut_selected: 0.0,
             lut_scan: 0.0,
             feedback_rotation: 0.0,
-            feedback_style_selected: 0.0,
-            feedback_style_scan: 0.0,
+            feedback_mode_selected: 0.0,
+            feedback_mode_scan: 0.0,
             delta_sec: 0.0,
             scrub: 0.0,
             mark: None,
