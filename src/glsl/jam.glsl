@@ -136,7 +136,7 @@ if (true) {
 #define FG_COORD COL_COORD
 #define FG_TEX COL_TEX
 #endif
-if (false) {
+if (true) {
     float scale = FG_RESOLUTION.x / VIEW_RESOLUTION.x;
     vec2 fg_coord = (FG_COORD * VIEW_RESOLUTION / FG_RESOLUTION) 
         *  scale - vec2(0.0, (FG_RESOLUTION.y * scale - VIEW_RESOLUTION.y)/VIEW_RESOLUTION.y);

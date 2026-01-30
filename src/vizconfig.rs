@@ -343,7 +343,7 @@ impl AllSettings {
     }
 
     pub fn feedback_modes() -> &'static [&'static str] {
-        &["basic", "jam"]
+        &["basic", "jam", "math", "xor"]
     }
 
     pub fn new<
@@ -2023,6 +2023,8 @@ impl AllSettings {
             send_midi_mft!(45, (stream.av_pct() * 127.0) as u8),
             send_midi_mft!(46, (stream.skew_x3_pct() * 127.0) as u8),
             send_midi_mft!(47, (stream.skew_y3_pct() * 127.0) as u8),
+            // ROW 13
+            send_midi_mft!(48, (stream.feedback_mode_scan() * 127.0) as u8),
         ]
     }
     pub fn video_fight_cb(&mut self, event: &MidiEvent) {
@@ -2230,6 +2232,11 @@ impl AllSettings {
             (0, 47, 63) => stream.adjust_skew_y3(-1.0),
             (0, 47, 65) => stream.adjust_skew_y3(1.0),
             (1, 47, 127) => stream.set_skew_y3(1.0),
+
+            // ROW 13
+            (0, 48, 63) => stream.adjust_feedback_mode_scan(-1.0),
+            (0, 48, 65) => stream.adjust_feedback_mode_scan(1.0),
+            (1, 48, 127) => stream.set_feedback_mode_selected(stream.feedback_mode_scan()),
             _ => (),
         }
     }
@@ -2545,7 +2552,7 @@ pub struct StreamSettings {
     pause: u8,
 
     // FEEDBACK
-    #[adjustable(k = B, idx = 13, min = 0.0, max = 1.0, step = 1.0)]
+    #[adjustable(k = B, idx = 13, min = 0.0, max = 3.0, step = 1.0)]
     feedback_mode_scan: f64,
     #[adjustable(kind = assign, k = CB, idx = 13,  from = self.feedback_mode_scan, command_simple = (self.main_mix(), "feedback_mode_selected", Unsigned))]
     feedback_mode_selected: f64,
