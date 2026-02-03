@@ -23,7 +23,7 @@ pub struct StreamSettingsFieldProperties {
     pub tween: bool,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash)]
 #[repr(C)]
 pub enum StreamSettingsField {
     FlashEnable,
@@ -98,7 +98,7 @@ pub enum StreamSettingsField {
     FeedbackModeSelected,
 }
 
-const ALL_FIELDS: [StreamSettingsField; 70] = [
+pub const ALL_FIELDS: &[StreamSettingsField] = &[
     StreamSettingsField::FlashEnable,
     StreamSettingsField::Tween,
     StreamSettingsField::UsrVar,
@@ -233,7 +233,7 @@ static PROPERTIES: LazyLock<HashMap<StreamSettingsField, StreamSettingsFieldProp
             };
         }
         // row 1
-        mk!(Threshold, 0, 0, 0.0, 1.0, 0.01, 0.0, "threshold");
+        mk!(Threshold, 0, 0, 0.0, 1.0, 0.01, 0.0, "thresh");
         mk!(DistortLevel, 0, 1, 0.0, 1.0, 0.01, 0.05, "distort_level");
         mk!(WarpLevel, 0, 2, 0.0, 1.0, 0.01, 0.05, "warp_level");
         mk!(ColorKeySim, 0, 3, 0.001, 1.0, 0.001, 0.001, "color_key_sim");
@@ -244,7 +244,7 @@ static PROPERTIES: LazyLock<HashMap<StreamSettingsField, StreamSettingsFieldProp
             0,
             4,
             0.0,
-            5.0 * AllSettings::distort_edge_types().len() as f64,
+            AllSettings::distort_edge_types().len() as f64,
             1.0,
             0.0,
             "distort_edge"
@@ -254,7 +254,7 @@ static PROPERTIES: LazyLock<HashMap<StreamSettingsField, StreamSettingsFieldProp
             1,
             4,
             0.0,
-            5.0 * AllSettings::distort_edge_types().len() as f64,
+            AllSettings::distort_edge_types().len() as f64,
             1.0,
             0.0,
             "distort_edge"
@@ -264,7 +264,7 @@ static PROPERTIES: LazyLock<HashMap<StreamSettingsField, StreamSettingsFieldProp
             0,
             5,
             0.0,
-            5.0 * AllSettings::distort_names().len() as f64,
+            AllSettings::distort_names().len() as f64,
             1.0,
             0.0,
             "distort"
@@ -274,7 +274,7 @@ static PROPERTIES: LazyLock<HashMap<StreamSettingsField, StreamSettingsFieldProp
             1,
             5,
             0.0,
-            5.0 * AllSettings::distort_names().len() as f64,
+            AllSettings::distort_names().len() as f64,
             1.0,
             0.0,
             "distort"
@@ -284,7 +284,7 @@ static PROPERTIES: LazyLock<HashMap<StreamSettingsField, StreamSettingsFieldProp
             0,
             6,
             0.0,
-            5.0 * AllSettings::distort_names().len() as f64,
+            AllSettings::distort_names().len() as f64,
             1.0,
             0.0,
             "warp"
@@ -294,7 +294,7 @@ static PROPERTIES: LazyLock<HashMap<StreamSettingsField, StreamSettingsFieldProp
             1,
             6,
             0.0,
-            5.0 * AllSettings::distort_names().len() as f64,
+            AllSettings::distort_names().len() as f64,
             1.0,
             0.0,
             "warp"
@@ -304,7 +304,7 @@ static PROPERTIES: LazyLock<HashMap<StreamSettingsField, StreamSettingsFieldProp
             0,
             7,
             0.0,
-            5.0 * AllSettings::lut_names().len() as f64,
+            AllSettings::lut_names().len() as f64,
             1.0,
             0.0,
             "lut"
@@ -314,7 +314,7 @@ static PROPERTIES: LazyLock<HashMap<StreamSettingsField, StreamSettingsFieldProp
             1,
             7,
             0.0,
-            5.0 * AllSettings::lut_names().len() as f64,
+            AllSettings::lut_names().len() as f64,
             1.0,
             0.0,
             "lut"
@@ -340,7 +340,7 @@ static PROPERTIES: LazyLock<HashMap<StreamSettingsField, StreamSettingsFieldProp
             0,
             13,
             0.0,
-            5.0 * AllSettings::blend_modes().len() as f64,
+            AllSettings::blend_modes().len() as f64,
             1.0,
             0.0,
             "scanlines"
@@ -350,7 +350,7 @@ static PROPERTIES: LazyLock<HashMap<StreamSettingsField, StreamSettingsFieldProp
             1,
             13,
             0.0,
-            5.0 * AllSettings::blend_modes().len() as f64,
+            AllSettings::blend_modes().len() as f64,
             1.0,
             0.0,
             "scanline_kind"
@@ -360,7 +360,7 @@ static PROPERTIES: LazyLock<HashMap<StreamSettingsField, StreamSettingsFieldProp
             0,
             14,
             0.0,
-            5.0 * AllSettings::blend_modes().len() as f64,
+            AllSettings::blend_modes().len() as f64,
             1.0,
             0.0,
             "overlay_blend"
@@ -370,7 +370,7 @@ static PROPERTIES: LazyLock<HashMap<StreamSettingsField, StreamSettingsFieldProp
             1,
             14,
             0.0,
-            5.0 * AllSettings::blend_modes().len() as f64,
+            AllSettings::blend_modes().len() as f64,
             1.0,
             0.0,
             "overlay_kind"
@@ -380,7 +380,7 @@ static PROPERTIES: LazyLock<HashMap<StreamSettingsField, StreamSettingsFieldProp
             0,
             15,
             0.0,
-            5.0 * AllSettings::overlay_vids().len() as f64,
+            AllSettings::overlay_vids().len() as f64,
             1.0,
             0.0,
             "overlay_vid"
@@ -390,7 +390,7 @@ static PROPERTIES: LazyLock<HashMap<StreamSettingsField, StreamSettingsFieldProp
             1,
             15,
             0.0,
-            5.0 * AllSettings::overlay_vids().len() as f64,
+            AllSettings::overlay_vids().len() as f64,
             1.0,
             0.0,
             "overlay_vid"
@@ -425,36 +425,27 @@ static PROPERTIES: LazyLock<HashMap<StreamSettingsField, StreamSettingsFieldProp
         mk!(SkewY0, 0, 35, -5.0, 5.0, 0.001, 0.0, "skew_y0");
         mk!(ShiftGh, 0, 36, -1.0, 1.0, 0.001, 0.0, "shift_gh");
         mk!(ShiftGv, 0, 37, -1.0, 1.0, 0.001, 0.0, "shift_gv");
-        mk!(SkewX1, 0, 38, -5.0, 5.0, 0.001, 0.0, "skew_x1");
+        mk!(SkewX1, 0, 38, -5.0, 5.0, 0.001, 1.0, "skew_x1");
         mk!(SkewY1, 0, 39, -5.0, 5.0, 0.001, 0.0, "skew_y1");
         mk!(ShiftBh, 0, 40, -1.0, 1.0, 0.001, 0.0, "shift_bh");
         mk!(ShiftBv, 0, 41, -1.0, 1.0, 0.001, 0.0, "shift_bv");
         mk!(SkewX2, 0, 42, -5.0, 5.0, 0.001, 0.0, "skew_x2");
-        mk!(SkewY2, 0, 43, -5.0, 5.0, 0.001, 0.0, "skew_y2");
+        mk!(SkewY2, 0, 43, -5.0, 5.0, 0.001, 1.0, "skew_y2");
         mk!(ShiftAh, 0, 44, -1.0, 1.0, 0.001, 0.0, "shift_ah");
         mk!(ShiftAv, 0, 45, -1.0, 1.0, 0.001, 0.0, "shift_av");
-        mk!(SkewX3, 0, 46, -5.0, 5.0, 0.001, 0.0, "skew_x3");
-        mk!(SkewY3, 0, 47, -5.0, 5.0, 0.001, 0.0, "skew_y3");
+        mk!(SkewX3, 0, 46, -5.0, 5.0, 0.001, 1.0, "skew_x3");
+        mk!(SkewY3, 0, 47, -5.0, 5.0, 0.001, 1.0, "skew_y3");
 
         /*
         feedback mode
          */
-        mk!(
-            FeedbackModeScan,
-            0,
-            48,
-            0.0,
-            5.0 * 3.0,
-            1.0,
-            0.0,
-            "feedback_mode"
-        );
+        mk!(FeedbackModeScan, 0, 48, 0.0, 3.0, 1.0, 0.0, "feedback_mode");
         mk!(
             FeedbackModeSelected,
             1,
             48,
             0.0,
-            5.0 * 3.0,
+            3.0,
             1.0,
             0.0,
             "feedback_mode"
@@ -483,19 +474,27 @@ static PROPERTIES: LazyLock<HashMap<StreamSettingsField, StreamSettingsFieldProp
         m
     });
 
+static FIELDS_BY_CC: LazyLock<HashMap<(u8, u8), StreamSettingsField>> = LazyLock::new(|| {
+    let mut m = HashMap::new();
+    for (field, props) in PROPERTIES.iter() {
+        if let (Some(channel), Some(cc)) = (props.channel, props.cc) {
+            m.insert((channel, cc), field.clone());
+        }
+    }
+    m
+});
+
 impl StreamSettingsField {
-    pub fn properties(&self) -> StreamSettingsFieldProperties {
-        PROPERTIES
-            .get(self)
-            .cloned()
-            .unwrap_or(StreamSettingsFieldProperties {
-                do_not_record: true,
-                ..Default::default()
-            })
+    pub fn properties(&self) -> Option<StreamSettingsFieldProperties> {
+        PROPERTIES.get(self).cloned()
+    }
+
+    pub fn find(channel: u8, cc: u8) -> Option<StreamSettingsField> {
+        FIELDS_BY_CC.get(&(channel, cc)).cloned()
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
 #[repr(C)]
 pub struct StreamIdent {
     pub name: String,
@@ -520,7 +519,10 @@ impl StreamSettings {
     pub fn new(ident: StreamIdent) -> Self {
         let mut fields = HashMap::new();
         for field in ALL_FIELDS.iter() {
-            let props = field.properties();
+            let props = field.properties().unwrap_or(StreamSettingsFieldProperties {
+                do_not_record: true,
+                ..Default::default()
+            });
             if let Some(default) = props.default {
                 fields.insert(field.clone(), default);
             } else {
@@ -546,7 +548,7 @@ impl StreamSettings {
 
     pub fn adjust_field(&mut self, field: &StreamSettingsField, steps: f64) {
         let current = self.get_field(field);
-        let step = field.properties().step.unwrap_or(0.0);
+        let step = field.properties().unwrap_or_default().step.unwrap_or(0.0);
         let delta = step * steps;
         match field {
             StreamSettingsField::OverlayBlendSelected => self.set_field(
@@ -596,14 +598,14 @@ impl StreamSettings {
             | StreamSettingsField::ColorKeyEnable
             | StreamSettingsField::Negate
             | StreamSettingsField::Pause => {
-                if current >= 0.0 {
+                if current != 0.0 {
                     self.set_field(field.clone(), 0.0);
                 } else {
                     self.set_field(field.clone(), 1.0);
                 }
             }
             _ => {
-                let props = field.properties();
+                let props = field.properties().unwrap_or_default();
                 if let Some(min) = props.min {
                     if current + delta < min {
                         self.set_field(field.clone(), min);
@@ -623,6 +625,7 @@ impl StreamSettings {
 
     pub fn command(&self, field: &StreamSettingsField) -> Vec<RenderSpec> {
         match field {
+            // special case for skew
             StreamSettingsField::SkewX0
             | StreamSettingsField::SkewY0
             | StreamSettingsField::SkewX1
@@ -647,6 +650,7 @@ impl StreamSettings {
                     .build()
                     .into()]
             }
+            //Time seek commands
             StreamSettingsField::DeltaSec => {
                 vec![seek!(self.first_video() => self.get_field(field), false)]
             }
@@ -669,6 +673,7 @@ impl StreamSettings {
                     .build()
                     .into()]
             }
+            //Send unsigned for these fields
             StreamSettingsField::ColorKeyEnable
             | StreamSettingsField::Negate
             | StreamSettingsField::DistEdgeSelected
@@ -691,6 +696,16 @@ impl StreamSettings {
                     vec![]
                 }
             }
+            // send nothing for these fields
+            StreamSettingsField::DistEdgeScan
+            | StreamSettingsField::DistortScan
+            | StreamSettingsField::WarpScan
+            | StreamSettingsField::LutScan
+            | StreamSettingsField::OverlayBlendScan
+            | StreamSettingsField::OverlayScan
+            | StreamSettingsField::ScanlinesScan
+            | StreamSettingsField::FeedbackModeScan => vec![],
+            // Fall down to send float
             _ => {
                 if let Some(props) = PROPERTIES.get(field) {
                     if let Some(name) = &props.label {
@@ -735,5 +750,50 @@ impl StreamSettings {
             feedback_mix: self.feedback_mix(),
             overlay_mix: self.overlay_mix(),
         });
+    }
+
+    pub fn diff(&self, other: &StreamSettings) -> Vec<(StreamSettingsField, f64)> {
+        let mut diffs = HashMap::new();
+        for field in ALL_FIELDS.iter() {
+            let v1 = self.get_field(field);
+            let v2 = other.get_field(field);
+            if (v1 - v2).abs() > std::f64::EPSILON {
+                diffs.insert(field.clone(), v2);
+            }
+        }
+        diffs.into_iter().collect()
+    }
+
+    pub fn apply_diff(&mut self, diffs: &[(StreamSettingsField, f64)]) {
+        for (field, value) in diffs.iter() {
+            self.set_field(field.clone(), *value);
+        }
+    }
+
+    pub fn get_commands(&self, fields: &[StreamSettingsField]) -> Vec<RenderSpec> {
+        let mut cmds = vec![];
+        for field in fields.iter() {
+            let mut field_cmds = self.command(field);
+            cmds.append(&mut field_cmds);
+        }
+        cmds
+    }
+
+    pub fn tween_diff(
+        &self,
+        field: StreamSettingsField,
+        start: f64,
+        end: f64,
+        p: f64,
+    ) -> Option<f64> {
+        let props = field.properties().unwrap_or_default();
+        if !props.tween {
+            return None;
+        }
+        Some(start + (end - start) * p)
+    }
+
+    pub fn find_field(channel: u8, cc: u8) -> Option<StreamSettingsField> {
+        FIELDS_BY_CC.get(&(channel, cc)).cloned()
     }
 }
