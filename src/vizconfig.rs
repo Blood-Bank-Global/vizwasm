@@ -2,22 +2,13 @@ use sdlrig::gfxinfo::MidiEvent;
 #[allow(unused_imports)]
 use sdlrig::gfxinfo::{MIDI_CONTROL_CHANGE, MIDI_NOTE_OFF, MIDI_NOTE_ON};
 use sdlrig::renderspec::{CopyEx, HudText, Mix, MixInput, Reset, SendCmd, SendMidi, SendValue};
-#[cfg(false)]
-use sdlrig::Adjustable;
 use sdlrig::{
     gfxinfo::{Asset, GfxEvent, KeyCode, KeyEvent, Knob, Vid, VidInfo, VidMixer},
     renderspec::RenderSpec,
 };
 
-#[cfg(false)]
-use sdlrig::seek;
-
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
-#[cfg(false)]
-use std::f64::consts::PI;
-#[cfg(false)]
-use std::hash::Hash;
 use std::sync::LazyLock;
 use std::{error::Error, i64, io::Write};
 
@@ -1290,29 +1281,17 @@ impl AllSettings {
         let playback = &mut self.playback[self.active_idx];
         let inc = if shift { inc * 10.0 } else { inc };
         match (kn, self.selected_knobs) {
-            (Knob::B, 1) => {
-                playback.loops.selected_loop =
-                    (playback.loops.selected_loop as f64 + inc).clamp(0.0, 3.0) as usize;
-            }
-            (Knob::B, 10) => {
-                self.scan_idx = (self.scan_idx as i64 + inc as i64)
-                    .clamp(0, self.playback.len() as i64 - 1)
-                    as usize;
-            }
-            (Knob::CB, 10) => {
-                if shift {
-                    self.display_idx = self.active_idx;
-                } else {
-                    self.active_idx = self.scan_idx;
-                    self.playback[self.active_idx].was_reset = true;
-                }
-            }
-            _ => {
-                let field = StreamSettings::find_field(0, self.selected_knobs as u8);
-                if let Some(field) = field {
+            (Knob::B, kn) => {
+                if let Some(field) = StreamSettingsField::find(0, kn as u8) {
                     playback.stream.adjust_field(&field, inc);
                 }
             }
+            (Knob::CB, kn) => {
+                if let Some(field) = StreamSettingsField::find(1, kn as u8) {
+                    playback.stream.adjust_field(&field, inc);
+                }
+            }
+            _ => (),
         }
     }
 
@@ -1358,299 +1337,84 @@ impl AllSettings {
     }
 
     pub fn hud(&self, vid_info: &VidInfo) -> String {
-        macro_rules! get {
-            ($name:ident) => {{
-                self.playback[self.active_idx]
-                    .stream
-                    .get_field(&StreamSettingsField::$name)
-            }};
+        let mut hud_txt = vec![
+            format!(
+                "Active: {} | Displayed: {} | Scan: {}",
+                self.playback_names[self.active_idx],
+                self.playback_names[self.display_idx],
+                self.playback_names[self.scan_idx],
+            ),
+            format!("Selected {}", self.selected_knobs),
+            format!("Duration: {}", vid_info.duration()),
+            format!(
+                "Timecode: {:02}:{:02}:{:02}:{:02}",
+                {
+                    let tc = self.playback[self.active_idx].stream.real_ts.0 as f64
+                        / self.playback[self.active_idx].stream.real_ts.1 as f64;
+                    (tc / 3600.0).floor() as u32
+                },
+                {
+                    let tc = self.playback[self.active_idx].stream.real_ts.0 as f64
+                        / self.playback[self.active_idx].stream.real_ts.1 as f64;
+                    ((tc % 3600.0) / 60.0).floor() as u32
+                },
+                {
+                    let tc = self.playback[self.active_idx].stream.real_ts.0 as f64
+                        / self.playback[self.active_idx].stream.real_ts.1 as f64;
+                    (tc % 60.0).floor() as u32
+                },
+                {
+                    let tc = self.playback[self.active_idx].stream.real_ts.0 as f64
+                        / self.playback[self.active_idx].stream.real_ts.1 as f64;
+                    ((tc - tc.floor()) * 24.0 as f64).round() as u32
+                },
+            ),
+            format!(
+                "ts: {:-6}/{:-6} = {:.3})",
+                self.playback[self.active_idx].stream.real_ts.0,
+                self.playback[self.active_idx].stream.real_ts.1,
+                {
+                    let tc = self.playback[self.active_idx].stream.real_ts.0 as f64
+                        / self.playback[self.active_idx].stream.real_ts.1 as f64;
+                    tc
+                },
+            ),
+        ];
+        let mut fields = vec![];
+        for f in streamsettings::ALL_FIELDS {
+            if let Some(props) = f.properties() {
+                if props.cc.is_some() {
+                    fields.push((
+                        props.cc.unwrap_or_default(),
+                        props.channel.unwrap_or_default(),
+                        props.label.unwrap_or_default().to_string(),
+                        self.playback[self.active_idx].stream.get_field(f),
+                    ));
+                }
+            }
         }
 
-        let tc = self.playback[self.active_idx].stream.real_ts.0 as f64
-            / self.playback[self.active_idx].stream.real_ts.1 as f64;
-
-        let hour = (tc / 3600.0).floor() as u32;
-        let minute = ((tc % 3600.0) / 60.0).floor() as u32;
-        let second = (tc % 60.0).floor() as u32;
-        let frame = ((tc - tc.floor()) * 24.0 as f64).round() as u32;
-
-        format!(
-            r#"
-loops: [{}], loop capture: {}
-
-{}[1] Loop Ctl Loop:   {:<04.3}
-              tween: {}
-              flash: {}
-
-{}[2]  Usr {} Toggle {}
-      Mix rr {} | rg {} | rb {} | ra {}
-          gr {} | gg {} | gb {} | ga {}
-          br {} | bg {} | bb {} | ba {}
-          ar {} | ag {} | ab {} | aa {}
-
-{}[3] Boost: {:0.2}
-     Threshold: {:0.4}
-     Distort Level: {}  Warp Level: {}
-
-{}[4] skew  {}, {}
-           {}, {}
-
-{}[5] Colorkey sim: {:.3} blend: {:.3}  enable: {}
-     color({:10}) = {:10} >{:10}< {:10}
-
-{}[6] Scroll h: {:0.4} v: {:0.4}
-
-{}[7] rh={} rv={} gh={} gv={} bh={} bv={} ah={} av={}
-     negate={}
-
-{}[8] Distort: dx = {:.3} dy = {:.3}
-     Rotation: {:.1}
-
-{}[9] Edge({:10}): {:10} >{:10}< {:10}
-     Warp({:14}): {:14} >{:14}< {:14}
-     Map({:14}): {:14} >{:14}< {:14}
-    
-{}[10] LUT({:10}): {:10} >{:10}< {:10}
-      Stream({:10}): {:10} >{:10}< {:10}
-      Displayed({})
-
-{}[11] Scanlines({:10}): {:10} >{:10}< {:10}
-      Blend({:10}): {:10} >{:10}< {:10}
-      Overlay({:10}): {:10} >{:10}< {:10}
-
-{}[12] Scrub {:.3}
- Selected {}
- Duration: {}
- Timecode: {:02}:{:02}:{:02}:{:02}
- ts: {:-6}/{:-6} = {:.3}
-
-{}[13] Feedback({}): {}
-"#,
-            self.playback[self.active_idx]
-                .loops
-                .playing
-                .iter()
-                .map(|p| p.then_some(" ON").unwrap_or("OFF"))
-                .collect::<Vec<_>>()
-                .join(","),
-            if self.playback[self.active_idx].loops.record_buffer.is_some() {
-                "Recording"
-            } else {
-                "n/a"
-            },
-            if self.selected_knobs == 1 { ">" } else { " " },
-            // TIMING
-            self.playback[self.active_idx].loops.selected_loop,
-            get!(Tween),
-            get!(FlashEnable) as u8,
-            // USR
-            if self.selected_knobs == 2 { ">" } else { " " },
-            get!(UsrVar) as i32,
-            0.0, //get!(UsrToggle),
-            // MIX
-            format!(" {:+.04} ", get!(MixRr)),
-            format!(" {:+.04} ", get!(MixRg)),
-            format!(" {:+.04} ", get!(MixRb)),
-            format!(" {:+.04} ", get!(MixRa)),
-            format!(" {:+.04} ", get!(MixGr)),
-            format!(" {:+.04} ", get!(MixGg)),
-            format!(" {:+.04} ", get!(MixGb)),
-            format!(" {:+.04} ", get!(MixGa)),
-            format!(" {:+.04} ", get!(MixBr)),
-            format!(" {:+.04} ", get!(MixBg)),
-            format!(" {:+.04} ", get!(MixBb)),
-            format!(" {:+.04} ", get!(MixBa)),
-            format!(" {:+.04} ", get!(MixAr)),
-            format!(" {:+.04} ", get!(MixAg)),
-            format!(" {:+.04} ", get!(MixAb)),
-            format!(" {:+.04} ", get!(MixAa)),
-            //BOOST
-            if self.selected_knobs == 3 { ">" } else { " " },
-            get!(Boost),
-            get!(Threshold),
-            format!(" {:0.3}", get!(DistortLevel)),
-            format!(" {:0.3}", get!(WarpLevel)),
-            //SKEW
-            if self.selected_knobs == 4 { ">" } else { " " },
-            format!(" ({:1.02}, {:1.02})", get!(SkewX0), get!(SkewY0)),
-            format!(" ({:1.02}, {:1.02})", get!(SkewX1), get!(SkewY1)),
-            format!(" ({:1.02}, {:1.02})", get!(SkewX2), get!(SkewY2)),
-            format!(" ({:1.02}, {:1.02})", get!(SkewX3), get!(SkewY3)),
-            // COLOR KEY
-            if self.selected_knobs == 5 { ">" } else { " " },
-            get!(ColorKeySim),
-            get!(VideoKeyBlend),
-            get!(ColorKeyEnable) as u8,
-            "0xCOLORKEY",
-            "",
-            "",
-            "",
-            //SCROLL
-            if self.selected_knobs == 6 { ">" } else { " " },
-            get!(ScrollH),
-            get!(ScrollV),
-            //RGB SHIFT
-            if self.selected_knobs == 7 { ">" } else { " " },
-            get!(ShiftRh),
-            get!(ShiftRv),
-            get!(ShiftGh),
-            get!(ShiftGv),
-            get!(ShiftBh),
-            get!(ShiftBv),
-            get!(ShiftAh),
-            get!(ShiftAv),
-            get!(Negate),
-            //DISTORT POSITION
-            if self.selected_knobs == 8 { ">" } else { " " },
-            get!(FeedbackDx),
-            get!(FeedbackDy),
-            get!(FeedbackRotation).to_degrees(),
-            //DISTORT METHOD
-            if self.selected_knobs == 9 { ">" } else { " " },
-            self.distort_edge_types[get!(DistEdgeScan) as usize],
-            if get!(DistEdgeScan) >= 1.0 {
-                &self.distort_edge_types[(get!(DistEdgeScan) - 1.0) as usize]
-            } else {
-                ""
-            },
-            self.distort_edge_types[get!(DistEdgeScan) as usize],
-            if get!(DistEdgeScan) < self.distort_edge_types.len() as f64 - 1.0 {
-                &self.distort_edge_types[(get!(DistEdgeScan) + 1.0) as usize]
-            } else {
-                ""
-            },
-            self.distort_names[get!(WarpSelected) as usize].0,
-            if get!(WarpScan) >= 1.0 {
-                &self.distort_names[(get!(WarpScan) - 1.0) as usize].0
-            } else {
-                ""
-            },
-            &self.distort_names[get!(WarpScan) as usize].0,
-            if get!(WarpScan) < self.distort_names.len() as f64 - 1.0 {
-                &self.distort_names[(get!(WarpScan) + 1.0) as usize].0
-            } else {
-                ""
-            },
-            &self.distort_names[get!(DistortSelected) as usize].0,
-            if get!(DistortScan) >= 1.0 {
-                &self.distort_names[(get!(DistortScan) - 1.0) as usize].0
-            } else {
-                ""
-            },
-            &self.distort_names[get!(DistortScan) as usize].0,
-            if get!(DistortScan) < self.distort_names.len() as f64 - 1.0 {
-                &self.distort_names[(get!(DistortScan) + 1.0) as usize].0
-            } else {
-                ""
-            },
-            //LUTS
-            if self.selected_knobs == 10 { ">" } else { " " },
-            &self.lut_names[get!(LutSelected) as usize],
-            if get!(LutScan) >= 1.0 {
-                &self.lut_names[(get!(LutScan) - 1.0) as usize]
-            } else {
-                ""
-            },
-            &self.lut_names[get!(LutScan) as usize],
-            if get!(LutScan) < self.lut_names.len() as f64 - 1.0 {
-                &self.lut_names[(get!(LutScan) + 1.0) as usize]
-            } else {
-                ""
-            },
-            //STREAM
-            self.playback_names[self.active_idx as usize],
-            if self.scan_idx >= 1 {
-                &self.playback_names[self.scan_idx - 1]
-            } else {
-                ""
-            },
-            &self.playback_names[self.scan_idx],
-            if (self.scan_idx as i64) < self.playback_names.len() as i64 - 1 {
-                &self.playback_names[self.scan_idx + 1]
-            } else {
-                ""
-            },
-            &self.playback_names[self.display_idx],
-            //SCANLINES MODES
-            if self.selected_knobs == 11 { ">" } else { " " },
-            &self.blend_modes[get!(ScanlinesSelected) as usize],
-            if get!(ScanlinesScan) >= 1.0 {
-                &self.blend_modes[(get!(ScanlinesScan) - 1.0) as usize]
-            } else {
-                ""
-            },
-            &self.blend_modes[get!(ScanlinesScan) as usize],
-            if get!(ScanlinesScan) < self.blend_modes.len() as f64 - 1.0 {
-                &self.blend_modes[(get!(ScanlinesScan) + 1.0) as usize]
-            } else {
-                ""
-            },
-            //BLEND MODES
-            &self.blend_modes[get!(OverlayBlendScan) as usize],
-            if get!(OverlayBlendScan) >= 1.0 {
-                &self.blend_modes[(get!(OverlayBlendScan) - 1.0) as usize]
-            } else {
-                ""
-            },
-            &self.blend_modes[get!(OverlayBlendScan) as usize],
-            if get!(OverlayBlendScan) < self.blend_modes.len() as f64 - 1.0 {
-                &self.blend_modes[(get!(OverlayBlendScan) + 1.0) as usize]
-            } else {
-                ""
-            },
-            //OVERLAYS
-            &self.overlay_names[get!(OverlaySelected) as usize],
-            if get!(OverlayScan) >= 1.0 {
-                &self.overlay_names[(get!(OverlayScan) - 1.0) as usize]
-            } else {
-                ""
-            },
-            &self.overlay_names[get!(OverlayScan) as usize],
-            if get!(OverlayScan) < self.overlay_names.len() as f64 - 1.0 {
-                &self.overlay_names[(get!(OverlayScan) + 1.0) as usize]
-            } else {
-                ""
-            },
-            // SCRUB
-            if self.selected_knobs == 12 { ">" } else { " " },
-            self.playback[self.active_idx]
-                .stream
-                .get_field(&StreamSettingsField::Scrub)
-                .abs()
-                .max(
-                    self.playback[self.active_idx]
-                        .stream
-                        .get_field(&StreamSettingsField::DeltaSec)
-                        .abs()
-                )
-                .max(
-                    self.playback[self.active_idx]
-                        .stream
-                        .get_field(&StreamSettingsField::ExactSec)
-                        .abs()
-                ),
-            self.selected_knobs,
-            (vid_info.duration_tbu_q.0 as f64 / vid_info.duration_tbu_q.1 as f64)
-                * (vid_info.timebase_q.0 as f64 / vid_info.timebase_q.1 as f64),
-            hour,
-            minute,
-            second,
-            frame,
-            self.playback[self.active_idx].stream.real_ts.0 as f64,
-            self.playback[self.active_idx].stream.real_ts.1 as f64,
-            self.playback[self.active_idx].stream.real_ts.0 as f64
-                / self.playback[self.active_idx].stream.real_ts.1 as f64,
-            // FEEDBACK STYLE
-            if self.selected_knobs == 13 { ">" } else { " " },
-            self.feedback_modes[self.playback[self.active_idx]
-                .stream
-                .get_field(&StreamSettingsField::FeedbackModeSelected)
-                as usize],
-            self.feedback_modes[self.playback[self.active_idx]
-                .stream
-                .get_field(&StreamSettingsField::FeedbackModeScan)
-                as usize],
-        )
+        fields.sort_by(|a, b| {
+            a.0.cmp(&b.0)
+                .then(a.1.cmp(&b.1))
+                .then(a.2.cmp(&b.2))
+                .then(a.3.total_cmp(&b.3))
+        });
+        for (cc, ch, label, value) in fields {
+            hud_txt.push(format!(
+                "{} [{:02}:{:03}] {:20}: {:10.4}",
+                if self.selected_knobs as u8 == cc {
+                    ">"
+                } else {
+                    " "
+                },
+                ch,
+                cc,
+                label,
+                value
+            ));
+        }
+        hud_txt.join("\n")
     }
 
     pub fn asset_list(&self, _app_fps: i64) -> Vec<Asset> {
@@ -1942,94 +1706,10 @@ impl AllSettings {
             .collect()
     }
 
-    // pub fn _old_reload_encoders_for_active_idx(&self) -> Vec<RenderSpec> {
-    //     // let stream = &self.playback[self.active_idx].stream;
-    //     macro_rules! get {
-    //         ($f:ident) => {
-    //             if let Some(max) = StreamSettings::field_properties(&StreamSettingsField::$f).max {
-    //                 (self.playback[self.active_idx]
-    //                     .stream
-    //                     .get_field(&StreamSettingsField::$f)
-    //                     + StreamSettings::field_properties(&StreamSettingsField::$f)
-    //                         .max
-    //                         .unwrap_or_default())
-    //                     / max
-    //             } else {
-    //                 0.0
-    //             }
-    //         };
-    //     }
-    //     vec![
-    //         //ROW 1
-    //         send_midi_mft!(0, (get!(Threshold) * 127.0) as u8),
-    //         send_midi_mft!(1, (get!(DistortLevel) * 127.0) as u8),
-    //         send_midi_mft!(2, (get!(WarpLevel) * 127.0) as u8),
-    //         send_midi_mft!(3, (get!(ColorKeySim) * 127.0) as u8),
-    //         // ROW 2
-    //         send_midi_mft!(4, (get!(DistEdgeScan) * 127.0) as u8),
-    //         send_midi_mft!(5, (get!(DistortScan) * 127.0) as u8),
-    //         send_midi_mft!(6, (get!(WarpScan) * 127.0) as u8),
-    //         send_midi_mft!(7, (get!(LutScan) * 127.0) as u8),
-    //         // ROW 3
-    //         send_midi_mft!(8, (get!(ScrollH) * 127.0) as u8),
-    //         send_midi_mft!(9, (get!(ScrollV) * 127.0) as u8),
-    //         send_midi_mft!(10, (get!(ScrolledH) * 127.0) as u8),
-    //         send_midi_mft!(11, (get!(ScrolledV) * 127.0) as u8),
-    //         // ROW 4
-    //         send_midi_mft!(12, (get!(FeedbackRotation) * 127.0) as u8),
-    //         send_midi_mft!(13, (get!(ScanlinesScan) * 127.0) as u8),
-    //         send_midi_mft!(14, (get!(OverlayBlendScan) * 127.0) as u8),
-    //         send_midi_mft!(15, (get!(OverlayScan) * 127.0) as u8),
-    //         // ROW 5
-    //         send_midi_mft!(16, (get!(MixRr) * 127.0) as u8),
-    //         send_midi_mft!(17, (get!(MixRg) * 127.0) as u8),
-    //         send_midi_mft!(18, (get!(MixRb) * 127.0) as u8),
-    //         send_midi_mft!(19, (get!(MixRa) * 127.0) as u8),
-    //         // ROW 6
-    //         send_midi_mft!(20, (get!(MixGr) * 127.0) as u8),
-    //         send_midi_mft!(21, (get!(MixGg) * 127.0) as u8),
-    //         send_midi_mft!(22, (get!(MixGb) * 127.0) as u8),
-    //         send_midi_mft!(23, (get!(MixGa) * 127.0) as u8),
-    //         // ROW 7
-    //         send_midi_mft!(24, (get!(MixBr) * 127.0) as u8),
-    //         send_midi_mft!(25, (get!(MixBg) * 127.0) as u8),
-    //         send_midi_mft!(26, (get!(MixBb) * 127.0) as u8),
-    //         send_midi_mft!(27, (get!(MixBa) * 127.0) as u8),
-    //         // ROW 8
-    //         send_midi_mft!(28, (get!(MixAr) * 127.0) as u8),
-    //         send_midi_mft!(29, (get!(MixAg) * 127.0) as u8),
-    //         send_midi_mft!(30, (get!(MixAb) * 127.0) as u8),
-    //         send_midi_mft!(31, (get!(MixAa) * 127.0) as u8),
-    //         // ROW 9
-    //         send_midi_mft!(32, (get!(ShiftRh) * 127.0) as u8),
-    //         send_midi_mft!(33, (get!(ShiftRv) * 127.0) as u8),
-    //         send_midi_mft!(34, (get!(SkewX0) * 127.0) as u8),
-    //         send_midi_mft!(35, (get!(SkewY0) * 127.0) as u8),
-    //         //ROW 10
-    //         send_midi_mft!(36, (get!(ShiftGh) * 127.0) as u8),
-    //         send_midi_mft!(37, (get!(ShiftGv) * 127.0) as u8),
-    //         send_midi_mft!(38, (get!(SkewX1) * 127.0) as u8),
-    //         send_midi_mft!(39, (get!(SkewY1) * 127.0) as u8),
-    //         // ROW 11
-    //         send_midi_mft!(40, (get!(ShiftBh) * 127.0) as u8),
-    //         send_midi_mft!(41, (get!(ShiftBv) * 127.0) as u8),
-    //         send_midi_mft!(42, (get!(SkewX2) * 127.0) as u8),
-    //         send_midi_mft!(43, (get!(SkewY2) * 127.0) as u8),
-    //         // ROW 12
-    //         send_midi_mft!(44, (get!(ShiftAh) * 127.0) as u8),
-    //         send_midi_mft!(45, (get!(ShiftAv) * 127.0) as u8),
-    //         send_midi_mft!(46, (get!(SkewX3) * 127.0) as u8),
-    //         send_midi_mft!(47, (get!(SkewY3) * 127.0) as u8),
-    //         // ROW 13
-    //         send_midi_mft!(48, (get!(FeedbackModeScan) * 127.0) as u8),
-    //     ]
-    // }
-
     pub fn video_fight_cb(&mut self, event: &MidiEvent) {
         if event.device != MFT || event.kind != MIDI_CONTROL_CHANGE {
             return;
         }
-
         if let Some(field) = StreamSettingsField::find(event.channel, event.key) {
             let idx = self.active_idx;
             match event.velocity {
@@ -2046,249 +1726,22 @@ impl AllSettings {
                 _ => {}
             }
         } else if let Some(field) = StreamSettingsField::find(0, event.key) {
-            //special case - channel was NOT zero but there is a setting at this key
-            // reset to default
-            let idx = self.active_idx;
+            if event.channel == 1 {
+                //special case - channel was NOT zero but there is a setting at this key
+                // reset to default
+                let idx = self.active_idx;
 
-            self.playback[idx].stream.set_field(
-                field,
-                field
-                    .properties()
-                    .unwrap_or_default()
-                    .default
-                    .unwrap_or_default(),
-            );
+                self.playback[idx].stream.set_field(
+                    field,
+                    field
+                        .properties()
+                        .unwrap_or_default()
+                        .default
+                        .unwrap_or_default(),
+                );
+            }
         }
     }
-
-    // pub fn _old_video_fight_cb(&mut self, event: &MidiEvent) {
-    //     let idx = self.active_idx;
-    //     // let stream = &mut self.playback[idx].stream;
-
-    //     if event.device != MFT || event.kind != MIDI_CONTROL_CHANGE {
-    //         return;
-    //     }
-
-    //     macro_rules! adj {
-    //         ($f:ident, $v:expr) => {
-    //             self.playback[idx]
-    //                 .stream
-    //                 .adjust_field(&StreamSettingsField::$f, $v)
-    //         };
-    //     }
-
-    //     macro_rules! set {
-    //         ($f:ident, $v:expr) => {
-    //             self.playback[idx]
-    //                 .stream
-    //                 .set_field(StreamSettingsField::$f, $v)
-    //         };
-    //     }
-    //     macro_rules! asg {
-    //         ($f:ident) => {
-    //             self.playback[idx]
-    //                 .stream
-    //                 .adjust_field(&StreamSettingsField::$f, 0.0)
-    //         };
-    //     }
-    //     match (event.channel, event.key, event.velocity) {
-    //         //ROW 1
-    //         (0, 0, 63) => adj!(Threshold, -1.0),
-    //         (0, 0, 65) => adj!(Threshold, 1.0),
-    //         (1, 0, 127) => set!(Threshold, 0.0),
-
-    //         (0, 1, 63) => adj!(DistortLevel, -1.0),
-    //         (0, 1, 65) => adj!(DistortLevel, 1.0),
-    //         (1, 1, 127) => set!(DistortLevel, 0.2),
-
-    //         (0, 2, 63) => adj!(WarpLevel, -1.0),
-    //         (0, 2, 65) => adj!(WarpLevel, 1.0),
-    //         (1, 2, 127) => set!(WarpLevel, 0.2),
-
-    //         (0, 3, 63) => adj!(ColorKeySim, -1.0),
-    //         (0, 3, 65) => adj!(ColorKeySim, 1.0),
-    //         (1, 3, 127) => asg!(ColorKeyEnable),
-
-    //         // ROW 2
-    //         (0, 4, v) => set!(DistEdgeScan, v as f64 / 127.0),
-    //         (1, 4, 127) => asg!(DistEdgeSelected),
-
-    //         (0, 5, v) => set!(DistortScan, v as f64 / 127.0),
-    //         (1, 5, 127) => asg!(DistortSelected),
-
-    //         (0, 6, v) => set!(WarpScan, v as f64 / 127.0),
-    //         (1, 6, 127) => asg!(WarpSelected),
-    //         (0, 7, v) => set!(LutScan, v as f64 / 127.0),
-    //         (1, 7, 127) => asg!(LutSelected),
-
-    //         // ROW 3
-    //         (0, 8, 63) => adj!(ScrollH, -1.0),
-    //         (0, 8, 65) => adj!(ScrollH, 1.0),
-    //         (1, 8, 127) => set!(ScrollH, 0.0),
-
-    //         (0, 9, 63) => adj!(ScrollV, -1.0),
-    //         (0, 9, 65) => adj!(ScrollV, 1.0),
-    //         (1, 9, 127) => set!(ScrollV, 0.0),
-
-    //         (0, 10, 63) => adj!(FeedbackDx, -1.0),
-    //         (0, 10, 65) => adj!(FeedbackDx, 1.0),
-    //         (1, 10, 127) => set!(FeedbackDx, 0.0),
-
-    //         (0, 11, 63) => adj!(FeedbackDy, -1.0),
-    //         (0, 11, 65) => adj!(FeedbackDy, 1.0),
-    //         (1, 11, 127) => set!(FeedbackDy, 0.0),
-
-    //         // ROW 4
-    //         (0, 12, 63) => adj!(FeedbackRotation, -1.0),
-    //         (0, 12, 65) => adj!(FeedbackRotation, 1.0),
-    //         (1, 12, 127) => set!(FeedbackRotation, 0.0),
-
-    //         (0, 13, v) => set!(ScanlinesScan, v as f64 / 127.0),
-    //         (1, 13, 127) => asg!(ScanlinesSelected),
-
-    //         (0, 14, v) => set!(OverlayBlendScan, v as f64 / 127.0),
-    //         (1, 14, 127) => asg!(OverlayBlendSelected),
-
-    //         (0, 15, v) => set!(OverlayScan, v as f64 / 127.0),
-    //         (1, 15, 127) => asg!(OverlaySelected),
-    //         // ROW 5
-    //         (0, 16, 63) => adj!(MixRr, -1.0),
-    //         (0, 16, 65) => adj!(MixRr, 1.0),
-    //         (1, 16, 127) => set!(MixRr, 1.0),
-
-    //         (0, 17, 63) => adj!(MixRg, -1.0),
-    //         (0, 17, 65) => adj!(MixRg, 1.0),
-    //         (1, 17, 127) => set!(MixRg, 0.0),
-
-    //         (0, 18, 63) => adj!(MixRb, -1.0),
-    //         (0, 18, 65) => adj!(MixRb, 1.0),
-    //         (1, 18, 127) => set!(MixRb, 0.0),
-
-    //         (0, 19, 63) => adj!(MixRa, -1.0),
-    //         (0, 19, 65) => adj!(MixRa, 1.0),
-    //         (1, 19, 127) => set!(MixRa, 0.0),
-
-    //         // ROW 6
-    //         (0, 20, 63) => adj!(MixGr, -1.0),
-    //         (0, 20, 65) => adj!(MixGr, 1.0),
-    //         (1, 20, 127) => set!(MixGr, 0.0),
-
-    //         (0, 21, 63) => adj!(MixGg, -1.0),
-    //         (0, 21, 65) => adj!(MixGg, 1.0),
-    //         (1, 21, 127) => set!(MixGg, 1.0),
-    //         (0, 22, 63) => adj!(MixGb, -1.0),
-    //         (0, 22, 65) => adj!(MixGb, 1.0),
-    //         (1, 22, 127) => set!(MixGb, 0.0),
-
-    //         (0, 23, 63) => adj!(MixGa, -1.0),
-    //         (0, 23, 65) => adj!(MixGa, 1.0),
-    //         (1, 23, 127) => set!(MixGa, 0.0),
-
-    //         // ROW 7
-    //         (0, 24, 63) => adj!(MixBr, -1.0),
-    //         (0, 24, 65) => adj!(MixBr, 1.0),
-    //         (1, 24, 127) => set!(MixBr, 0.0),
-
-    //         (0, 25, 63) => adj!(MixBg, -1.0),
-    //         (0, 25, 65) => adj!(MixBg, 1.0),
-    //         (1, 25, 127) => set!(MixBg, 0.0),
-
-    //         (0, 26, 63) => adj!(MixBb, -1.0),
-    //         (0, 26, 65) => adj!(MixBb, 1.0),
-    //         (1, 26, 127) => set!(MixBb, 1.0),
-
-    //         (0, 27, 63) => adj!(MixBa, -1.0),
-    //         (0, 27, 65) => adj!(MixBa, 1.0),
-    //         (1, 27, 127) => set!(MixBa, 0.0),
-
-    //         // ROW 8
-    //         (0, 28, 63) => adj!(MixAr, -1.0),
-    //         (0, 28, 65) => adj!(MixAr, 1.0),
-    //         (1, 28, 127) => set!(MixAr, 0.0),
-    //         (0, 29, 63) => adj!(MixAg, -1.0),
-    //         (0, 29, 65) => adj!(MixAg, 1.0),
-    //         (1, 29, 127) => set!(MixAg, 0.0),
-
-    //         (0, 30, 63) => adj!(MixAb, -1.0),
-    //         (0, 30, 65) => adj!(MixAb, 1.0),
-    //         (1, 30, 127) => set!(MixAb, 0.0),
-
-    //         (0, 31, 63) => adj!(MixAa, -1.0),
-    //         (0, 31, 65) => adj!(MixAa, 1.0),
-    //         (1, 31, 127) => set!(MixAa, 1.0),
-
-    //         // ROW 9
-    //         (0, 32, 63) => adj!(ShiftRh, -1.0),
-    //         (0, 32, 65) => adj!(ShiftRh, 1.0),
-    //         (1, 32, 127) => set!(ShiftRh, 0.0),
-
-    //         (0, 33, 63) => adj!(ShiftRv, -1.0),
-    //         (0, 33, 65) => adj!(ShiftRv, 1.0),
-    //         (1, 33, 127) => set!(ShiftRv, 0.0),
-
-    //         (0, 34, 63) => adj!(SkewX0, -1.0),
-    //         (0, 34, 65) => adj!(SkewX0, 1.0),
-    //         (1, 34, 127) => set!(SkewX0, 0.0),
-
-    //         (0, 35, 63) => adj!(SkewY0, -1.0),
-    //         (0, 35, 65) => adj!(SkewY0, 1.0),
-    //         (1, 35, 127) => set!(SkewY0, 0.0),
-    //         //ROW 10
-    //         (0, 36, 63) => adj!(ShiftGh, -1.0),
-    //         (0, 36, 65) => adj!(ShiftGh, 1.0),
-    //         (1, 36, 127) => set!(ShiftGh, 0.0),
-
-    //         (0, 37, 63) => adj!(ShiftGv, -1.0),
-    //         (0, 37, 65) => adj!(ShiftGv, 1.0),
-    //         (1, 37, 127) => set!(ShiftGv, 0.0),
-
-    //         (0, 38, 63) => adj!(SkewX1, -1.0),
-    //         (0, 38, 65) => adj!(SkewX1, 1.0),
-    //         (1, 38, 127) => set!(SkewX1, 1.0),
-
-    //         (0, 39, 63) => adj!(SkewY1, -1.0),
-    //         (0, 39, 65) => adj!(SkewY1, 1.0),
-    //         (1, 39, 127) => set!(SkewY1, 0.0),
-
-    //         // ROW 11
-    //         (0, 40, 63) => adj!(ShiftBh, -1.0),
-    //         (0, 40, 65) => adj!(ShiftBh, 1.0),
-    //         (1, 40, 127) => set!(ShiftBh, 0.0),
-
-    //         (0, 41, 63) => adj!(ShiftBv, -1.0),
-    //         (0, 41, 65) => adj!(ShiftBv, 1.0),
-    //         (1, 41, 127) => set!(ShiftBv, 0.0),
-    //         (0, 42, 63) => adj!(SkewX2, -1.0),
-    //         (0, 42, 65) => adj!(SkewX2, 1.0),
-    //         (1, 42, 127) => set!(SkewX2, 0.0),
-
-    //         (0, 43, 63) => adj!(SkewY2, -1.0),
-    //         (0, 43, 65) => adj!(SkewY2, 1.0),
-    //         (1, 43, 127) => set!(SkewY2, 1.0),
-
-    //         // ROW 12
-    //         (0, 44, 63) => adj!(ShiftAh, -1.0),
-    //         (0, 44, 65) => adj!(ShiftAh, 1.0),
-    //         (1, 44, 127) => set!(ShiftAh, 0.0),
-    //         (0, 45, 63) => adj!(ShiftAv, -1.0),
-    //         (0, 45, 65) => adj!(ShiftAv, 1.0),
-    //         (1, 45, 127) => set!(ShiftAv, 0.0),
-
-    //         (0, 46, 63) => adj!(SkewX3, -1.0),
-    //         (0, 46, 65) => adj!(SkewX3, 1.0),
-    //         (1, 46, 127) => set!(SkewX3, 1.0),
-
-    //         (0, 47, 63) => adj!(SkewY3, -1.0),
-    //         (0, 47, 65) => adj!(SkewY3, 1.0),
-    //         (1, 47, 127) => set!(SkewY3, 1.0),
-
-    //         // ROW 13
-    //         (0, 48, 63) => adj!(FeedbackModeScan, -1.0),
-    //         (0, 48, 65) => adj!(FeedbackModeScan, 1.0),
-    //         (1, 48, 127) => asg!(FeedbackModeSelected),
-    //         _ => (),
-    //     }
-    // }
 
     // Generic send for all midi devices to GLSL vars
     pub fn midi_to_glsl(&mut self, event: &MidiEvent) -> Vec<RenderSpec> {
@@ -2367,624 +1820,5 @@ impl AllSettings {
         }
 
         return cmds;
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-#[repr(C)]
-#[cfg(false)]
-pub struct StreamIdent {
-    pub name: String,
-    pub first_video: String,
-    pub input_mix: String,
-    pub main_mix: String,
-    pub feedback_mix: String,
-    pub overlay_mix: String,
-}
-
-#[derive(Debug, Clone, Adjustable, Serialize, Deserialize)]
-#[repr(C)]
-#[cfg(false)]
-pub struct StreamSettings {
-    pub ident: StreamIdent,
-    // These are reserved because we catch these inputs and use them to change the
-    // All settings config
-    #[adjustable(k = B, idx = 1)]
-    reserved1: f64,
-    #[adjustable(k = B, idx = 10)]
-    reserved2: f64,
-    #[adjustable(k = CB, idx = 10)]
-    reserved3: f64,
-
-    #[adjustable(k = R, idx = 10)]
-    reserved4: f64,
-    #[adjustable(k = CR, idx = 10)]
-    reserved5: f64,
-
-    pub real_ts: (i32, i32),
-    pub continuous_ts: (i32, i32),
-    // FLASH
-    #[adjustable(kind = toggle, k = CB, idx = 1, command_simple = (self.main_mix(), "flash_enable", Unsigned))]
-    flash_enable: u8,
-    // LOOP CONTROL
-    #[adjustable(k = CL, idx = 1, kind = toggle)]
-    tween: u8,
-    // USER
-    #[adjustable(k = L, idx = 2, min = -101.0, max = 101.0, step = 1.0, setter=set_usr_var, command_simple = (self.input_mix(), "usr_var", Integer))]
-    usr_var: f64,
-    #[adjustable(k = CL, idx = 2, kind = toggle, command_simple = (self.input_mix(), "usr_toggle", Integer))]
-    usr_toggle: u8,
-    //VIDEO MIXER
-    #[adjustable(k = R, idx = 2, min = 0.0, max = 15, do_not_record = true)]
-    color_mix_selected: f64,
-    #[adjustable(k = B, idx = 2, min = -2.0, max = 2.0, step = 0.01, ty = f64, getter = color_mix, setter = set_color_mix)]
-    color_mix: (),
-    #[adjustable(min =  -2.0, max = 2.0, step = 0.01, command_simple = (self.main_mix(), "mix_rr", Float), tween = true)]
-    rr: f64,
-    #[adjustable(min =  -2.0, max = 2.0, step = 0.01, command_simple = (self.main_mix(), "mix_rg", Float), tween = true)]
-    rg: f64,
-    #[adjustable(min =  -2.0, max = 2.0, step = 0.01, command_simple = (self.main_mix(), "mixrb", Float), tween = true)]
-    rb: f64,
-    #[adjustable(min =  -2.0, max = 2.0, step = 0.01, command_simple = (self.main_mix(), "mix_ra", Float), tween = true)]
-    ra: f64,
-    #[adjustable(min =  -2.0, max = 2.0, step = 0.01, command_simple = (self.main_mix(), "mix_gr", Float), tween = true)]
-    gr: f64,
-    #[adjustable(min =  -2.0, max = 2.0, step = 0.01, command_simple = (self.main_mix(), "mix_gg", Float), tween = true)]
-    gg: f64,
-    #[adjustable(min =  -2.0, max = 2.0, step = 0.01, command_simple = (self.main_mix(), "mix_gb", Float), tween = true)]
-    gb: f64,
-    #[adjustable(min =  -2.0, max = 2.0, step = 0.01, command_simple = (self.main_mix(), "mix_ga", Float), tween = true)]
-    ga: f64,
-    #[adjustable(min =  -2.0, max = 2.0, step = 0.01, command_simple = (self.main_mix(), "mix_br", Float), tween = true)]
-    br: f64,
-    #[adjustable(min =  -2.0, max = 2.0, step = 0.01, command_simple = (self.main_mix(), "mix_bg", Float), tween = true)]
-    bg: f64,
-    #[adjustable(min =  -2.0, max = 2.0, step = 0.01, command_simple = (self.main_mix(), "mix_bb", Float), tween = true)]
-    bb: f64,
-    #[adjustable(min =  -2.0, max = 2.0, step = 0.01, command_simple = (self.main_mix(), "mix_ba", Float), tween = true)]
-    ba: f64,
-    #[adjustable(min =  -2.0, max = 2.0, step = 0.01, command_simple = (self.main_mix(), "mix_ar", Float), tween = true)]
-    ar: f64,
-    #[adjustable(min =  -2.0, max = 2.0, step = 0.01, command_simple = (self.main_mix(), "mix_ag", Float), tween = true)]
-    ag: f64,
-    #[adjustable(min =  -2.0, max = 2.0, step = 0.01, command_simple = (self.main_mix(), "mix_ab", Float), tween = true)]
-    ab: f64,
-    #[adjustable(min =  -2.0, max = 2.0, step = 0.01, command_simple = (self.main_mix(), "mix_aa", Float), tween = true)]
-    aa: f64,
-
-    #[adjustable(k = L, idx = 3, min = -2.0, max = 2.0, step = 0.0087, command_simple = (self.main_mix(), "boost", Float))]
-    boost: f64,
-    #[adjustable(k = R, idx = 3, min = 0.0, max = 1.0, step = 0.01, command_simple = (self.main_mix(), "thresh", Float))]
-    threshold: f64,
-    #[adjustable(tween = true, min = 0.0, max = 1.0, step=0.005, command_simple = (self.main_mix(), "distort_level", Float))]
-    distort_level: f64,
-    #[adjustable(tween = true,  min = 0.0, max = 1.0, step=0.005, command_simple = (self.main_mix(), "warp_level", Float))]
-    warp_level: f64,
-    #[adjustable(k = CB, idx = 3, kind = toggle, do_not_record = true)]
-    distort_warp_select: u8,
-    #[adjustable(k = B, idx = 3, min = 0.0, max = 1.0, step=0.005, ty = f64, getter = distort_or_warp_level, setter = set_distort_or_warp_level)]
-    distort_or_warp_level: (),
-    #[adjustable(k = CL, idx = 4, setter = set_skew_selected, do_not_record = true)]
-    skew_selected: f64,
-    #[adjustable(k = L, idx = 4, min = -1.0, max = 1.0, step = 0.001, ty = f64, getter = skew_dx, setter = set_skew_dx)]
-    skew_dx: (),
-    #[adjustable(k = R, idx = 4, min = -1.0, max = 1.0, step = 0.001, ty = f64, getter = skew_dy, setter = set_skew_dy)]
-    skew_dy: (),
-    #[adjustable(k = B, idx = 4, kind = custom, ty = ((f64, f64), (f64, f64) (f64, f64), (f64, f64)), getter = skew_all, setter = set_skew_all)]
-    skew_all: (),
-    #[adjustable(min = -5.0, max = 5.0, step = 0.001,command_fn = skew_update, tween = true)]
-    skew_x0: f64,
-    #[adjustable(min = -5.0, max = 5.0,step = 0.001, command_fn = skew_update, tween = true)]
-    skew_y0: f64,
-    #[adjustable(min = -5.0, max = 5.0,step = 0.001,command_fn = skew_update, tween = true)]
-    skew_x1: f64,
-    #[adjustable(min = -5.0, max = 5.0,step = 0.001, command_fn = skew_update, tween = true)]
-    skew_y1: f64,
-    #[adjustable(min = -5.0, max = 5.0, step = 0.001, command_fn = skew_update, tween = true)]
-    skew_x2: f64,
-    #[adjustable(min = -5.0, max = 5.0, step = 0.001,command_fn = skew_update, tween = true)]
-    skew_y2: f64,
-    #[adjustable(min = -5.0, max = 5.0, step = 0.001,command_fn = skew_update, tween = true)]
-    skew_x3: f64,
-    #[adjustable(min = -5.0, max = 5.0, step = 0.001,command_fn = skew_update, tween = true)]
-    skew_y3: f64,
-
-    // VIDEO KEY
-    #[adjustable(k = B, idx = 5, min = 0.001, max = 1.0, step = 0.001, command_simple = (self.main_mix(), "color_key_sim", Float))]
-    sim: f64,
-    #[adjustable(k = L, idx = 5, min = 0.0, max = 1.0, step = 0.001, command_simple = (self.main_mix(), "color_key_blend", Float))]
-    blend: f64,
-    #[adjustable(kind = toggle, k = CB, idx = 5, command_simple = (self.main_mix(), "color_key_enable", Unsigned))]
-    video_key_enable: u8,
-
-    // VIDEO KEY COLOR
-    #[adjustable(k = R, idx = 5, min = 0.0, max = (AllSettings::colors().len() - 1), step = 1, do_not_record = true)]
-    video_key_color_scan: f64,
-    #[adjustable(kind = assign, k = CR, idx = 5, from = self.video_key_color_scan, command_fn = video_key_color_update)]
-    video_key_color_selected: f64,
-
-    // SCROLL
-    #[adjustable(k = L, idx = 6, min = -1.0, max = 1.0, step = 0.0001,)]
-    scroll_h: f64,
-    #[adjustable(k = R, idx = 6, min = -1.0, max = 1.0, step = 0.0001,)]
-    scroll_v: f64,
-    #[adjustable(command_simple = (self.main_mix(), "scrolled_h", Float), do_not_record = true)]
-    scrolled_h: f64,
-    #[adjustable(command_simple = (self.main_mix(), "scrolled_v", Float), do_not_record = true)]
-    scrolled_v: f64,
-
-    // COLOR SHIFT
-    #[adjustable(k = R, idx = 7, min = 0.0, max = 7.0, step = 1.0, do_not_record = true)]
-    shift_select: f64,
-    #[adjustable(k = B, idx = 7, min = -1.0, max = 1.0, step = 0.001, ty = f64, setter = set_color_shift, getter = color_shift)]
-    color_shift: (),
-    #[adjustable(tween = true, min = -1.0, max = 1.0, step = 0.001,  command_simple = (self.main_mix(), "shift_rh", Float))]
-    rh: f64,
-    #[adjustable(tween = true, min = -1.0, max = 1.0, step = 0.001,  command_simple = (self.main_mix(), "shift_rv", Float))]
-    rv: f64,
-    #[adjustable(tween = true, min = -1.0, max = 1.0, step = 0.001,  command_simple = (self.main_mix(), "shift_gh", Float))]
-    gh: f64,
-    #[adjustable(tween = true, min = -1.0, max = 1.0, step = 0.001,  command_simple = (self.main_mix(), "shift_gv", Float))]
-    gv: f64,
-    #[adjustable(tween = true, min = -1.0, max = 1.0, step = 0.001,  command_simple = (self.main_mix(), "shift_bh", Float))]
-    bh: f64,
-    #[adjustable(tween = true, min = -1.0, max = 1.0, step = 0.001,  command_simple = (self.main_mix(), "shift_bv", Float))]
-    bv: f64,
-    #[adjustable(tween = true, min = -1.0, max = 1.0, step = 0.001,  command_simple = (self.main_mix(), "shift_ah", Float))]
-    ah: f64,
-    #[adjustable(tween = true, min = -1.0, max = 1.0, step = 0.001,  command_simple = (self.main_mix(), "shift_av", Float))]
-    av: f64,
-    #[adjustable(kind = toggle, k = CR, idx = 7)]
-    shift_enable: u8,
-
-    // COMPOSITE
-    #[adjustable(k = L, idx = 7, min = 1.0, max = 1800.0)]
-    composite_freq: f64,
-
-    // NEGATE
-    #[adjustable(kind = toggle, k = CL, idx = 7, command_simple = (self.main_mix(), "negate", Unsigned))]
-    negate: u8,
-
-    //DISTORT
-    #[adjustable(k = L, idx = 8, min = -1.0, max = 1.0, step = 0.001, tween = true, command_simple = (self.main_mix(), "distort_dx", Float))]
-    dx: f64,
-    #[adjustable(k = R, idx = 8, min = -1.0, max = 1.0, step = 0.001, tween = true,  command_simple = (self.main_mix(), "distort_dy", Float))]
-    dy: f64,
-
-    #[adjustable(k = B, idx = 8, min = - 2.0 * std::f64::consts::PI, max = 2.0 * std::f64::consts::PI,step = 2.0 * std::f64::consts::PI/400.0, tween = true, setter = set_feedback_rotation, command_simple = (self.main_mix(), "feedback_rotation", Float))]
-    feedback_rotation: f64,
-
-    #[adjustable(k = B, idx = 9, min = 0.0, max = (AllSettings::distort_names().len() - 1), step = 1.0, do_not_record = true)]
-    distort_scan: f64,
-    #[adjustable(kind = assign, k = CB, idx = 9, from = self.distort_scan)]
-    distort_selected: f64,
-    #[adjustable(k = L, idx = 9, min = 0.0, max = (AllSettings::distort_edge_types().len() - 1), step = 1.0, do_not_record = true)]
-    distort_edge_scan: f64,
-    #[adjustable(kind = assign, k = CL, idx = 9, from = self.distort_edge_scan, command_simple = (self.main_mix(), "distort_edge", Unsigned))]
-    distort_edge_selected: f64,
-
-    // WARP
-    #[adjustable(k = R, idx = 9, min = 0.0, max = (AllSettings::distort_names().len() - 1), step = 1.0, do_not_record = true)]
-    warp_scan: f64,
-    #[adjustable(kind = assign, k = CR, idx = 9, from = self.warp_scan)]
-    warp_selected: f64,
-
-    //LUT
-    #[adjustable(k = L, idx = 10, min = 0.0, max = (AllSettings::lut_names().len() - 1), step = 1.0, do_not_record = true)]
-    lut_scan: f64,
-    #[adjustable(kind = assign, k = CL, idx = 10, from = self.lut_scan)]
-    lut_selected: f64,
-
-    // FOREGROUND
-    #[adjustable(k = R, idx = 11, min = 0.0, max = (AllSettings::blend_modes().len() - 1), step = 1.0, do_not_record = true)]
-    blend_scan: f64,
-    #[adjustable(kind = assign, k = CR, idx = 11, from = self.blend_scan, command_simple = (self.overlay_mix(), "overlay_kind", Unsigned))]
-    blend_selected: f64,
-
-    #[adjustable(k = L, idx = 11, min = 0.0, max = (AllSettings::blend_modes().len() - 1), step = 1.0, do_not_record = true)]
-    scanlines_scan: f64,
-    #[adjustable(kind = assign, k = CL, idx = 11, from = self.scanlines_scan, command_simple = (self.overlay_mix(), "scanline_kind", Unsigned))]
-    scanlines_selected: f64,
-
-    #[adjustable(k = B, idx = 11, min = 0.0, max = (AllSettings::overlay_vids().len() - 1), step = 1.0, do_not_record = true)]
-    overlay_scan: f64,
-    #[adjustable(kind = assign, k = CB, idx = 11, from = self.overlay_scan)]
-    overlay_selected: f64,
-
-    // DELTA FRAMES
-    #[adjustable(command_fn = delta_sec_update)]
-    delta_sec: f64,
-    #[adjustable(k = B, idx = 12, step = 0.05, command_fn = scrub_update)]
-    scrub: f64,
-    mark: Option<f64>,
-    #[adjustable(command_fn = exact_sec_update)]
-    exact_sec: f64,
-    #[adjustable(kind = toggle)]
-    pause: u8,
-
-    // FEEDBACK
-    #[adjustable(k = B, idx = 13, min = 0.0, max = 3.0, step = 1.0)]
-    feedback_mode_scan: f64,
-    #[adjustable(kind = assign, k = CB, idx = 13,  from = self.feedback_mode_scan, command_simple = (self.main_mix(), "feedback_mode_selected", Unsigned))]
-    feedback_mode_selected: f64,
-}
-
-#[cfg(false)]
-impl StreamSettings {
-    pub fn new<S: AsRef<str>>(
-        name: S,
-        first_video: S,
-        input_mix: S,
-        main_mix: S,
-        feedback_mix: S,
-        overlay_mix: S,
-    ) -> Self {
-        Self {
-            ident: StreamIdent {
-                name: name.as_ref().to_string(),
-                first_video: first_video.as_ref().to_string(),
-                input_mix: input_mix.as_ref().to_string(),
-                main_mix: main_mix.as_ref().to_string(),
-                feedback_mix: feedback_mix.as_ref().to_string(),
-                overlay_mix: overlay_mix.as_ref().to_string(),
-            },
-            real_ts: (0, 1),
-            continuous_ts: (0, 1),
-            flash_enable: 0,
-            tween: 0,
-            usr_var: 0.0,
-            usr_toggle: 0,
-            color_mix: (),
-            color_mix_selected: 0.0,
-            rr: 1.0,
-            rg: 0.0,
-            rb: 0.0,
-            gr: 0.0,
-            ra: 0.0,
-            gg: 1.0,
-            gb: 0.0,
-            ga: 0.0,
-            br: 0.0,
-            bg: 0.0,
-            bb: 1.0,
-            ba: 0.0,
-            ar: 0.0,
-            ag: 0.0,
-            ab: 0.0,
-            aa: 1.0,
-            skew_selected: 0.0,
-            skew_dx: (),
-            skew_dy: (),
-            skew_all: (),
-            skew_x0: 0.0,
-            skew_y0: 0.0,
-            skew_x1: 1.0,
-            skew_y1: 0.0,
-            skew_x2: 0.0,
-            skew_y2: 1.0,
-            skew_x3: 1.0,
-            skew_y3: 1.0,
-            sim: 0.001,
-            blend: 0.0,
-            video_key_enable: 0,
-            video_key_color_scan: 0.0,
-            video_key_color_selected: 0.0,
-            scroll_h: 0.0,
-            scroll_v: 0.0,
-            scrolled_h: 0.0,
-            scrolled_v: 0.0,
-            shift_select: 0.0,
-            color_shift: (),
-            rh: 0.0,
-            rv: 0.0,
-            gh: 0.0,
-            gv: 0.0,
-            bh: 0.0,
-            bv: 0.0,
-            ah: 0.0,
-            av: 0.0,
-            shift_enable: 0,
-            composite_freq: 1.0,
-            negate: 0,
-            boost: 0.0,
-            distort_level: 0.2,
-            warp_level: 0.2,
-            distort_warp_select: 0,
-            distort_or_warp_level: (),
-            dx: 0.0,
-            dy: 0.0,
-            threshold: 0.0,
-            blend_scan: 0.0,
-            blend_selected: 0.0,
-            scanlines_scan: 0.0,
-            scanlines_selected: 0.0,
-            overlay_selected: 0.0,
-            overlay_scan: 0.0,
-            distort_scan: 0.0,
-            distort_selected: 0.0,
-            distort_edge_scan: 0.0,
-            distort_edge_selected: 0.0,
-            warp_scan: 0.0,
-            warp_selected: 0.0,
-            lut_selected: 0.0,
-            lut_scan: 0.0,
-            feedback_rotation: 0.0,
-            feedback_mode_selected: 0.0,
-            feedback_mode_scan: 0.0,
-            delta_sec: 0.0,
-            scrub: 0.0,
-            mark: None,
-            exact_sec: 0.0,
-            pause: 0,
-            reserved1: 0.0,
-            reserved2: 0.0,
-            reserved3: 0.0,
-            reserved4: 0.0,
-            reserved5: 0.0,
-        }
-    }
-
-    // Override accessors
-    fn set_color_shift(&mut self, v: f64) {
-        match self.shift_select as u8 {
-            0 => {
-                self.rh = v;
-            }
-            1 => {
-                self.rv = v;
-            }
-            2 => {
-                self.gh = v;
-            }
-            3 => {
-                self.gv = v;
-            }
-            4 => {
-                self.bh = v;
-            }
-            5 => {
-                self.bv = v;
-            }
-            6 => {
-                self.ah = v;
-            }
-            7 => {
-                self.av = v;
-            }
-            _ => (),
-        }
-    }
-
-    fn color_shift(&self) -> f64 {
-        match self.shift_select as u8 {
-            0 => self.rh,
-            1 => self.rv,
-            2 => self.gh,
-            3 => self.gv,
-            4 => self.bh,
-            5 => self.bv,
-            6 => self.ah,
-            7 => self.av,
-            _ => panic!("Color shift out of bounds"),
-        }
-    }
-
-    pub fn set_color_mix(&mut self, v: f64) {
-        match self.color_mix_selected as u8 {
-            0 => self.rr = v,
-            1 => self.rg = v,
-            2 => self.rb = v,
-            3 => self.ra = v,
-            4 => self.gr = v,
-            5 => self.gg = v,
-            6 => self.gb = v,
-            7 => self.ga = v,
-            8 => self.br = v,
-            9 => self.bg = v,
-            10 => self.bb = v,
-            11 => self.ba = v,
-            12 => self.ar = v,
-            13 => self.ag = v,
-            14 => self.ab = v,
-            15 => self.aa = v,
-            _ => panic!("Color mix out of bounds"),
-        }
-    }
-
-    pub fn color_mix(&self) -> f64 {
-        match self.color_mix_selected as u8 {
-            0 => self.rr,
-            1 => self.rg,
-            2 => self.rb,
-            3 => self.ra,
-            4 => self.gr,
-            5 => self.gg,
-            6 => self.gb,
-            7 => self.ga,
-            8 => self.br,
-            9 => self.bg,
-            10 => self.bb,
-            11 => self.ba,
-            12 => self.ar,
-            13 => self.ag,
-            14 => self.ab,
-            15 => self.aa,
-            _ => panic!("Color mix out of bounds"),
-        }
-    }
-
-    pub fn set_skew_selected(&mut self, v: f64) {
-        self.skew_selected = (v as u8).rem_euclid(4) as f64;
-    }
-
-    pub fn skew_dx(&self) -> f64 {
-        match self.skew_selected as u8 {
-            0 => self.skew_x0,
-            1 => self.skew_x1,
-            2 => self.skew_x2,
-            3 => self.skew_x3,
-            _ => panic!("skew dx selected out of bounds"),
-        }
-    }
-
-    pub fn set_skew_dx(&mut self, v: f64) {
-        match self.skew_selected as u8 {
-            0 => self.skew_x0 = v,
-            1 => self.skew_x1 = v,
-            2 => self.skew_x2 = v,
-            3 => self.skew_x3 = v,
-            _ => panic!("skew dx selected out of bounds"),
-        }
-    }
-
-    pub fn skew_dy(&self) -> f64 {
-        match self.skew_selected as u8 {
-            0 => self.skew_y0,
-            1 => self.skew_y1,
-            2 => self.skew_y2,
-            3 => self.skew_y3,
-            _ => panic!("skew dy selected out of bounds"),
-        }
-    }
-
-    pub fn set_skew_dy(&mut self, v: f64) {
-        match self.skew_selected as u8 {
-            0 => self.skew_y0 = v,
-            1 => self.skew_y1 = v,
-            2 => self.skew_y2 = v,
-            3 => self.skew_y3 = v,
-            _ => panic!("skew dx selected out of bounds"),
-        }
-    }
-
-    pub fn set_skew_all(&mut self, v: ((f64, f64), (f64, f64), (f64, f64), (f64, f64))) {
-        self.skew_x0 = v.0 .0;
-        self.skew_y0 = v.0 .1;
-        self.skew_x1 = v.1 .0;
-        self.skew_y1 = v.1 .1;
-        self.skew_x2 = v.2 .0;
-        self.skew_y2 = v.2 .1;
-        self.skew_x3 = v.3 .0;
-        self.skew_y3 = v.3 .1;
-    }
-
-    pub fn skew_all(&self) -> ((f64, f64), (f64, f64), (f64, f64), (f64, f64)) {
-        (
-            (self.skew_x0, self.skew_y0),
-            (self.skew_x1, self.skew_y1),
-            (self.skew_x2, self.skew_y2),
-            (self.skew_x3, self.skew_y3),
-        )
-    }
-
-    pub fn adjust_skew_all(&mut self, inc: f64) {
-        let step = inc * 0.001;
-        self.set_skew_all((
-            (
-                (self.skew_x0 + step).clamp(-5.0, 5.0),
-                (self.skew_y0 + step).clamp(-5.0, 5.0),
-            ),
-            (
-                (self.skew_x1 - step).clamp(-5.0, 5.0),
-                (self.skew_y1 + step).clamp(-5.0, 5.0),
-            ),
-            (
-                (self.skew_x2 + step).clamp(-5.0, 5.0),
-                (self.skew_y2 - step).clamp(-5.0, 5.0),
-            ),
-            (
-                (self.skew_x3 - step).clamp(-5.0, 5.0),
-                (self.skew_y3 - step).clamp(-5.0, 5.0),
-            ),
-        ));
-    }
-
-    pub fn set_usr_var(&mut self, v: f64) {
-        self.usr_var = (v + 100.0).rem_euclid(201.0) - 100.0;
-    }
-
-    pub fn set_feedback_rotation(&mut self, v: f64) {
-        self.feedback_rotation = (v + 2.0 * PI).rem_euclid(4.0 * PI) - 2.0 * PI;
-    }
-
-    fn distort_or_warp_level(&self) -> f64 {
-        if self.distort_warp_select == 0 {
-            self.distort_level
-        } else {
-            self.warp_level
-        }
-    }
-
-    fn set_distort_or_warp_level(&mut self, v: f64) {
-        if self.distort_warp_select == 0 {
-            self.distort_level = v
-        } else {
-            self.warp_level = v
-        }
-    }
-
-    fn video_key_color_update(&self) -> Vec<RenderSpec> {
-        eprintln!("Unimplemented video key color update");
-        vec![]
-    }
-
-    fn skew_update(&self) -> Vec<RenderSpec> {
-        vec![SendCmd::builder()
-            .mix(self.main_mix())
-            .name("new_corners")
-            .value(SendValue::Vector(vec![
-                self.skew_x0 as f32,
-                self.skew_y0 as f32,
-                self.skew_x1 as f32,
-                self.skew_y1 as f32,
-                self.skew_x2 as f32,
-                self.skew_y2 as f32,
-                self.skew_x3 as f32,
-                self.skew_y3 as f32,
-            ]))
-            .build()
-            .into()]
-    }
-
-    fn delta_sec_update(&self) -> Vec<RenderSpec> {
-        vec![seek!(self.first_video() => self.delta_sec, false)]
-    }
-
-    fn scrub_update(&self) -> Vec<RenderSpec> {
-        if self.scrub >= 0.0 {
-            vec![seek!(self.first_video() => self.scrub, false)]
-        } else {
-            vec![seek!(self.first_video() => self.scrub - 0.1, false)]
-        }
-    }
-
-    fn exact_sec_update(&self) -> Vec<RenderSpec> {
-        vec![seek!(self.first_video() => self.exact_sec, true)]
-    }
-
-    pub fn first_video(&self) -> String {
-        self.ident.first_video.clone()
-    }
-    pub fn input_mix(&self) -> String {
-        self.ident.input_mix.clone()
-    }
-    pub fn main_mix(&self) -> String {
-        self.ident.main_mix.clone()
-    }
-    pub fn feedback_mix(&self) -> String {
-        self.ident.feedback_mix.clone()
-    }
-    pub fn overlay_mix(&self) -> String {
-        self.ident.overlay_mix.clone()
-    }
-    pub fn reset(&mut self) {
-        *self = Self::new(
-            self.ident.name.clone(),
-            self.first_video(),
-            self.input_mix(),
-            self.main_mix(),
-            self.feedback_mix(),
-            self.overlay_mix(),
-        );
     }
 }

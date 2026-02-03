@@ -232,10 +232,33 @@ static PROPERTIES: LazyLock<HashMap<StreamSettingsField, StreamSettingsFieldProp
                 );
             };
         }
+        macro_rules! internal {
+            ($p:ident, $default:expr) => {
+                m.insert(
+                    StreamSettingsField::$p,
+                    StreamSettingsFieldProperties {
+                        default: Some($default),
+                        do_not_record: true,
+                        ..Default::default()
+                    },
+                );
+            };
+            ($p:ident, $default:expr, $label:expr) => {
+                m.insert(
+                    StreamSettingsField::$p,
+                    StreamSettingsFieldProperties {
+                        default: Some($default),
+                        label: Some($label.to_string()),
+                        do_not_record: true,
+                        ..Default::default()
+                    },
+                );
+            };
+        }
         // row 1
-        mk!(Threshold, 0, 0, 0.0, 1.0, 0.01, 0.0, "thresh");
-        mk!(DistortLevel, 0, 1, 0.0, 1.0, 0.01, 0.05, "distort_level");
-        mk!(WarpLevel, 0, 2, 0.0, 1.0, 0.01, 0.05, "warp_level");
+        mk!(Threshold, 0, 0, 0.0, 1.0, 0.001, 0.0, "thresh");
+        mk!(DistortLevel, 0, 1, 0.0, 1.0, 0.001, 0.05, "distort_level");
+        mk!(WarpLevel, 0, 2, 0.0, 1.0, 0.001, 0.05, "warp_level");
         mk!(ColorKeySim, 0, 3, 0.001, 1.0, 0.001, 0.001, "color_key_sim");
         mk!(ColorKeyEnable, 1, 3, 0.0, 1.0, 1.0, 0.0, "color_key_enable");
         //row 2
@@ -245,7 +268,7 @@ static PROPERTIES: LazyLock<HashMap<StreamSettingsField, StreamSettingsFieldProp
             4,
             0.0,
             AllSettings::distort_edge_types().len() as f64,
-            1.0,
+            0.2,
             0.0,
             "distort_edge"
         );
@@ -255,7 +278,7 @@ static PROPERTIES: LazyLock<HashMap<StreamSettingsField, StreamSettingsFieldProp
             4,
             0.0,
             AllSettings::distort_edge_types().len() as f64,
-            1.0,
+            0.2,
             0.0,
             "distort_edge"
         );
@@ -265,7 +288,7 @@ static PROPERTIES: LazyLock<HashMap<StreamSettingsField, StreamSettingsFieldProp
             5,
             0.0,
             AllSettings::distort_names().len() as f64,
-            1.0,
+            0.2,
             0.0,
             "distort"
         );
@@ -275,7 +298,7 @@ static PROPERTIES: LazyLock<HashMap<StreamSettingsField, StreamSettingsFieldProp
             5,
             0.0,
             AllSettings::distort_names().len() as f64,
-            1.0,
+            0.2,
             0.0,
             "distort"
         );
@@ -285,7 +308,7 @@ static PROPERTIES: LazyLock<HashMap<StreamSettingsField, StreamSettingsFieldProp
             6,
             0.0,
             AllSettings::distort_names().len() as f64,
-            1.0,
+            0.2,
             0.0,
             "warp"
         );
@@ -295,7 +318,7 @@ static PROPERTIES: LazyLock<HashMap<StreamSettingsField, StreamSettingsFieldProp
             6,
             0.0,
             AllSettings::distort_names().len() as f64,
-            1.0,
+            0.2,
             0.0,
             "warp"
         );
@@ -305,7 +328,7 @@ static PROPERTIES: LazyLock<HashMap<StreamSettingsField, StreamSettingsFieldProp
             7,
             0.0,
             AllSettings::lut_names().len() as f64,
-            1.0,
+            0.2,
             0.0,
             "lut"
         );
@@ -315,13 +338,15 @@ static PROPERTIES: LazyLock<HashMap<StreamSettingsField, StreamSettingsFieldProp
             7,
             0.0,
             AllSettings::lut_names().len() as f64,
-            1.0,
+            0.2,
             0.0,
             "lut"
         );
         // row 3
         mk!(ScrollH, 0, 8, -1.0, 1.0, 0.0001, 0.0, "scroll_h");
         mk!(ScrollV, 0, 9, -1.0, 1.0, 0.0001, 0.0, "scroll_v");
+        internal!(ScrolledH, 0.0, "scrolled_h");
+        internal!(ScrolledV, 0.0, "scrolled_v");
         mk!(FeedbackDx, 0, 10, -1.0, 1.0, 0.001, 0.0, "distort_dx");
         mk!(FeedbackDy, 0, 11, -1.0, 1.0, 0.001, 0.0, "distort_dy");
         // row 4
@@ -341,7 +366,7 @@ static PROPERTIES: LazyLock<HashMap<StreamSettingsField, StreamSettingsFieldProp
             13,
             0.0,
             AllSettings::blend_modes().len() as f64,
-            1.0,
+            0.2,
             0.0,
             "scanlines"
         );
@@ -351,7 +376,7 @@ static PROPERTIES: LazyLock<HashMap<StreamSettingsField, StreamSettingsFieldProp
             13,
             0.0,
             AllSettings::blend_modes().len() as f64,
-            1.0,
+            0.2,
             0.0,
             "scanline_kind"
         );
@@ -361,7 +386,7 @@ static PROPERTIES: LazyLock<HashMap<StreamSettingsField, StreamSettingsFieldProp
             14,
             0.0,
             AllSettings::blend_modes().len() as f64,
-            1.0,
+            0.2,
             0.0,
             "overlay_blend"
         );
@@ -381,7 +406,7 @@ static PROPERTIES: LazyLock<HashMap<StreamSettingsField, StreamSettingsFieldProp
             15,
             0.0,
             AllSettings::overlay_vids().len() as f64,
-            1.0,
+            0.2,
             0.0,
             "overlay_vid"
         );
@@ -391,7 +416,7 @@ static PROPERTIES: LazyLock<HashMap<StreamSettingsField, StreamSettingsFieldProp
             15,
             0.0,
             AllSettings::overlay_vids().len() as f64,
-            1.0,
+            0.2,
             0.0,
             "overlay_vid"
         );
@@ -439,30 +464,17 @@ static PROPERTIES: LazyLock<HashMap<StreamSettingsField, StreamSettingsFieldProp
         /*
         feedback mode
          */
-        mk!(FeedbackModeScan, 0, 48, 0.0, 3.0, 1.0, 0.0, "feedback_mode");
+        mk!(FeedbackModeScan, 0, 48, 0.0, 3.0, 0.2, 0.0, "feedback_mode");
         mk!(
             FeedbackModeSelected,
             1,
             48,
             0.0,
             3.0,
-            1.0,
+            0.2,
             0.0,
-            "feedback_mode"
+            "feedback_mode_selected"
         );
-
-        macro_rules! internal {
-            ($p:ident, $default:expr) => {
-                m.insert(
-                    StreamSettingsField::$p,
-                    StreamSettingsFieldProperties {
-                        default: Some($default),
-                        do_not_record: true,
-                        ..Default::default()
-                    },
-                );
-            };
-        }
 
         internal!(FlashEnable, 0.0);
         internal!(Tween, 0.0);
