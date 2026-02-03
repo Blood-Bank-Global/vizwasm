@@ -368,7 +368,7 @@ static PROPERTIES: LazyLock<HashMap<StreamSettingsField, StreamSettingsFieldProp
             AllSettings::blend_modes().len() as f64,
             0.2,
             0.0,
-            "scanlines"
+            "scanline_scan"
         );
         mk!(
             ScanlinesSelected,
@@ -388,7 +388,7 @@ static PROPERTIES: LazyLock<HashMap<StreamSettingsField, StreamSettingsFieldProp
             AllSettings::blend_modes().len() as f64,
             0.2,
             0.0,
-            "overlay_blend"
+            "overlay_blend_scan"
         );
         mk!(
             OverlayBlendSelected,
@@ -396,7 +396,7 @@ static PROPERTIES: LazyLock<HashMap<StreamSettingsField, StreamSettingsFieldProp
             14,
             0.0,
             AllSettings::blend_modes().len() as f64,
-            1.0,
+            0.2,
             0.0,
             "overlay_kind"
         );
@@ -689,14 +689,29 @@ impl StreamSettings {
             StreamSettingsField::ColorKeyEnable
             | StreamSettingsField::Negate
             | StreamSettingsField::DistEdgeSelected
-            | StreamSettingsField::OverlayBlendSelected
-            | StreamSettingsField::ScanlinesSelected
             | StreamSettingsField::FeedbackModeSelected => {
                 if let Some(props) = PROPERTIES.get(field) {
                     if let Some(name) = &props.label {
                         let value = self.get_field(field) as u32;
                         vec![SendCmd::builder()
                             .mix(self.main_mix())
+                            .name(name)
+                            .value(SendValue::Unsigned(value))
+                            .build()
+                            .into()]
+                    } else {
+                        vec![]
+                    }
+                } else {
+                    vec![]
+                }
+            }
+            StreamSettingsField::OverlayBlendSelected | StreamSettingsField::ScanlinesSelected => {
+                if let Some(props) = PROPERTIES.get(field) {
+                    if let Some(name) = &props.label {
+                        let value = self.get_field(field) as u32;
+                        vec![SendCmd::builder()
+                            .mix(self.overlay_mix())
                             .name(name)
                             .value(SendValue::Unsigned(value))
                             .build()

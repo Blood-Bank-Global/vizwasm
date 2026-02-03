@@ -104,6 +104,26 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
         );
     }
 
+    // Cameras
+    vids.push(
+        Vid::builder()
+            .name("front cam")
+            .path("MacBook Pro Camera")
+            .format("avfoundation")
+            .opts(&vec![
+                ("pixel_format", "bgr0"),
+                ("framerate", "30.0"),
+                ("video_size", "1280x720"),
+            ])
+            .resolution((1280, 720))
+            .tbq((1, 1000000))
+            .pix_fmt("bgr0")
+            .repeat(false)
+            .realtime(true)
+            .hardware_decode(false)
+            .build()
+            .into(),
+    );
     vids
 });
 
@@ -113,11 +133,15 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "a_sword_in_the_stone",
         "arthur",
         "a_sword_in_the_stone_combo",
+        "jam",
+        "statue",
+        "the_moon",
+        "the_snow_queen",
+        "front cam",
         "sunrise_scene",
         "sunrise_combo",
         "columns",
         "facade",
-        "jam",
         "quest_message",
         "blur_lights",
         "burns",
@@ -139,9 +163,6 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "vestial1",
         "vestial2",
         "wonderboy",
-        "statue",
-        "the_moon",
-        "the_snow_queen",
     ]
     .iter()
     .map(|s| s.to_string())

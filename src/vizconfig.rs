@@ -1337,49 +1337,7 @@ impl AllSettings {
     }
 
     pub fn hud(&self, vid_info: &VidInfo) -> String {
-        let mut hud_txt = vec![
-            format!(
-                "Active: {} | Displayed: {} | Scan: {}",
-                self.playback_names[self.active_idx],
-                self.playback_names[self.display_idx],
-                self.playback_names[self.scan_idx],
-            ),
-            format!("Selected {}", self.selected_knobs),
-            format!("Duration: {}", vid_info.duration()),
-            format!(
-                "Timecode: {:02}:{:02}:{:02}:{:02}",
-                {
-                    let tc = self.playback[self.active_idx].stream.real_ts.0 as f64
-                        / self.playback[self.active_idx].stream.real_ts.1 as f64;
-                    (tc / 3600.0).floor() as u32
-                },
-                {
-                    let tc = self.playback[self.active_idx].stream.real_ts.0 as f64
-                        / self.playback[self.active_idx].stream.real_ts.1 as f64;
-                    ((tc % 3600.0) / 60.0).floor() as u32
-                },
-                {
-                    let tc = self.playback[self.active_idx].stream.real_ts.0 as f64
-                        / self.playback[self.active_idx].stream.real_ts.1 as f64;
-                    (tc % 60.0).floor() as u32
-                },
-                {
-                    let tc = self.playback[self.active_idx].stream.real_ts.0 as f64
-                        / self.playback[self.active_idx].stream.real_ts.1 as f64;
-                    ((tc - tc.floor()) * 24.0 as f64).round() as u32
-                },
-            ),
-            format!(
-                "ts: {:-6}/{:-6} = {:.3})",
-                self.playback[self.active_idx].stream.real_ts.0,
-                self.playback[self.active_idx].stream.real_ts.1,
-                {
-                    let tc = self.playback[self.active_idx].stream.real_ts.0 as f64
-                        / self.playback[self.active_idx].stream.real_ts.1 as f64;
-                    tc
-                },
-            ),
-        ];
+        let mut hud_txt = vec![];
         let mut fields = vec![];
         for f in streamsettings::ALL_FIELDS {
             if let Some(props) = f.properties() {
@@ -1414,6 +1372,47 @@ impl AllSettings {
                 value
             ));
         }
+        hud_txt.push(format!(
+            "Active: {} | Displayed: {} | Scan: {}",
+            self.playback_names[self.active_idx],
+            self.playback_names[self.display_idx],
+            self.playback_names[self.scan_idx],
+        ));
+        hud_txt.push(format!("Selected {}", self.selected_knobs));
+        hud_txt.push(format!("Duration: {}", vid_info.duration()));
+        hud_txt.push(format!(
+            "Timecode: {:02}:{:02}:{:02}:{:02}",
+            {
+                let tc = self.playback[self.active_idx].stream.real_ts.0 as f64
+                    / self.playback[self.active_idx].stream.real_ts.1 as f64;
+                (tc / 3600.0).floor() as u32
+            },
+            {
+                let tc = self.playback[self.active_idx].stream.real_ts.0 as f64
+                    / self.playback[self.active_idx].stream.real_ts.1 as f64;
+                ((tc % 3600.0) / 60.0).floor() as u32
+            },
+            {
+                let tc = self.playback[self.active_idx].stream.real_ts.0 as f64
+                    / self.playback[self.active_idx].stream.real_ts.1 as f64;
+                (tc % 60.0).floor() as u32
+            },
+            {
+                let tc = self.playback[self.active_idx].stream.real_ts.0 as f64
+                    / self.playback[self.active_idx].stream.real_ts.1 as f64;
+                ((tc - tc.floor()) * 24.0 as f64).round() as u32
+            },
+        ));
+        hud_txt.push(format!(
+            "ts: {:-6}/{:-6} = {:.3})",
+            self.playback[self.active_idx].stream.real_ts.0,
+            self.playback[self.active_idx].stream.real_ts.1,
+            {
+                let tc = self.playback[self.active_idx].stream.real_ts.0 as f64
+                    / self.playback[self.active_idx].stream.real_ts.1 as f64;
+                tc
+            },
+        ));
         hud_txt.join("\n")
     }
 
@@ -1644,21 +1643,6 @@ macro_rules! beat_time_boilerplate {
         }
     };
 }
-
-// macro_rules! send_midi_mft {
-//     ($k:expr, $v:expr) => {
-//         RenderSpec::SendMidi(SendMidi {
-//             event: MidiEvent {
-//                 device: MFT.to_string(),
-//                 channel: 0,
-//                 kind: MIDI_CONTROL_CHANGE,
-//                 key: $k,
-//                 velocity: $v,
-//                 timestamp: 0,
-//             },
-//         })
-//     };
-// }
 
 const IAC: &str = "IAC Driver Bus 1";
 const IAC_GLSL: &str = "iac_driver_bus_1";
