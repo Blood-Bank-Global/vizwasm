@@ -260,6 +260,54 @@ uint data[ 1024 ] = uint[](
         0u, 402653184u, 0u, 0u
 );
 
+int float2txt( float val, out int[128] txt ) {
+    if (val > 9999.9999) {
+        txt[0] = 0x4F; // no character type so this is the asci for OOPS
+        txt[1] = 0x4F;
+        txt[2] = 0x50;
+        txt[3] = 0x53;
+        return 4;
+    }
+
+    int len = 0;
+    int whole[4] = { 0, 0, 0, 0 };
+    int whole_val = int( val );
+
+    int i;
+    for ( i = 0; i < 4; i++ ) {
+        if (whole_val <= int(pow(10.0, float(i))))  break;
+        whole[i] = (int( whole_val / int(pow(10.0, float(i))) ) % 10) + 48;
+    }
+
+    if (i == 0) {
+        txt[0] = 48; // '0'
+        len = 1;
+    } else {
+        len = i;
+        for ( ; i >= 4; i-- ) {
+            txt[4 - i] = whole[i - 1];
+        }
+    }
+
+    int decimal[4] = { 0, 0, 0, 0 };
+    int decimal_val = int( fract( val ) * 10000.0 );
+    int j;
+    for (j = 0; j < 4; j++ ) {
+        if (decimal_val <= int(pow(10.0, float(j))))  break;
+        decimal[j] = (int( decimal_val / int(pow(10.0, float(3 - j))) ) % 10) + 48;
+    }
+    if (j == 0) {
+        return len;
+    } else {
+        txt[len] = 46; // '.'
+        len += 1;
+        for ( int k = 0; k < j; k++ ) {
+            txt[len + k] = decimal[k];
+        }
+        len += j;
+    }
+}
+
 // referencing a pixel, for an extended ASCII character in Code Page 37
 //    expected ranges of char are 0-255
 //    expected ranges of offset are within the 8x16 neighborhood

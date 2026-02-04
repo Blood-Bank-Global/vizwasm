@@ -1,6 +1,7 @@
 use std::{
     collections::HashMap,
     error::Error,
+    iter::repeat,
     sync::{
         mpsc::{channel, Receiver, Sender},
         LazyLock, Mutex,
@@ -12,11 +13,11 @@ use sdlrig::gfxinfo::{MIDI_CONTROL_CHANGE, MIDI_NOTE_OFF, MIDI_NOTE_ON};
 
 use sdlrig::{
     gfxinfo::{Asset, GfxEvent, GfxInfo, MidiEvent, Vid, VidMixer},
-    renderspec::{Mix, RenderSpec, SendCmd},
+    renderspec::{Mix, RenderSpec, SendCmd, SendValue},
 };
 
-use vizwasm::beat_time_boilerplate;
 use vizwasm::vizconfig::{time_code_2_float, AllSettings, MixConfig};
+use vizwasm::{beat_time_boilerplate, streamsettings::StreamSettings};
 fn main() {}
 
 static STREAM_PATH: &'static str = "/Users/ttie/Desktop/dungeon/streams";
@@ -25,6 +26,19 @@ static ASSET_PATH: &'static str = "/Users/ttie/Desktop/common_data";
 
 static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
     let mut vids = vec![];
+
+    vids.push(
+        Vid::builder()
+            .name("wireframe")
+            .path(format!("{ASSET_PATH}/wireframe.png"))
+            .resolution((640, 480))
+            .tbq((1, 12800))
+            .pix_fmt("yuv420p")
+            .repeat(true)
+            .realtime(false)
+            .hardware_decode(true)
+            .build(),
+    );
 
     let vid640x480 = [
         "a_sword_in_the_stone",
@@ -283,6 +297,30 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
         });
     }
 
+    // config for wireframe
+    let blank_vid = STREAM_DEFS.iter().find(|v| v.name == "wireframe");
+    if let Some(vid) = blank_vid {
+        configs.push(MixConfig {
+            def: VidMixer::builder()
+                .name("wireframe_data_mix")
+                .width(vid.resolution.0 as u32)
+                .height(vid.resolution.1 as u32)
+                .header(concat!(
+                    include_str!("../glsl/utils.glsl"),
+                    "\n",
+                    include_str!("../glsl/strings.glsl"),
+                    "\n",
+                ))
+                .body(include_str!("../glsl/wireframe.glsl"))
+                .build(),
+            mix: Mix::builder()
+                .name("wireframe_data_mix")
+                .mixed("wireframe_mix")
+                .no_display(true)
+                .build(),
+        });
+    }
+
     configs
 });
 
@@ -366,6 +404,9 @@ pub fn decode_settings(bytes: &[u8]) {
 static MIDI_CALLBACK_CHANNELS: LazyLock<Mutex<(Sender<SendCmd>, Receiver<SendCmd>)>> =
     LazyLock::new(|| Mutex::new(channel::<SendCmd>()));
 
+static TARGET_SIZE_W: u32 = 640;
+static TARGET_SIZE_H: u32 = 480;
+
 #[no_mangle]
 pub fn calculate(
     #[allow(unused)] canvas_w: u32,
@@ -401,7 +442,7 @@ pub fn calculate(
         let mut iy = 0;
 
         let iaspect = iw as f32 / ih as f32;
-        let oaspect = canvas_w as f32 / (canvas_h as f32 / 2.0);
+        let oaspect = TARGET_SIZE_W as f32 / TARGET_SIZE_H as f32;
 
         // correct aspect ratio
         if iaspect > oaspect {
@@ -414,7 +455,7 @@ pub fn calculate(
             oh = effective_oh;
         }
         let src = (ix, iy, ow as u32, oh as u32);
-        let dst = (0, 0, canvas_w as u32, canvas_h as u32 / 2);
+        let dst = (0, 0, TARGET_SIZE_W, TARGET_SIZE_H);
 
         let playback_specs = settings.get_playback_specs(&mix_name, src, dst);
         for spec in playback_specs {
@@ -443,7 +484,7 @@ pub fn calculate(
         let mut iy = 0;
 
         let iaspect = iw as f32 / ih as f32;
-        let oaspect = canvas_w as f32 / (canvas_h as f32 / 2.0);
+        let oaspect = TARGET_SIZE_W as f32 / TARGET_SIZE_H as f32;
 
         // correct aspect ratio
         if iaspect > oaspect {
@@ -456,7 +497,7 @@ pub fn calculate(
             oh = effective_oh;
         }
         let src = (ix, iy, ow as u32, oh as u32);
-        let dst = (0, canvas_h as i32 / 2, canvas_w as u32, canvas_h as u32 / 2);
+        let dst = (0, TARGET_SIZE_H as i32, TARGET_SIZE_W, TARGET_SIZE_H);
 
         let playback_specs = settings.get_playback_specs(&mix_name, src, dst);
         for spec in playback_specs {
@@ -473,6 +514,115 @@ pub fn calculate(
             specs.push(spec);
         }
     }
+
+    // wireframe_data_mix
+    let mix_name = "wireframe_data_mix";
+    if let Some(mix_config) = settings.mix_configs.get_mut(mix_name) {
+        let iw = mix_config.def.width as i32;
+        let ih = mix_config.def.height as i32;
+        let mut ow = iw;
+        let mut oh = ih;
+        let mut ix = 0;
+        let mut iy = 0;
+
+        let iaspect = iw as f32 / ih as f32;
+        let oaspect = TARGET_SIZE_W as f32 / TARGET_SIZE_H as f32;
+
+        // correct aspect ratio
+        if iaspect > oaspect {
+            let effective_ow = (ih as f32 * oaspect) as i32;
+            ix = (ow - effective_ow) / 2;
+            ow = effective_ow;
+        } else if iaspect < oaspect {
+            let effective_oh = (iw as f32 / oaspect) as i32;
+            iy = (oh - effective_oh) / 2;
+            oh = effective_oh;
+        }
+        let src = (ix, iy, ow as u32, oh as u32);
+        let dst = (TARGET_SIZE_W as i32, 0, TARGET_SIZE_W, TARGET_SIZE_H);
+
+        let playback_specs = settings.get_playback_specs(&mix_name, src, dst);
+        for spec in playback_specs {
+            if let RenderSpec::Mix(mix) = &spec {
+                let other = seen.get(&mix.name);
+                if let Some(other) = other {
+                    if other.target == mix.target {
+                        // If the mix already exists, skip adding it again.
+                        continue;
+                    }
+                }
+                seen.insert(mix.name.clone(), mix.clone());
+            }
+            specs.push(spec);
+        }
+
+        for cc in 0..16 {
+            if let Some(field) = StreamSettings::find_field(0, cc) {
+                if let Some(props) = field.properties() {
+                    let label = props.label.unwrap_or_default();
+
+                    let txt = label
+                        .bytes()
+                        .map(|b| b as i32)
+                        .chain(repeat(0).take((128 - label.len()).clamp(0, 128)))
+                        .collect::<Vec<_>>();
+
+                    specs.push(
+                        SendCmd::builder()
+                            .mix("wireframe_data_mix")
+                            .name(format!("button{}_len", cc + 1))
+                            .value(SendValue::Integer(label.len() as i32))
+                            .build()
+                            .into(),
+                    );
+                    specs.push(
+                        SendCmd::builder()
+                            .mix("wireframe_data_mix")
+                            .name(format!("button{}_txt", cc + 1))
+                            .value(SendValue::IVector(txt))
+                            .build()
+                            .into(),
+                    );
+
+                    let n = settings.playback[settings.active_idx]
+                        .stream
+                        .get_field(&field);
+                    let val = format!("{}{:>5.05}", if n >= 0.0 { " " } else { "" }, n);
+                    let txt = val
+                        .bytes()
+                        .map(|b| b as i32)
+                        .chain(repeat(0).take((128 - val.len()).clamp(0, 128)))
+                        .collect::<Vec<_>>();
+
+                    specs.push(
+                        SendCmd::builder()
+                            .mix("wireframe_data_mix")
+                            .name(format!("button{}_val_len", cc + 1))
+                            .value(SendValue::Integer(val.len() as i32))
+                            .build()
+                            .into(),
+                    );
+                    specs.push(
+                        SendCmd::builder()
+                            .mix("wireframe_data_mix")
+                            .name(format!("button{}_val", cc + 1))
+                            .value(SendValue::IVector(txt))
+                            .build()
+                            .into(),
+                    );
+                }
+                specs.push(
+                    SendCmd::builder()
+                        .mix("wireframe_data_mix")
+                        .name("selected_button")
+                        .value(SendValue::Integer(settings.selected_knobs as i32))
+                        .build()
+                        .into(),
+                );
+            }
+        }
+    }
+
     let to_return = specs.clone();
     settings.clean_up_by_specs(&mut specs);
     Ok(to_return)

@@ -1095,13 +1095,27 @@ impl AllSettings {
                             ..
                         } => {
                             if *shift {
-                                self.selected_knobs = (self.selected_knobs + 10).clamp(0, 127);
+                                self.selected_knobs = (self.selected_knobs + 40).clamp(0, 127);
                             } else {
-                                self.selected_knobs = (self.selected_knobs + 1).clamp(0, 127);
+                                self.selected_knobs = (self.selected_knobs + 4).clamp(0, 127);
                             }
                         }
                         KeyEvent {
                             key: KeyCode::SDLK_UP,
+                            down: true,
+                            shift,
+                            ..
+                        } => {
+                            if *shift {
+                                self.selected_knobs =
+                                    (self.selected_knobs as i32 - 40 as i32).clamp(0, 127) as usize;
+                            } else {
+                                self.selected_knobs =
+                                    (self.selected_knobs as i32 - 4 as i32).clamp(0, 127) as usize;
+                            }
+                        }
+                        KeyEvent {
+                            key: KeyCode::SDLK_LEFT,
                             down: true,
                             shift,
                             ..
@@ -1113,37 +1127,34 @@ impl AllSettings {
                                 self.selected_knobs =
                                     (self.selected_knobs as i32 - 1 as i32).clamp(0, 127) as usize;
                             }
-                        }
-                        KeyEvent {
-                            key: KeyCode::SDLK_LEFT,
-                            down: true,
-                            shift,
-                            ..
-                        } => {
-                            let mix = self.playback[self.active_idx].stream.overlay_mix();
-                            let specs = self.get_playback_specs(mix, (0, 0, 1, 1), (0, 0, 1, 1));
-                            let last = specs
-                                .iter()
-                                .filter_map(|s| {
-                                    if let RenderSpec::Mix(mix) = s {
-                                        if let Some(MixInput::Video(v)) = mix.inputs.get(0) {
-                                            Some(v.clone())
+
+                            if false {
+                                let mix = self.playback[self.active_idx].stream.overlay_mix();
+                                let specs =
+                                    self.get_playback_specs(mix, (0, 0, 1, 1), (0, 0, 1, 1));
+                                let last = specs
+                                    .iter()
+                                    .filter_map(|s| {
+                                        if let RenderSpec::Mix(mix) = s {
+                                            if let Some(MixInput::Video(v)) = mix.inputs.get(0) {
+                                                Some(v.clone())
+                                            } else {
+                                                None
+                                            }
                                         } else {
                                             None
                                         }
-                                    } else {
-                                        None
-                                    }
-                                })
-                                .last();
-                            if let Some(last) = last {
-                                for i in 0..self.playback.len() {
-                                    if self.playback[i].stream.first_video() == last {
-                                        self.playback[i].stream.adjust_field(
-                                            &StreamSettingsField::DeltaSec,
-                                            if *shift { -10.0 } else { -1.0 },
-                                        );
-                                        break;
+                                    })
+                                    .last();
+                                if let Some(last) = last {
+                                    for i in 0..self.playback.len() {
+                                        if self.playback[i].stream.first_video() == last {
+                                            self.playback[i].stream.adjust_field(
+                                                &StreamSettingsField::DeltaSec,
+                                                if *shift { -10.0 } else { -1.0 },
+                                            );
+                                            break;
+                                        }
                                     }
                                 }
                             }
@@ -1154,30 +1165,41 @@ impl AllSettings {
                             shift,
                             ..
                         } => {
-                            let mix = self.playback[self.active_idx].stream.overlay_mix();
-                            let specs = self.get_playback_specs(mix, (0, 0, 1, 1), (0, 0, 1, 1));
-                            let last = specs
-                                .iter()
-                                .filter_map(|s| {
-                                    if let RenderSpec::Mix(mix) = s {
-                                        if let Some(MixInput::Video(v)) = mix.inputs.get(0) {
-                                            Some(v.clone())
+                            if *shift {
+                                self.selected_knobs =
+                                    (self.selected_knobs as i32 + 10 as i32).clamp(0, 127) as usize;
+                            } else {
+                                self.selected_knobs =
+                                    (self.selected_knobs as i32 + 1 as i32).clamp(0, 127) as usize;
+                            }
+
+                            if false {
+                                let mix = self.playback[self.active_idx].stream.overlay_mix();
+                                let specs =
+                                    self.get_playback_specs(mix, (0, 0, 1, 1), (0, 0, 1, 1));
+                                let last = specs
+                                    .iter()
+                                    .filter_map(|s| {
+                                        if let RenderSpec::Mix(mix) = s {
+                                            if let Some(MixInput::Video(v)) = mix.inputs.get(0) {
+                                                Some(v.clone())
+                                            } else {
+                                                None
+                                            }
                                         } else {
                                             None
                                         }
-                                    } else {
-                                        None
-                                    }
-                                })
-                                .last();
-                            if let Some(last) = last {
-                                for i in 0..self.playback.len() {
-                                    if self.playback[i].stream.first_video() == last {
-                                        self.playback[i].stream.adjust_field(
-                                            &StreamSettingsField::DeltaSec,
-                                            if *shift { 10.0 } else { 1.0 },
-                                        );
-                                        break;
+                                    })
+                                    .last();
+                                if let Some(last) = last {
+                                    for i in 0..self.playback.len() {
+                                        if self.playback[i].stream.first_video() == last {
+                                            self.playback[i].stream.adjust_field(
+                                                &StreamSettingsField::DeltaSec,
+                                                if *shift { 10.0 } else { 1.0 },
+                                            );
+                                            break;
+                                        }
                                     }
                                 }
                             }
