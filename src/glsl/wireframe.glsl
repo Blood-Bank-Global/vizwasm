@@ -261,4 +261,25 @@ if (uv.x > OFFSET_X && uv.x < (640.0 - OFFSET_X) && uv.y > OFFSET_Y && uv.y < (4
             );
         }
     }
+
+   
+}
+
+ if (uv.x > OFFSET_X && 
+     uv.x < OFFSET_X + AREA_W && 
+     uv.y > OFFSET_Y + AREA_H &&
+     uv.y < OFFSET_Y + AREA_H + FONT_H) {
+    int txt[128];
+    int len = 3;
+    txt[0] = selected_button / 100 + 48;
+    txt[1] = (selected_button / 10) % 10 + 48;
+    txt[2] = selected_button % 10 + 48;
+    color = draw_text(
+        color,
+        src_coord0 * iResolution.xy,
+        vec2(OFFSET_X, OFFSET_Y + AREA_H),
+        iResolution.xy,
+        txt,
+        len
+    );
 }

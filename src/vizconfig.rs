@@ -884,7 +884,9 @@ impl AllSettings {
                                 | KeyCode::SDLK_5
                                 | KeyCode::SDLK_6
                                 | KeyCode::SDLK_7
-                                | KeyCode::SDLK_8,
+                                | KeyCode::SDLK_8
+                                | KeyCode::SDLK_9
+                                | KeyCode::SDLK_0,
                             repeat,
                             shift,
                             down,
@@ -1228,54 +1230,54 @@ impl AllSettings {
                         } => {
                             self.adjust(Knob::CB, *shift, 1.0);
                         }
-                        KeyEvent {
-                            key: KeyCode::SDLK_9,
-                            shift,
-                            down: true,
-                            ..
-                        } => {
-                            self.adjust(Knob::L, *shift, -1.0);
-                        }
-                        KeyEvent {
-                            key: KeyCode::SDLK_0,
-                            shift,
-                            down: true,
-                            ..
-                        } => {
-                            self.adjust(Knob::L, *shift, 1.0);
-                        }
-                        KeyEvent {
-                            key: KeyCode::SDLK_MINUS,
-                            shift,
-                            down: true,
-                            ..
-                        } => {
-                            self.adjust(Knob::CL, *shift, 1.0);
-                        }
-                        KeyEvent {
-                            key: KeyCode::SDLK_LEFTBRACKET,
-                            shift,
-                            down: true,
-                            ..
-                        } => {
-                            self.adjust(Knob::R, *shift, -1.0);
-                        }
-                        KeyEvent {
-                            key: KeyCode::SDLK_RIGHTBRACKET,
-                            shift,
-                            down: true,
-                            ..
-                        } => {
-                            self.adjust(Knob::R, *shift, 1.0);
-                        }
-                        KeyEvent {
-                            key: KeyCode::SDLK_BACKSLASH,
-                            shift,
-                            down: true,
-                            ..
-                        } => {
-                            self.adjust(Knob::CR, *shift, 1.0);
-                        }
+                        // KeyEvent {
+                        //     key: KeyCode::SDLK_9,
+                        //     shift,
+                        //     down: true,
+                        //     ..
+                        // } => {
+                        //     self.adjust(Knob::L, *shift, -1.0);
+                        // }
+                        // KeyEvent {
+                        //     key: KeyCode::SDLK_0,
+                        //     shift,
+                        //     down: true,
+                        //     ..
+                        // } => {
+                        //     self.adjust(Knob::L, *shift, 1.0);
+                        // }
+                        // KeyEvent {
+                        //     key: KeyCode::SDLK_MINUS,
+                        //     shift,
+                        //     down: true,
+                        //     ..
+                        // } => {
+                        //     self.adjust(Knob::CL, *shift, 1.0);
+                        // }
+                        // KeyEvent {
+                        //     key: KeyCode::SDLK_LEFTBRACKET,
+                        //     shift,
+                        //     down: true,
+                        //     ..
+                        // } => {
+                        //     self.adjust(Knob::R, *shift, -1.0);
+                        // }
+                        // KeyEvent {
+                        //     key: KeyCode::SDLK_RIGHTBRACKET,
+                        //     shift,
+                        //     down: true,
+                        //     ..
+                        // } => {
+                        //     self.adjust(Knob::R, *shift, 1.0);
+                        // }
+                        // KeyEvent {
+                        //     key: KeyCode::SDLK_BACKSLASH,
+                        //     shift,
+                        //     down: true,
+                        //     ..
+                        // } => {
+                        //     self.adjust(Knob::CR, *shift, 1.0);
+                        // }
                         _ => (),
                     }
                 }
@@ -1434,6 +1436,11 @@ impl AllSettings {
                     / self.playback[self.active_idx].stream.real_ts.1 as f64;
                 tc
             },
+        ));
+        hud_txt.push(format!(
+            "Pb {:?}\nLoop {}",
+            self.playback[self.active_idx].loops.playing,
+            self.playback[self.active_idx].loops.selected_loop
         ));
         hud_txt.join("\n")
     }

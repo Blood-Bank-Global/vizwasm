@@ -65,6 +65,22 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
         );
     }
 
+    let rip_vids640x480 = ["sopranos"];
+    for vid_name in rip_vids640x480.iter() {
+        vids.push(
+            Vid::builder()
+                .name(vid_name.trim_end_matches(".mp4"))
+                .path(format!("/Users/ttie/Desktop/rip/{}.mp4", vid_name))
+                .resolution((640, 480))
+                .tbq((1, 12800))
+                .pix_fmt("yuv420p")
+                .repeat(true)
+                .realtime(false)
+                .hardware_decode(true)
+                .build(),
+        );
+    }
+
     let tech_vids640x480 = [
         "blank",
         "blur_lights",
@@ -144,10 +160,12 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
 static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
     let names = [
         "blank",
+        "sopranos",
         "a_sword_in_the_stone",
         "arthur",
         "a_sword_in_the_stone_combo",
         "jam",
+        "quest_message",
         "statue",
         "the_moon",
         "the_snow_queen",
@@ -156,7 +174,6 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "sunrise_combo",
         "columns",
         "facade",
-        "quest_message",
         "blur_lights",
         "burns",
         "circles",
@@ -556,71 +573,81 @@ pub fn calculate(
             specs.push(spec);
         }
 
-        for cc in 0..16 {
-            if let Some(field) = StreamSettings::find_field(0, cc) {
+        let page = settings.selected_knobs as u8 / 16;
+        for i in 0..16 {
+            let cc = i + (16 * page);
+            let button = i + 1;
+            let (label, val) = if let Some(field) = StreamSettings::find_field(0, cc) {
+                let n = settings.playback[settings.active_idx]
+                    .stream
+                    .get_field(&field);
+                let val = format!("{}{:>5.05}", if n >= 0.0 { " " } else { "" }, n);
                 if let Some(props) = field.properties() {
-                    let label = props.label.unwrap_or_default();
-
-                    let txt = label
-                        .bytes()
-                        .map(|b| b as i32)
-                        .chain(repeat(0).take((128 - label.len()).clamp(0, 128)))
-                        .collect::<Vec<_>>();
-
-                    specs.push(
-                        SendCmd::builder()
-                            .mix("wireframe_data_mix")
-                            .name(format!("button{}_len", cc + 1))
-                            .value(SendValue::Integer(label.len() as i32))
-                            .build()
-                            .into(),
-                    );
-                    specs.push(
-                        SendCmd::builder()
-                            .mix("wireframe_data_mix")
-                            .name(format!("button{}_txt", cc + 1))
-                            .value(SendValue::IVector(txt))
-                            .build()
-                            .into(),
-                    );
-
-                    let n = settings.playback[settings.active_idx]
-                        .stream
-                        .get_field(&field);
-                    let val = format!("{}{:>5.05}", if n >= 0.0 { " " } else { "" }, n);
-                    let txt = val
-                        .bytes()
-                        .map(|b| b as i32)
-                        .chain(repeat(0).take((128 - val.len()).clamp(0, 128)))
-                        .collect::<Vec<_>>();
-
-                    specs.push(
-                        SendCmd::builder()
-                            .mix("wireframe_data_mix")
-                            .name(format!("button{}_val_len", cc + 1))
-                            .value(SendValue::Integer(val.len() as i32))
-                            .build()
-                            .into(),
-                    );
-                    specs.push(
-                        SendCmd::builder()
-                            .mix("wireframe_data_mix")
-                            .name(format!("button{}_val", cc + 1))
-                            .value(SendValue::IVector(txt))
-                            .build()
-                            .into(),
-                    );
+                    (props.label.unwrap_or_default().clone(), val)
+                } else {
+                    ("none".to_string(), val)
                 }
-                specs.push(
-                    SendCmd::builder()
-                        .mix("wireframe_data_mix")
-                        .name("selected_button")
-                        .value(SendValue::Integer(settings.selected_knobs as i32))
-                        .build()
-                        .into(),
-                );
-            }
+            } else {
+                ("none".to_string(), "".to_string())
+            };
+
+            let txt = label
+                .bytes()
+                .map(|b| b as i32)
+                .chain(repeat(0).take((128 - label.len()).clamp(0, 128)))
+                .collect::<Vec<_>>();
+
+            specs.push(
+                SendCmd::builder()
+                    .mix("wireframe_data_mix")
+                    .name(format!("button{button}_len"))
+                    .value(SendValue::Integer(label.len() as i32))
+                    .build()
+                    .into(),
+            );
+            specs.push(
+                SendCmd::builder()
+                    .mix("wireframe_data_mix")
+                    .name(format!("button{button}_txt"))
+                    .value(SendValue::IVector(txt))
+                    .build()
+                    .into(),
+            );
+
+            let txt = val
+                .bytes()
+                .map(|b| b as i32)
+                .chain(repeat(0).take((128 - val.len()).clamp(0, 128)))
+                .collect::<Vec<_>>();
+
+            specs.push(
+                SendCmd::builder()
+                    .mix("wireframe_data_mix")
+                    .name(format!("button{button}_val_len"))
+                    .value(SendValue::Integer(val.len() as i32))
+                    .build()
+                    .into(),
+            );
+            specs.push(
+                SendCmd::builder()
+                    .mix("wireframe_data_mix")
+                    .name(format!("button{button}_val"))
+                    .value(SendValue::IVector(txt))
+                    .build()
+                    .into(),
+            );
         }
+
+        specs.push(
+            SendCmd::builder()
+                .mix("wireframe_data_mix")
+                .name("selected_button")
+                .value(SendValue::Integer(
+                    settings.selected_knobs as i32 - (16 * page as i32),
+                ))
+                .build()
+                .into(),
+        );
     }
 
     let to_return = specs.clone();

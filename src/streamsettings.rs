@@ -254,6 +254,17 @@ static PROPERTIES: LazyLock<HashMap<StreamSettingsField, StreamSettingsFieldProp
                     },
                 );
             };
+            ($p:ident, $default:expr, $label:expr, $dnr:expr) => {
+                m.insert(
+                    StreamSettingsField::$p,
+                    StreamSettingsFieldProperties {
+                        default: Some($default),
+                        label: Some($label.to_string()),
+                        do_not_record: $dnr,
+                        ..Default::default()
+                    },
+                );
+            };
         }
         // row 1
         mk!(Threshold, 0, 0, 0.0, 1.0, 0.001, 0.0, "thresh");
@@ -476,13 +487,13 @@ static PROPERTIES: LazyLock<HashMap<StreamSettingsField, StreamSettingsFieldProp
             "feedback_mode_selected"
         );
 
-        internal!(FlashEnable, 0.0);
+        internal!(FlashEnable, 0.0, "flash_enable", false);
         internal!(Tween, 0.0);
-        internal!(UsrVar, 0.0);
+        internal!(UsrVar, 0.0, "usr_var", false);
         internal!(DeltaSec, 0.0);
         internal!(Scrub, 0.0);
-        internal!(ExactSec, 0.0);
-        internal!(Pause, 0.0);
+        internal!(ExactSec, 0.0, "exact_sec", false);
+        internal!(Pause, 0.0, "pause", false);
         m
     });
 

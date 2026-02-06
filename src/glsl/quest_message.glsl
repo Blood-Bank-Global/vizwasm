@@ -69,7 +69,8 @@ if (false) { // class stats
             txt[15] = 0x30 + int(mod(stat2/10, 10));
             txt[16] = 0x30 + int(mod(stat2, 10));
         }
-        color = draw_text(color, uv, line_pos, iResolution.xy, txt, len);
+        // color = draw_text(color, uv, line_pos, iResolution.xy, txt, len);
+        color = draw_textMedieval(color, uv, line_pos, iResolution.xy, txt, len);
     }
 }
 
@@ -108,6 +109,6 @@ if (true) {
             txt[i] = qmsg.msg[i + char_offset];
         }
 
-        color = draw_text(color, uv, vec2(0.0, floor(16.0*line_)), iResolution.xy, txt, (remainder+1));
+        color = draw_textMedieval(color, uv, vec2(0.0, floor(16.0*line_)), iResolution.xy, txt, (remainder+1));
     }
 }

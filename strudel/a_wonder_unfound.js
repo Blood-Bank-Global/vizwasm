@@ -53,7 +53,7 @@ S$PlUCKS: "c3!8"
 S$CHORDS: "c4 c4 c4 c4"
     .add("<0,3> <3,5> <3,7> <0,5>")
     .add("0 1".slow(8))
-    .slow(8)
+    .slow(4)
     .note()
     .o(2)
     .s("gm_pad_sweep:4")
