@@ -347,6 +347,23 @@ vec4 draw_text(in vec4 in_color, in vec2 uv_in, in vec2 pos_in, in vec2 resoluti
     return vec4( col, 1.0f );
 }
 
+vec4 draw_char(in vec4 in_color, in vec2 uv, in vec2 pos, in vec2 resolution, in int charCode) {
+    if (uv.x < pos.x || uv.y < pos.y|| uv.x >= (pos.x + 8) || uv.y >= (pos.y + 16)) {
+        return in_color;
+    }
+
+    int onGlyph = fontRef(charCode, ivec2(mod(uv.x - pos.x, 8), mod(uv.y - pos.y, 16)) );
+    vec3 col = vec3( 0.0f );
+    switch ( onGlyph ) {
+        case -1: col = vec3( 0.1618f ); break; // out of bounds
+        case  0: col = vec3( 0.0f );    break; // "off" pixel
+        case  1: col = vec3( 0.7f );  break; // "on" pixel
+    }
+
+    // Output to screen
+    return vec4( col, 1.0f );
+}
+
 /*
 medievalish_font (PNM).
 DB_Medievalish_Chonker_8x8_1bbp_bmp_font
@@ -540,6 +557,24 @@ vec4 draw_textMedieval(in vec4 in_color, in vec2 uv_in, in vec2 pos_in, in vec2 
         case -1: col = vec3( 0.1618f ); break; // out of bounds
         case  0: col = vec3( 0.0f );    break; // "off" pixel
         case  1: col = vec3( 0.7f );    break; // "on" pixel
+    }
+
+    // Output to screen
+    return vec4( col, 1.0f );
+}
+
+
+vec4 fantasy_char(in vec4 in_color, in ivec2 uv, in ivec2 pos, in ivec2 resolution, in int charCode) {
+    if (uv.x < pos.x || uv.y < pos.y|| uv.x >= (pos.x + 8) || uv.y >= (pos.y + 16)) {
+        return in_color;
+    }
+
+    int onGlyph = fontRefMedieval(charCode, ivec2(mod(uv.x - pos.x, 8), mod(uv.y - pos.y, 16)) );
+    vec3 col = vec3( 0.0f );
+    switch ( onGlyph ) {
+        case -1: col = vec3( 0.1618f ); break; // out of bounds
+        case  0: col = vec3( 0.0f );    break; // "off" pixel
+        case  1: col = vec3( 0.7f );  break; // "on" pixel
     }
 
     // Output to screen

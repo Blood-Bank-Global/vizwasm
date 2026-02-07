@@ -314,9 +314,9 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
         });
     }
 
-    // config for wireframe
     let blank_vid = STREAM_DEFS.iter().find(|v| v.name == "wireframe");
     if let Some(vid) = blank_vid {
+        // config for wireframe
         configs.push(MixConfig {
             def: VidMixer::builder()
                 .name("wireframe_data_mix")
@@ -333,6 +333,27 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
             mix: Mix::builder()
                 .name("wireframe_data_mix")
                 .mixed("wireframe_mix")
+                .no_display(true)
+                .build(),
+        });
+
+        // config for logs
+        configs.push(MixConfig {
+            def: VidMixer::builder()
+                .name("logs_mix")
+                .width(vid.resolution.0 as u32)
+                .height(vid.resolution.1 as u32)
+                .header(concat!(
+                    include_str!("../glsl/utils.glsl"),
+                    "\n",
+                    include_str!("../glsl/strings.glsl"),
+                    "\n",
+                ))
+                .body(include_str!("../glsl/logs.glsl"))
+                .build(),
+            mix: Mix::builder()
+                .name("logs_mix")
+                .mixed("blank_mix")
                 .no_display(true)
                 .build(),
         });
@@ -645,6 +666,94 @@ pub fn calculate(
                 .value(SendValue::Integer(
                     settings.selected_knobs as i32 - (16 * page as i32),
                 ))
+                .build()
+                .into(),
+        );
+    }
+
+    // logs panel
+    let mix_name = "logs_mix";
+    if let Some(mix_config) = settings.mix_configs.get_mut(mix_name) {
+        let iw = mix_config.def.width as i32;
+        let ih = mix_config.def.height as i32;
+        let mut ow = iw;
+        let mut oh = ih;
+        let mut ix = 0;
+        let mut iy = 0;
+
+        let iaspect = iw as f32 / ih as f32;
+        let oaspect = TARGET_SIZE_W as f32 / TARGET_SIZE_H as f32;
+
+        // correct aspect ratio
+        if iaspect > oaspect {
+            let effective_ow = (ih as f32 * oaspect) as i32;
+            ix = (ow - effective_ow) / 2;
+            ow = effective_ow;
+        } else if iaspect < oaspect {
+            let effective_oh = (iw as f32 / oaspect) as i32;
+            iy = (oh - effective_oh) / 2;
+            oh = effective_oh;
+        }
+        let src = (ix, iy, ow as u32, oh as u32);
+        let dst = (
+            TARGET_SIZE_W as i32,
+            TARGET_SIZE_H as i32,
+            TARGET_SIZE_W,
+            TARGET_SIZE_H,
+        );
+        let playback_specs = settings.get_playback_specs(&mix_name, src, dst);
+        for spec in playback_specs {
+            if let RenderSpec::Mix(mix) = &spec {
+                let other = seen.get(&mix.name);
+                if let Some(other) = other {
+                    if other.target == mix.target {
+                        // If the mix already exists, skip adding it again.
+                        continue;
+                    }
+                }
+                seen.insert(mix.name.clone(), mix.clone());
+            }
+            specs.push(spec);
+        }
+
+        let mut txt = vec![0; 2500];
+        let mut starts = vec![0; 30];
+        let mut ends = vec![0; 30];
+
+        let mut start = 0;
+        for i in 0..settings.logs.len().min(30) {
+            let line = &settings.logs[i];
+            let mut end = start;
+            for b in line.bytes().take(80) {
+                txt[end] = b as i32;
+                end += 1;
+            }
+            starts[i] = start as i32;
+            ends[i] = end as i32;
+            start = end;
+        }
+        specs.push(
+            SendCmd::builder()
+                .mix("logs_mix")
+                .name("txt")
+                .value(SendValue::IVector(txt))
+                .build()
+                .into(),
+        );
+
+        specs.push(
+            SendCmd::builder()
+                .mix("logs_mix")
+                .name("line_start")
+                .value(SendValue::IVector(starts))
+                .build()
+                .into(),
+        );
+        specs.push(
+            SendCmd::builder()
+                .mix("logs_mix")
+                .name("line_end")
+                .value(SendValue::IVector(ends))
                 .build()
                 .into(),
         );

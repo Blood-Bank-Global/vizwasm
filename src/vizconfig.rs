@@ -170,6 +170,7 @@ pub struct AllSettings {
     pub selected_knobs: usize,
     pub playback: Vec<PlaybackSettings>,
     pub initial_reset_complete: Vec<bool>,
+    pub logs: Vec<String>,
 }
 
 impl AllSettings {
@@ -556,6 +557,7 @@ impl AllSettings {
             active_idx: 0,
             scan_idx: 0,
             display_idx: 0,
+            logs: vec![],
         }
     }
 
@@ -1349,6 +1351,7 @@ impl AllSettings {
                 && self.initial_reset_complete[i] == true
             {
                 eprintln!("unloading {i}");
+                self.log(format!("unloading {i}"));
                 self.initial_reset_complete[i] = false;
                 specs.push(
                     Reset {
@@ -1776,10 +1779,10 @@ impl AllSettings {
             .or_else(|| Some(format!("???({})", event.device).to_string()))
             .unwrap();
 
-        eprintln!(
+        self.log(format!(
             "{debug_kind}_{debug_device}_{}_{}{} = {}",
             event.channel, event.key, on_off, event.velocity
-        );
+        ));
 
         let mut cmds = vec![];
         if let Some(glsl_device) = MIDI_DEVICE_VARS.get(&event.device) {
@@ -1833,5 +1836,12 @@ impl AllSettings {
         }
 
         return cmds;
+    }
+
+    pub fn log<T: AsRef<str>>(&mut self, line: T) {
+        self.logs.push(line.as_ref().to_string());
+        if self.logs.len() > 30 {
+            self.logs.remove(0);
+        }
     }
 }
