@@ -688,18 +688,30 @@ impl StreamSettings {
             }
             //Time seek commands
             StreamSettingsField::DeltaSec => {
-                vec![seek!(self.first_video() => self.get_field(field), false)]
+                if self.first_video().is_empty() {
+                    vec![]
+                } else {
+                    vec![seek!(self.first_video() => self.get_field(field), false)]
+                }
             }
             StreamSettingsField::Scrub => {
-                let value = self.get_field(field);
-                if value >= 0.0 {
-                    vec![seek!(self.first_video() => value, false)]
+                if self.first_video().is_empty() {
+                    vec![]
                 } else {
-                    vec![seek!(self.first_video() => value - 0.1, false)]
+                    let value = self.get_field(field);
+                    if value >= 0.0 {
+                        vec![seek!(self.first_video() => value, false)]
+                    } else {
+                        vec![seek!(self.first_video() => value - 0.1, false)]
+                    }
                 }
             }
             StreamSettingsField::ExactSec => {
-                vec![seek!(self.first_video() => self.get_field(field), true)]
+                if self.first_video().is_empty() {
+                    vec![]
+                } else {
+                    vec![seek!(self.first_video() => self.get_field(field), true)]
+                }
             }
             StreamSettingsField::UsrVar => {
                 vec![SendCmd::builder()
