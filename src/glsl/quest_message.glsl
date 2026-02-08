@@ -1,4 +1,4 @@
-//!VAR vec3 iResolution0 1.0 1.0 1.0
+//!VAR vec2 iResolution0 1.0 1.0
 ////////////// 1234567890ABCDE_1234567890ABCDE_1234567890ABCDE_1234567890ABCDE_1234567890ABCDE_
 //!STR quest0 "Welcome,        Adventurer"
 //!STR quest1 "A Quest, should you accept it."

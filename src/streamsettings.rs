@@ -278,7 +278,7 @@ static PROPERTIES: LazyLock<HashMap<StreamSettingsField, StreamSettingsFieldProp
             0,
             4,
             0.0,
-            AllSettings::distort_edge_types().len() as f64,
+            AllSettings::distort_edge_types().len() as f64 - 1.0,
             0.2,
             0.0,
             "distort_edge"
@@ -288,7 +288,7 @@ static PROPERTIES: LazyLock<HashMap<StreamSettingsField, StreamSettingsFieldProp
             1,
             4,
             0.0,
-            AllSettings::distort_edge_types().len() as f64,
+            AllSettings::distort_edge_types().len() as f64 - 1.0,
             0.2,
             0.0,
             "distort_edge"
@@ -298,7 +298,7 @@ static PROPERTIES: LazyLock<HashMap<StreamSettingsField, StreamSettingsFieldProp
             0,
             5,
             0.0,
-            AllSettings::distort_names().len() as f64,
+            AllSettings::distort_names().len() as f64 - 1.0,
             0.2,
             0.0,
             "distort"
@@ -308,7 +308,7 @@ static PROPERTIES: LazyLock<HashMap<StreamSettingsField, StreamSettingsFieldProp
             1,
             5,
             0.0,
-            AllSettings::distort_names().len() as f64,
+            AllSettings::distort_names().len() as f64 - 1.0,
             0.2,
             0.0,
             "distort"
@@ -318,7 +318,7 @@ static PROPERTIES: LazyLock<HashMap<StreamSettingsField, StreamSettingsFieldProp
             0,
             6,
             0.0,
-            AllSettings::distort_names().len() as f64,
+            AllSettings::distort_names().len() as f64 - 1.0,
             0.2,
             0.0,
             "warp"
@@ -328,7 +328,7 @@ static PROPERTIES: LazyLock<HashMap<StreamSettingsField, StreamSettingsFieldProp
             1,
             6,
             0.0,
-            AllSettings::distort_names().len() as f64,
+            AllSettings::distort_names().len() as f64 - 1.0,
             0.2,
             0.0,
             "warp"
@@ -338,7 +338,7 @@ static PROPERTIES: LazyLock<HashMap<StreamSettingsField, StreamSettingsFieldProp
             0,
             7,
             0.0,
-            AllSettings::lut_names().len() as f64,
+            AllSettings::lut_names().len() as f64 - 1.0,
             0.2,
             0.0,
             "lut"
@@ -348,7 +348,7 @@ static PROPERTIES: LazyLock<HashMap<StreamSettingsField, StreamSettingsFieldProp
             1,
             7,
             0.0,
-            AllSettings::lut_names().len() as f64,
+            AllSettings::lut_names().len() as f64 - 1.0,
             0.2,
             0.0,
             "lut"
@@ -376,7 +376,7 @@ static PROPERTIES: LazyLock<HashMap<StreamSettingsField, StreamSettingsFieldProp
             0,
             13,
             0.0,
-            AllSettings::blend_modes().len() as f64,
+            AllSettings::blend_modes().len() as f64 - 1.0,
             0.2,
             0.0,
             "scanline_scan"
@@ -386,7 +386,7 @@ static PROPERTIES: LazyLock<HashMap<StreamSettingsField, StreamSettingsFieldProp
             1,
             13,
             0.0,
-            AllSettings::blend_modes().len() as f64,
+            AllSettings::blend_modes().len() as f64 - 1.0,
             0.2,
             0.0,
             "scanline_kind"
@@ -396,7 +396,7 @@ static PROPERTIES: LazyLock<HashMap<StreamSettingsField, StreamSettingsFieldProp
             0,
             14,
             0.0,
-            AllSettings::blend_modes().len() as f64,
+            AllSettings::blend_modes().len() as f64 - 1.0,
             0.2,
             0.0,
             "overlay_blend_scan"
@@ -406,7 +406,7 @@ static PROPERTIES: LazyLock<HashMap<StreamSettingsField, StreamSettingsFieldProp
             1,
             14,
             0.0,
-            AllSettings::blend_modes().len() as f64,
+            AllSettings::blend_modes().len() as f64 - 1.0,
             0.2,
             0.0,
             "overlay_kind"
@@ -416,7 +416,7 @@ static PROPERTIES: LazyLock<HashMap<StreamSettingsField, StreamSettingsFieldProp
             0,
             15,
             0.0,
-            AllSettings::overlay_vids().len() as f64,
+            AllSettings::overlay_vids().len() as f64 - 1.0,
             0.2,
             0.0,
             "overlay_vid"
@@ -426,7 +426,7 @@ static PROPERTIES: LazyLock<HashMap<StreamSettingsField, StreamSettingsFieldProp
             1,
             15,
             0.0,
-            AllSettings::overlay_vids().len() as f64,
+            AllSettings::overlay_vids().len() as f64 - 1.0,
             0.2,
             0.0,
             "overlay_vid"
@@ -562,6 +562,19 @@ impl StreamSettings {
     }
 
     pub fn set_field(&mut self, field: StreamSettingsField, value: f64) {
+        let mut value = value;
+        if let Some(props) = field.properties() {
+            if let Some(min) = props.min {
+                if value < min {
+                    value = min;
+                }
+            }
+            if let Some(max) = props.max {
+                if value > max {
+                    value = max;
+                }
+            }
+        }
         self.fields.insert(field, value);
     }
 

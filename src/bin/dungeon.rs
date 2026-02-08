@@ -147,6 +147,7 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
 static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
     let names = [
         "blank",
+        "status",
         "sopranos",
         "a_sword_in_the_stone",
         "arthur",

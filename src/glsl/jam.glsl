@@ -1,12 +1,12 @@
-//!VAR vec3 iResolution0 1.0 1.0 1.0
-//!VAR vec3 iResolution1 1.0 1.0 1.0
-//!VAR vec3 iResolution2 1.0 1.0 1.0
-//!VAR vec3 iResolution3 1.0 1.0 1.0
-//!VAR vec3 iResolution4 1.0 1.0 1.0
-//!VAR vec3 iResolution5 1.0 1.0 1.0
-//!VAR vec3 iResolution6 1.0 1.0 1.0
-//!VAR vec3 iResolution7 1.0 1.0 1.0
-//!VAR vec3 iResolution8 1.0 1.0 1.0
+//!VAR vec2 iResolution0 1.0 1.0
+//!VAR vec2 iResolution1 1.0 1.0
+//!VAR vec2 iResolution2 1.0 1.0
+//!VAR vec2 iResolution3 1.0 1.0
+//!VAR vec2 iResolution4 1.0 1.0
+//!VAR vec2 iResolution5 1.0 1.0
+//!VAR vec2 iResolution6 1.0 1.0
+//!VAR vec2 iResolution7 1.0 1.0
+//!VAR vec2 iResolution8 1.0 1.0
 
 //!VAR float cc_iac_driver_bus_1_0_0 0.0
 //!VAR float cc_iac_driver_bus_1_0_1 0.0
