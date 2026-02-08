@@ -1,7 +1,6 @@
 use std::{
     collections::HashMap,
     error::Error,
-    iter::repeat,
     sync::{
         mpsc::{channel, Receiver, Sender},
         LazyLock, Mutex,
@@ -13,11 +12,11 @@ use sdlrig::gfxinfo::{MIDI_CONTROL_CHANGE, MIDI_NOTE_OFF, MIDI_NOTE_ON};
 
 use sdlrig::{
     gfxinfo::{Asset, GfxEvent, GfxInfo, MidiEvent, Vid, VidMixer},
-    renderspec::{Mix, RenderSpec, SendCmd, SendValue},
+    renderspec::{Mix, RenderSpec, SendCmd},
 };
 
+use vizwasm::beat_time_boilerplate;
 use vizwasm::vizconfig::{time_code_2_float, AllSettings, MixConfig};
-use vizwasm::{beat_time_boilerplate, streamsettings::StreamSettings};
 fn main() {}
 
 static STREAM_PATH: &'static str = "/Users/ttie/Desktop/dungeon/streams";
@@ -26,19 +25,6 @@ static ASSET_PATH: &'static str = "/Users/ttie/Desktop/common_data";
 
 static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
     let mut vids = vec![];
-
-    vids.push(
-        Vid::builder()
-            .name("wireframe")
-            .path(format!("{ASSET_PATH}/wireframe.png"))
-            .resolution((640, 480))
-            .tbq((1, 12800))
-            .pix_fmt("yuv420p")
-            .repeat(true)
-            .realtime(false)
-            .hardware_decode(true)
-            .build(),
-    );
 
     let vid640x480 = [
         "a_sword_in_the_stone",
@@ -49,6 +35,7 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
         "statue",
         "the_moon",
         "the_snow_queen",
+        "skate",
     ];
     for vid_name in vid640x480.iter() {
         vids.push(
@@ -194,6 +181,7 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "vestial1",
         "vestial2",
         "wonderboy",
+        "skate",
     ]
     .iter()
     .map(|s| s.to_string())
@@ -314,51 +302,6 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
         });
     }
 
-    let blank_vid = STREAM_DEFS.iter().find(|v| v.name == "wireframe");
-    if let Some(vid) = blank_vid {
-        // config for wireframe
-        configs.push(MixConfig {
-            def: VidMixer::builder()
-                .name("wireframe_data_mix")
-                .width(vid.resolution.0 as u32)
-                .height(vid.resolution.1 as u32)
-                .header(concat!(
-                    include_str!("../glsl/utils.glsl"),
-                    "\n",
-                    include_str!("../glsl/strings.glsl"),
-                    "\n",
-                ))
-                .body(include_str!("../glsl/wireframe.glsl"))
-                .build(),
-            mix: Mix::builder()
-                .name("wireframe_data_mix")
-                .mixed("wireframe_mix")
-                .no_display(true)
-                .build(),
-        });
-
-        // config for logs
-        configs.push(MixConfig {
-            def: VidMixer::builder()
-                .name("logs_mix")
-                .width(vid.resolution.0 as u32)
-                .height(vid.resolution.1 as u32)
-                .header(concat!(
-                    include_str!("../glsl/utils.glsl"),
-                    "\n",
-                    include_str!("../glsl/strings.glsl"),
-                    "\n",
-                ))
-                .body(include_str!("../glsl/logs.glsl"))
-                .build(),
-            mix: Mix::builder()
-                .name("logs_mix")
-                .mixed("blank_mix")
-                .no_display(true)
-                .build(),
-        });
-    }
-
     configs
 });
 
@@ -471,297 +414,85 @@ pub fn calculate(
 
     // TOP
     let mix_name = settings.playback[settings.active_idx].stream.overlay_mix();
-    if let Some(mix_config) = settings.mix_configs.get_mut(&mix_name) {
-        let iw = mix_config.def.width as i32;
-        let ih = mix_config.def.height as i32;
-        let mut ow = iw;
-        let mut oh = ih;
-        let mut ix = 0;
-        let mut iy = 0;
-
-        let iaspect = iw as f32 / ih as f32;
-        let oaspect = TARGET_SIZE_W as f32 / TARGET_SIZE_H as f32;
-
-        // correct aspect ratio
-        if iaspect > oaspect {
-            let effective_ow = (ih as f32 * oaspect) as i32;
-            ix = (ow - effective_ow) / 2;
-            ow = effective_ow;
-        } else if iaspect < oaspect {
-            let effective_oh = (iw as f32 / oaspect) as i32;
-            iy = (oh - effective_oh) / 2;
-            oh = effective_oh;
-        }
-        let src = (ix, iy, ow as u32, oh as u32);
-        let dst = (0, 0, TARGET_SIZE_W, TARGET_SIZE_H);
-
-        let playback_specs = settings.get_playback_specs(&mix_name, src, dst);
-        for spec in playback_specs {
-            if let RenderSpec::Mix(mix) = &spec {
-                let other = seen.get(&mix.name);
-                if let Some(other) = other {
-                    if other.target == mix.target {
-                        // If the mix already exists, skip adding it again.
-                        continue;
-                    }
-                }
-                seen.insert(mix.name.clone(), mix.clone());
-            }
-            specs.push(spec);
-        }
-    }
-
+    specs.append(&mut do_display(settings, &mut seen, mix_name, (0, 0)));
     // BOTTOM
     let mix_name = settings.playback[settings.display_idx].stream.overlay_mix();
-    if let Some(mix_config) = settings.mix_configs.get_mut(&mix_name) {
-        let iw = mix_config.def.width as i32;
-        let ih = mix_config.def.height as i32;
-        let mut ow = iw;
-        let mut oh = ih;
-        let mut ix = 0;
-        let mut iy = 0;
-
-        let iaspect = iw as f32 / ih as f32;
-        let oaspect = TARGET_SIZE_W as f32 / TARGET_SIZE_H as f32;
-
-        // correct aspect ratio
-        if iaspect > oaspect {
-            let effective_ow = (ih as f32 * oaspect) as i32;
-            ix = (ow - effective_ow) / 2;
-            ow = effective_ow;
-        } else if iaspect < oaspect {
-            let effective_oh = (iw as f32 / oaspect) as i32;
-            iy = (oh - effective_oh) / 2;
-            oh = effective_oh;
-        }
-        let src = (ix, iy, ow as u32, oh as u32);
-        let dst = (0, TARGET_SIZE_H as i32, TARGET_SIZE_W, TARGET_SIZE_H);
-
-        let playback_specs = settings.get_playback_specs(&mix_name, src, dst);
-        for spec in playback_specs {
-            if let RenderSpec::Mix(mix) = &spec {
-                let other = seen.get(&mix.name);
-                if let Some(other) = other {
-                    if other.target == mix.target {
-                        // If the mix already exists, skip adding it again.
-                        continue;
-                    }
-                }
-                seen.insert(mix.name.clone(), mix.clone());
-            }
-            specs.push(spec);
-        }
-    }
-
+    specs.append(&mut do_display(
+        settings,
+        &mut seen,
+        mix_name,
+        (0, TARGET_SIZE_H as i32),
+    ));
     // wireframe_data_mix
     let mix_name = "wireframe_data_mix";
-    if let Some(mix_config) = settings.mix_configs.get_mut(mix_name) {
-        let iw = mix_config.def.width as i32;
-        let ih = mix_config.def.height as i32;
-        let mut ow = iw;
-        let mut oh = ih;
-        let mut ix = 0;
-        let mut iy = 0;
-
-        let iaspect = iw as f32 / ih as f32;
-        let oaspect = TARGET_SIZE_W as f32 / TARGET_SIZE_H as f32;
-
-        // correct aspect ratio
-        if iaspect > oaspect {
-            let effective_ow = (ih as f32 * oaspect) as i32;
-            ix = (ow - effective_ow) / 2;
-            ow = effective_ow;
-        } else if iaspect < oaspect {
-            let effective_oh = (iw as f32 / oaspect) as i32;
-            iy = (oh - effective_oh) / 2;
-            oh = effective_oh;
-        }
-        let src = (ix, iy, ow as u32, oh as u32);
-        let dst = (TARGET_SIZE_W as i32, 0, TARGET_SIZE_W, TARGET_SIZE_H);
-
-        let playback_specs = settings.get_playback_specs(&mix_name, src, dst);
-        for spec in playback_specs {
-            if let RenderSpec::Mix(mix) = &spec {
-                let other = seen.get(&mix.name);
-                if let Some(other) = other {
-                    if other.target == mix.target {
-                        // If the mix already exists, skip adding it again.
-                        continue;
-                    }
-                }
-                seen.insert(mix.name.clone(), mix.clone());
-            }
-            specs.push(spec);
-        }
-
-        let page = settings.selected_knobs as u8 / 16;
-        for i in 0..16 {
-            let cc = i + (16 * page);
-            let button = i + 1;
-            let (label, val) = if let Some(field) = StreamSettings::find_field(0, cc) {
-                let n = settings.playback[settings.active_idx]
-                    .stream
-                    .get_field(&field);
-                let val = format!("{}{:>5.05}", if n >= 0.0 { " " } else { "" }, n);
-                if let Some(props) = field.properties() {
-                    (props.label.unwrap_or_default().clone(), val)
-                } else {
-                    ("none".to_string(), val)
-                }
-            } else {
-                ("none".to_string(), "".to_string())
-            };
-
-            let txt = label
-                .bytes()
-                .map(|b| b as i32)
-                .chain(repeat(0).take((128 - label.len()).clamp(0, 128)))
-                .collect::<Vec<_>>();
-
-            specs.push(
-                SendCmd::builder()
-                    .mix("wireframe_data_mix")
-                    .name(format!("button{button}_len"))
-                    .value(SendValue::Integer(label.len() as i32))
-                    .build()
-                    .into(),
-            );
-            specs.push(
-                SendCmd::builder()
-                    .mix("wireframe_data_mix")
-                    .name(format!("button{button}_txt"))
-                    .value(SendValue::IVector(txt))
-                    .build()
-                    .into(),
-            );
-
-            let txt = val
-                .bytes()
-                .map(|b| b as i32)
-                .chain(repeat(0).take((128 - val.len()).clamp(0, 128)))
-                .collect::<Vec<_>>();
-
-            specs.push(
-                SendCmd::builder()
-                    .mix("wireframe_data_mix")
-                    .name(format!("button{button}_val_len"))
-                    .value(SendValue::Integer(val.len() as i32))
-                    .build()
-                    .into(),
-            );
-            specs.push(
-                SendCmd::builder()
-                    .mix("wireframe_data_mix")
-                    .name(format!("button{button}_val"))
-                    .value(SendValue::IVector(txt))
-                    .build()
-                    .into(),
-            );
-        }
-
-        specs.push(
-            SendCmd::builder()
-                .mix("wireframe_data_mix")
-                .name("selected_button")
-                .value(SendValue::Integer(
-                    settings.selected_knobs as i32 - (16 * page as i32),
-                ))
-                .build()
-                .into(),
-        );
-    }
+    specs.append(&mut do_display(
+        settings,
+        &mut seen,
+        mix_name,
+        (TARGET_SIZE_W as i32, 0),
+    ));
 
     // logs panel
     let mix_name = "logs_mix";
-    if let Some(mix_config) = settings.mix_configs.get_mut(mix_name) {
-        let iw = mix_config.def.width as i32;
-        let ih = mix_config.def.height as i32;
-        let mut ow = iw;
-        let mut oh = ih;
-        let mut ix = 0;
-        let mut iy = 0;
-
-        let iaspect = iw as f32 / ih as f32;
-        let oaspect = TARGET_SIZE_W as f32 / TARGET_SIZE_H as f32;
-
-        // correct aspect ratio
-        if iaspect > oaspect {
-            let effective_ow = (ih as f32 * oaspect) as i32;
-            ix = (ow - effective_ow) / 2;
-            ow = effective_ow;
-        } else if iaspect < oaspect {
-            let effective_oh = (iw as f32 / oaspect) as i32;
-            iy = (oh - effective_oh) / 2;
-            oh = effective_oh;
-        }
-        let src = (ix, iy, ow as u32, oh as u32);
-        let dst = (
-            TARGET_SIZE_W as i32,
-            TARGET_SIZE_H as i32,
-            TARGET_SIZE_W,
-            TARGET_SIZE_H,
-        );
-        let playback_specs = settings.get_playback_specs(&mix_name, src, dst);
-        for spec in playback_specs {
-            if let RenderSpec::Mix(mix) = &spec {
-                let other = seen.get(&mix.name);
-                if let Some(other) = other {
-                    if other.target == mix.target {
-                        // If the mix already exists, skip adding it again.
-                        continue;
-                    }
-                }
-                seen.insert(mix.name.clone(), mix.clone());
-            }
-            specs.push(spec);
-        }
-
-        let mut txt = vec![0; 2500];
-        let mut starts = vec![0; 30];
-        let mut ends = vec![0; 30];
-
-        let mut start = 0;
-        for i in 0..settings.logs.len().min(30) {
-            let line = &settings.logs[i];
-            let mut end = start;
-            for b in line.bytes().take(80) {
-                txt[end] = b as i32;
-                end += 1;
-            }
-            starts[i] = start as i32;
-            ends[i] = end as i32;
-            start = end;
-        }
-        specs.push(
-            SendCmd::builder()
-                .mix("logs_mix")
-                .name("txt")
-                .value(SendValue::IVector(txt))
-                .build()
-                .into(),
-        );
-
-        specs.push(
-            SendCmd::builder()
-                .mix("logs_mix")
-                .name("line_start")
-                .value(SendValue::IVector(starts))
-                .build()
-                .into(),
-        );
-        specs.push(
-            SendCmd::builder()
-                .mix("logs_mix")
-                .name("line_end")
-                .value(SendValue::IVector(ends))
-                .build()
-                .into(),
-        );
-    }
+    specs.append(&mut do_display(
+        settings,
+        &mut seen,
+        mix_name,
+        (TARGET_SIZE_W as i32, TARGET_SIZE_H as i32),
+    ));
 
     let to_return = specs.clone();
     settings.clean_up_by_specs(&mut specs);
     Ok(to_return)
+}
+
+pub fn do_display<T: AsRef<str>>(
+    settings: &mut AllSettings,
+    seen: &mut HashMap<String, Mix>,
+    mix_name: T,
+    offset: (i32, i32),
+) -> Vec<RenderSpec> {
+    let mut specs = vec![];
+    if let Some(mix_config) = settings.mix_configs.get_mut(mix_name.as_ref()) {
+        let iw = mix_config.def.width as i32;
+        let ih = mix_config.def.height as i32;
+        let mut ow = iw;
+        let mut oh = ih;
+        let mut ix = 0;
+        let mut iy = 0;
+
+        let iaspect = iw as f32 / ih as f32;
+        let oaspect = TARGET_SIZE_W as f32 / TARGET_SIZE_H as f32;
+
+        // correct aspect ratio
+        if iaspect > oaspect {
+            let effective_ow = (ih as f32 * oaspect) as i32;
+            ix = (ow - effective_ow) / 2;
+            ow = effective_ow;
+        } else if iaspect < oaspect {
+            let effective_oh = (iw as f32 / oaspect) as i32;
+            iy = (oh - effective_oh) / 2;
+            oh = effective_oh;
+        }
+        let src = (ix, iy, ow as u32, oh as u32);
+        let dst = (offset.0, offset.1, TARGET_SIZE_W, TARGET_SIZE_H);
+
+        let playback_specs = settings.get_playback_specs(&mix_name, src, dst);
+        for spec in playback_specs {
+            if let RenderSpec::Mix(mix) = &spec {
+                let other = seen.get(&mix.name);
+                if let Some(other) = other {
+                    if other.target == mix.target {
+                        // If the mix already exists, skip adding it again.
+                        continue;
+                    }
+                }
+                seen.insert(mix.name.clone(), mix.clone());
+            }
+            specs.push(spec);
+        }
+    }
+    specs
 }
 
 const IAC: &str = "IAC Driver Bus 1";

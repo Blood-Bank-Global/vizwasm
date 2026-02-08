@@ -9,6 +9,7 @@ use sdlrig::{
 
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
+use std::iter::repeat;
 use std::sync::LazyLock;
 use std::{error::Error, i64, io::Write};
 
@@ -171,6 +172,7 @@ pub struct AllSettings {
     pub playback: Vec<PlaybackSettings>,
     pub initial_reset_complete: Vec<bool>,
     pub logs: Vec<String>,
+    pub last_line: String,
 }
 
 impl AllSettings {
@@ -359,6 +361,7 @@ impl AllSettings {
     where
         SI::Item: AsRef<str>,
     {
+        let asset_path = asset_path.as_ref().to_string();
         let playback_names = playback_names
             .into_iter()
             .map(|s| s.as_ref().to_string())
@@ -368,7 +371,6 @@ impl AllSettings {
             .into_iter()
             .map(|mc| (mc.def.name.clone(), mc))
             .collect::<HashMap<_, _>>();
-        let asset_path = asset_path.as_ref().to_string();
 
         let distort_names = Self::distort_names()
             .iter()
@@ -416,6 +418,82 @@ impl AllSettings {
                 },
             )
         }));
+
+        let wireframe = Vid::builder()
+            .name("wireframe")
+            .path(format!("{asset_path}/wireframe.png"))
+            .resolution((640, 480))
+            .tbq((1, 12800))
+            .pix_fmt("yuv420p")
+            .repeat(true)
+            .realtime(false)
+            .hardware_decode(true)
+            .build();
+        stream_defs.push(wireframe);
+        mix_configs.insert(
+            "wireframe_mix".to_string(),
+            MixConfig {
+                def: VidMixer::builder()
+                    .name("wireframe_mix")
+                    .width(640)
+                    .height(480)
+                    .build(),
+                mix: Mix::builder()
+                    .name("wireframe_mix")
+                    .video("wireframe")
+                    .no_display(true)
+                    .build(),
+            },
+        );
+
+        // config for wireframe
+        mix_configs.insert(
+            "wireframe_data_mix".to_string(),
+            MixConfig {
+                def: VidMixer::builder()
+                    .name("wireframe_data_mix")
+                    .width(640)
+                    .height(480)
+                    .header(concat!(
+                        include_str!("glsl/utils.glsl"),
+                        "\n",
+                        include_str!("glsl/strings.glsl"),
+                        "\n",
+                    ))
+                    .body(include_str!("glsl/wireframe.glsl"))
+                    .build(),
+                mix: Mix::builder()
+                    .name("wireframe_data_mix")
+                    .mixed("wireframe_mix")
+                    .no_display(true)
+                    .build(),
+            },
+        );
+
+        // config for logs
+        mix_configs.insert(
+            "logs_mix".to_string(),
+            MixConfig {
+                def: VidMixer::builder()
+                    .name("logs_mix")
+                    .width(640)
+                    .height(480)
+                    .header(concat!(
+                        include_str!("glsl/utils.glsl"),
+                        "\n",
+                        include_str!("glsl/strings.glsl"),
+                        "\n",
+                    ))
+                    .body(include_str!("glsl/logs.glsl"))
+                    .build(),
+                mix: Mix::builder()
+                    .name("logs_mix")
+                    .mixed("blank_mix")
+                    .no_display(true)
+                    .build(),
+            },
+        );
+
         let blend_modes = Self::blend_modes()
             .iter()
             .map(|s| s.to_string())
@@ -557,7 +635,8 @@ impl AllSettings {
             active_idx: 0,
             scan_idx: 0,
             display_idx: 0,
-            logs: vec![],
+            logs: vec![String::new(); 100],
+            last_line: String::new(),
         }
     }
 
@@ -714,6 +793,158 @@ impl AllSettings {
             .into(),
         );
 
+        // WIRE FRAME DATA
+        let page = self.selected_knobs as u8 / 16;
+        for i in 0..16 {
+            let cc = i + (16 * page);
+            let button = i + 1;
+            let (label, val, extra) = if let Some(field) = StreamSettings::find_field(0, cc) {
+                let mut n = self.playback[self.active_idx].stream.get_field(&field);
+                let val = format!("{}{:>5.05}", if n >= 0.0 { " " } else { "" }, n);
+                if let Some(props) = field.properties() {
+                    let label = props.label.unwrap_or_default().clone();
+                    let extra = if field == StreamSettingsField::DistEdgeScan {
+                        Some(self.distort_edge_types[n as usize].clone())
+                    } else if field == StreamSettingsField::OverlayBlendScan
+                        || field == StreamSettingsField::ScanlinesScan
+                    {
+                        n = n.clamp(0.0, (self.blend_modes.len() - 1) as f64);
+                        Some(self.blend_modes[n as usize].clone())
+                    } else if field == StreamSettingsField::LutScan {
+                        n = n.clamp(0.0, (self.lut_names.len() - 1) as f64);
+                        Some(self.lut_names[n as usize].clone())
+                    } else if field == StreamSettingsField::FeedbackModeScan {
+                        n = n.clamp(0.0, (self.feedback_modes.len() - 1) as f64);
+                        Some(self.feedback_modes[n as usize].clone())
+                    } else if field == StreamSettingsField::OverlayScan {
+                        n = n.clamp(0.0, (self.overlay_names.len() - 1) as f64);
+                        Some(self.overlay_names[n as usize].clone())
+                    } else if field == StreamSettingsField::DistortScan {
+                        n = n.clamp(0.0, (self.distort_names.len() - 1) as f64);
+                        Some(self.distort_names[n as usize].0.clone())
+                    } else if field == StreamSettingsField::WarpScan {
+                        n = n.clamp(0.0, (self.distort_names.len() - 1) as f64);
+                        Some(self.distort_names[n as usize].1.clone())
+                    } else {
+                        None
+                    };
+                    (label, val, extra)
+                } else {
+                    ("none".to_string(), val, None)
+                }
+            } else {
+                ("none".to_string(), "".to_string(), None)
+            };
+
+            let txt = label
+                .bytes()
+                .map(|b| b as i32)
+                .chain(repeat(0).take((128 - label.len()).clamp(0, 128)))
+                .collect::<Vec<_>>();
+
+            specs.push(
+                SendCmd::builder()
+                    .mix("wireframe_data_mix")
+                    .name(format!("button{button}_len"))
+                    .value(SendValue::Integer(label.len() as i32))
+                    .build()
+                    .into(),
+            );
+            specs.push(
+                SendCmd::builder()
+                    .mix("wireframe_data_mix")
+                    .name(format!("button{button}_txt"))
+                    .value(SendValue::IVector(txt))
+                    .build()
+                    .into(),
+            );
+
+            let txt = if let Some(mut extra) = extra.clone() {
+                extra.truncate(11);
+                extra
+                    .bytes()
+                    .map(|b| b as i32)
+                    .chain(repeat(0).take((128 - extra.len()).clamp(0, 128)))
+                    .collect::<Vec<_>>()
+            } else {
+                val.bytes()
+                    .map(|b| b as i32)
+                    .chain(repeat(0).take((128 - val.len()).clamp(0, 128)))
+                    .collect::<Vec<_>>()
+            };
+
+            specs.push(
+                SendCmd::builder()
+                    .mix("wireframe_data_mix")
+                    .name(format!("button{button}_val_len"))
+                    .value(SendValue::Integer(val.len() as i32))
+                    .build()
+                    .into(),
+            );
+            specs.push(
+                SendCmd::builder()
+                    .mix("wireframe_data_mix")
+                    .name(format!("button{button}_val"))
+                    .value(SendValue::IVector(txt))
+                    .build()
+                    .into(),
+            );
+        }
+
+        specs.push(
+            SendCmd::builder()
+                .mix("wireframe_data_mix")
+                .name("selected_button")
+                .value(SendValue::Integer(
+                    self.selected_knobs as i32 - (16 * page as i32),
+                ))
+                .build()
+                .into(),
+        );
+
+        // LOGS DATA
+        let mut txt = vec![0; 8100];
+        let mut starts = vec![0; 100];
+        let mut ends = vec![0; 100];
+
+        let mut start = 0;
+        for i in 0..self.logs.len().min(100) {
+            let line = &self.logs[i];
+            let mut end = start;
+            for b in line.bytes().take(80) {
+                txt[end] = b as i32;
+                end += 1;
+            }
+            starts[i] = start as i32;
+            ends[i] = end as i32;
+            start = end;
+        }
+        specs.push(
+            SendCmd::builder()
+                .mix("logs_mix")
+                .name("txt")
+                .value(SendValue::IVector(txt))
+                .build()
+                .into(),
+        );
+
+        specs.push(
+            SendCmd::builder()
+                .mix("logs_mix")
+                .name("line_start")
+                .value(SendValue::IVector(starts))
+                .build()
+                .into(),
+        );
+        specs.push(
+            SendCmd::builder()
+                .mix("logs_mix")
+                .name("line_end")
+                .value(SendValue::IVector(ends))
+                .build()
+                .into(),
+        );
+
         Ok(specs)
     }
 
@@ -726,9 +957,12 @@ impl AllSettings {
     where
         F: Fn(&mut AllSettings, &MidiEvent),
     {
-        //Update steams for incoming frame events
+        //Update streams for incoming frame events
         for ge in reg_events {
             match ge {
+                GfxEvent::LogEvent(log) => {
+                    self.log(log.message.clone());
+                }
                 GfxEvent::FrameEvent(fe) => {
                     if let Some((eidx, _)) = self
                         .playback
@@ -1351,7 +1585,6 @@ impl AllSettings {
                 && self.initial_reset_complete[i] == true
             {
                 eprintln!("unloading {i}");
-                self.log(format!("unloading {i}"));
                 self.initial_reset_complete[i] = false;
                 specs.push(
                     Reset {
@@ -1779,10 +2012,10 @@ impl AllSettings {
             .or_else(|| Some(format!("???({})", event.device).to_string()))
             .unwrap();
 
-        self.log(format!(
+        eprintln!(
             "{debug_kind}_{debug_device}_{}_{}{} = {}",
             event.channel, event.key, on_off, event.velocity
-        ));
+        );
 
         let mut cmds = vec![];
         if let Some(glsl_device) = MIDI_DEVICE_VARS.get(&event.device) {
@@ -1839,8 +2072,29 @@ impl AllSettings {
     }
 
     pub fn log<T: AsRef<str>>(&mut self, line: T) {
-        self.logs.push(line.as_ref().to_string());
-        if self.logs.len() > 30 {
+        let mut s = line.as_ref().to_string();
+
+        if s.starts_with("gfx_ll>") {
+            //filter some of the content
+            return;
+        }
+
+        if self.last_line == s {
+            let mut rep = self.logs[self.logs.len() - 1].clone();
+            rep.truncate(80 - " (rep.)".len());
+            rep.push_str(" (rep.)");
+        } else {
+            self.last_line = s.clone();
+
+            while s.len() > 80 {
+                let remainder = s.split_off(80);
+                self.logs.push(s);
+                s = remainder;
+            }
+            self.logs.push(s);
+        }
+
+        if self.logs.len() > 100 {
             self.logs.remove(0);
         }
     }
