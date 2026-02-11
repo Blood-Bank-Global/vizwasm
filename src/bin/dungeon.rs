@@ -12,7 +12,7 @@ use sdlrig::gfxinfo::{MIDI_CONTROL_CHANGE, MIDI_NOTE_OFF, MIDI_NOTE_ON};
 
 use sdlrig::{
     gfxinfo::{Asset, GfxEvent, GfxInfo, MidiEvent, Vid, VidMixer},
-    renderspec::{Mix, RenderSpec, SendCmd},
+    renderspec::{Mix, RenderSpec, SendCmd, SendValue},
 };
 
 use vizwasm::beat_time_boilerplate;
@@ -432,7 +432,6 @@ pub fn calculate(
         mix_name,
         (TARGET_SIZE_W as i32, 0),
     ));
-
     // logs panel
     let mix_name = "logs_mix";
     specs.append(&mut do_display(
@@ -441,6 +440,99 @@ pub fn calculate(
         mix_name,
         (TARGET_SIZE_W as i32, TARGET_SIZE_H as i32),
     ));
+
+    if seen.contains_key("status_mix") {
+        let status = format!("{:?}", gfx_info.get("status_mix"));
+        let all_txt = format!("{frame}\n{status}\nthe quick brown fox jumps over the lazy dog");
+        let msgs = all_txt
+            .lines()
+            .into_iter()
+            .map(|s| {
+                let mut s = s.to_string();
+                let mut parts = vec![];
+                while s.len() > 72 {
+                    let part = s.split_off(72);
+                    parts.push(s);
+                    s = part;
+                }
+                parts.push(s);
+                parts
+            })
+            .flatten()
+            .collect::<Vec<_>>();
+        let positions = msgs
+            .iter()
+            .enumerate()
+            .map(|(n, _)| [10.0, n as f32 * 18.0])
+            .flatten()
+            .collect::<Vec<_>>();
+
+        let txt = msgs
+            .join("")
+            .as_bytes()
+            .iter()
+            .map(|b| *b as i32)
+            .collect::<Vec<_>>();
+
+        let starts = msgs
+            .iter()
+            .scan(0, |state, msg| {
+                let start = *state;
+                *state += msg.len() as i32;
+                Some(start)
+            })
+            .collect::<Vec<_>>();
+        let lens = msgs.iter().map(|msg| msg.len() as i32).collect::<Vec<_>>();
+        if positions.len() / 2 == msgs.len()
+            || positions.len() / 2 == starts.len()
+            || positions.len() / 2 == lens.len()
+        {
+            specs.push(
+                SendCmd::builder()
+                    .mix("status_mix")
+                    .name("num_labels")
+                    .value(SendValue::Integer(starts.len() as i32))
+                    .build()
+                    .into(),
+            );
+
+            specs.push(
+                SendCmd::builder()
+                    .mix("status_mix")
+                    .name("label_pos")
+                    .value(SendValue::Vector(positions))
+                    .build()
+                    .into(),
+            );
+
+            specs.push(
+                SendCmd::builder()
+                    .mix("status_mix")
+                    .name("label_txt")
+                    .value(SendValue::IVector(txt))
+                    .build()
+                    .into(),
+            );
+
+            specs.push(
+                SendCmd::builder()
+                    .mix("status_mix")
+                    .name("label_idx")
+                    .value(SendValue::IVector(starts))
+                    .build()
+                    .into(),
+            );
+
+            specs.push(
+                SendCmd::builder()
+                    .mix("status_mix")
+                    .name("label_len")
+                    .value(SendValue::IVector(lens))
+                    .build()
+                    .into(),
+            );
+        }
+    }
 
     let to_return = specs.clone();
     settings.clean_up_by_specs(&mut specs);

@@ -348,10 +348,9 @@ vec4 draw_text(in vec4 in_color, in vec2 uv_in, in vec2 pos_in, in vec2 resoluti
 }
 
 
-vec4 char8x16(in vec4 in_color, in vec2 uv, in ivec2 mn, float scale, in int charCode) {
+vec4 char8x16(in vec4 in_color, in vec2 uv, in vec2 pos, float scale, in int charCode) {
     float scaledWidth = 8.0f * scale;
     float scaledHeight = 16.0f * scale;
-    vec2 pos = vec2(mn) * vec2(scaledWidth, scaledHeight);
     if (uv.x < pos.x || uv.y < pos.y|| uv.x >= (pos.x + scaledWidth) || uv.y >= (pos.y + scaledHeight)) {
         return in_color;
     }

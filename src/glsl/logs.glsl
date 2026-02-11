@@ -1,6 +1,6 @@
-//!VAR int[] txt 8100
-//!VAR int[] line_start 100
-//!VAR int[] line_end 100
+//!VAR int[] txt 0 0
+//!VAR int[] line_start 0 0
+//!VAR int[] line_end 0 0
 
 #define SCALE 1.0
 #define FONT_BITS_W 8.0
