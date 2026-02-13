@@ -122,25 +122,25 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
     }
 
     // Cameras
-    vids.push(
-        Vid::builder()
-            .name("front cam")
-            .path("MacBook Pro Camera")
-            .format("avfoundation")
-            .opts(&vec![
-                ("pixel_format", "bgr0"),
-                ("framerate", "30.0"),
-                ("video_size", "1280x720"),
-            ])
-            .resolution((1280, 720))
-            .tbq((1, 1000000))
-            .pix_fmt("bgr0")
-            .repeat(false)
-            .realtime(true)
-            .hardware_decode(false)
-            .build()
-            .into(),
-    );
+    // vids.push(
+    //     Vid::builder()
+    //         .name("front cam")
+    //         .path("MacBook Pro Camera")
+    //         .format("avfoundation")
+    //         .opts(&vec![
+    //             ("pixel_format", "bgr0"),
+    //             ("framerate", "30.0"),
+    //             ("video_size", "1280x720"),
+    //         ])
+    //         .resolution((1280, 720))
+    //         .tbq((1, 1000000))
+    //         .pix_fmt("bgr0")
+    //         .repeat(false)
+    //         .realtime(true)
+    //         .hardware_decode(false)
+    //         .build()
+    //         .into(),
+    // );
     vids
 });
 
@@ -157,7 +157,7 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "statue",
         "the_moon",
         "the_snow_queen",
-        "front cam",
+        //"front cam",
         "sunrise_scene",
         "sunrise_combo",
         "columns",
@@ -442,8 +442,10 @@ pub fn calculate(
     ));
 
     if seen.contains_key("status_mix") {
-        let status = format!("{:?}", gfx_info.get("status_mix"));
-        let all_txt = format!("{frame}\n{status}\nthe quick brown fox jumps over the lazy dog");
+        // let status = format!("{:?}", gfx_info.get("status_mix"));
+        // let all_txt = format!("{frame}\n{status}\nthe quick brown fox jumps over the lazy dog");
+        let all_txt =
+            format!("Frame: {frame}\nFPS: {fps}\n\nThe quick brown fox jumps over the lazy dog.");
         let msgs = all_txt
             .lines()
             .into_iter()

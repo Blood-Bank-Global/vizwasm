@@ -1,267 +1,57 @@
+//this code has been heavily reworked but some references:
 //taken from https://www.shadertoy.com/view/mtGcWd
 //referenced by https://vdmx.vidvox.net/tutorials/techniques-for-drawing-text-in-glsl
 
-uint data[ 1024 ] = uint[](
-        0u, 0u, 4278255360u, 0u, 
-        0u, 0u, 4278255360u, 0u, 
-        0u, 0u, 4278255360u, 0u, 
-        8289792u, 1579008u, 4278255390u, 1010794240u, 
-        8519532u, 272382976u, 4278255374u, 1714643736u, 
-        10869758u, 943488512u, 4282172186u, 1715437336u, 
-        8519678u, 2095578904u, 3882260786u, 1714447323u, 
-        8519678u, 4276617020u, 3275931000u, 1714447164u, 
-        12436478u, 2095545916u, 3275931084u, 1009804263u, 
-        10086268u, 941103128u, 3882260940u, 405824316u, 
-        8519480u, 270014464u, 4282172364u, 2121295835u, 
-        8519440u, 3947520u, 4278255564u, 418440984u, 
-        8289792u, 0u, 4278255480u, 417392152u, 
-        0u, 0u, 4278255360u, 49152u, 
-        0u, 0u, 4278255360u, 0u, 
-        0u, 0u, 4278255360u, 0u, 
-        0u, 0u, 0u, 0u, 
-        0u, 0u, 0u, 0u, 
-        2147614720u, 8126464u, 0u, 0u, 
-        3221624934u, 2143682584u, 404226048u, 0u, 
-        3759029350u, 3680501820u, 1008205824u, 0u, 
-        4028530278u, 3677880446u, 2115502080u, 4350u, 
-        4164819046u, 3681288216u, 404232240u, 2636030u, 
-        4278065254u, 2076573720u, 404229216u, 3228317820u, 
-        4164819046u, 465960984u, 404291326u, 3237903484u, 
-        4028530278u, 460127870u, 404229216u, 3228335160u, 
-        3759029248u, 456719932u, 410916912u, 4264099384u, 
-        3221624934u, 453836312u, 406585344u, 65040u, 
-        2147614822u, 466026110u, 404226048u, 0u, 
-        0u, 8126464u, 0u, 0u, 
-        0u, 0u, 0u, 0u, 
-        0u, 0u, 0u, 0u, 
-        0u, 0u, 0u, 0u, 
-        0u, 402653184u, 0u, 0u, 
-        26112u, 402653232u, 0u, 0u, 
-        1598976u, 2080389168u, 204472320u, 0u, 
-        3958380u, 3321916464u, 404226048u, 0u, 
-        3941484u, 3267521632u, 806092800u, 2u, 
-        3932414u, 3234215936u, 806118936u, 6u, 
-        1572972u, 2081191424u, 806108184u, 12u, 
-        1572972u, 102292480u, 806158206u, 16646168u, 
-        1572972u, 103861248u, 806108184u, 48u, 
-        254u, 2254490624u, 806118936u, 402653280u, 
-        1572972u, 3334917120u, 404226048u, 402659520u, 
-        1572972u, 2089186816u, 204472320u, 402659456u, 
-        0u, 402653184u, 0u, 805306368u, 
-        0u, 402653184u, 0u, 0u, 
-        0u, 0u, 0u, 0u, 
-        0u, 0u, 0u, 0u, 
-        0u, 0u, 0u, 0u, 
-        0u, 0u, 0u, 0u, 
-        941128828u, 217987326u, 2088501248u, 124u, 
-        1815660230u, 482369734u, 3334864896u, 100688070u, 
-        3329754630u, 1019265030u, 3334871064u, 201339078u, 
-        3323464710u, 1824571398u, 3334871064u, 410916876u, 
-        3591903292u, 3439131660u, 2088632320u, 805309464u, 
-        3591909382u, 4261856792u, 3322281984u, 1610614296u, 
-        3323486214u, 201770544u, 3322281984u, 813567000u, 
-        3323510790u, 201770544u, 3322288152u, 402659328u, 
-        1813563078u, 214353456u, 3322681368u, 201338904u, 
-        947846780u, 511474736u, 2088239152u, 100687896u, 
-        0u, 0u, 0u, 0u, 
-        0u, 0u, 0u, 0u, 
-        0u, 0u, 0u, 0u, 
-        0u, 0u, 0u, 0u, 
-        0u, 0u, 0u, 0u, 
-        0u, 0u, 0u, 0u, 
-        1113148u, 4177460796u, 3325828838u, 4039558780u, 
-        2084071014u, 1818650214u, 3323464806u, 1626269382u, 
-        3328992962u, 1717723842u, 3323464806u, 1627322054u, 
-        3334891200u, 1718118592u, 3323464812u, 1627324102u, 
-        3737550016u, 1719171264u, 4262988920u, 1624694470u, 
-        3741214400u, 1718118622u, 3323464824u, 1623641798u, 
-        3737544384u, 1717592262u, 3323513964u, 1623639750u, 
-        3703989954u, 1717723334u, 3323513958u, 1657194182u, 
-        3234227814u, 1818648678u, 3323513958u, 1724303046u, 
-        2093415484u, 4177457210u, 3325851878u, 4274439804u, 
-        0u, 0u, 0u, 0u, 
-        0u, 0u, 0u, 0u, 
-        0u, 0u, 0u, 0u, 
-        0u, 0u, 0u, 0u, 
-        0u, 0u, 0u, 4096u, 
-        0u, 0u, 0u, 14336u, 
-        4236049532u, 2126956230u, 3328638524u, 3959808u, 
-        1724278470u, 2126956230u, 3328624176u, 2148320768u, 
-        1724278470u, 1522976454u, 1818658352u, 3222011904u, 
-        1724278368u, 415680198u, 2087062576u, 3758882816u, 
-        2093382712u, 415680214u, 943462448u, 1879834624u, 
-        1623616524u, 415680214u, 941109296u, 940310528u, 
-        1623614982u, 415680214u, 2081972272u, 470548480u, 
-        1624663750u, 415657214u, 1813561904u, 235667456u, 
-        1625188038u, 415643886u, 3323512368u, 101449728u, 
-        4034717308u, 1014763628u, 3325886012u, 37486592u, 
-        786432u, 0u, 0u, 0u, 
-        917504u, 0u, 0u, 255u, 
-        0u, 0u, 0u, 0u, 
-        0u, 0u, 0u, 0u, 
-        805306368u, 0u, 0u, 0u, 
-        805306368u, 0u, 0u, 0u, 
-        402710528u, 469776384u, 3759671008u, 939524096u, 
-        24576u, 201354240u, 1612187232u, 402653184u, 
-        24576u, 201352192u, 1610612832u, 402653184u, 
-        7895164u, 1014784118u, 1815613030u, 418176124u, 
-        814278u, 1824977100u, 1981285996u, 419325638u, 
-        8152768u, 3439222988u, 1712850552u, 416704198u, 
-        13395648u, 3435159756u, 1712850552u, 416704198u, 
-        13395648u, 3435159756u, 1712850540u, 416704198u, 
-        13395654u, 3435552972u, 1712850534u, 416704198u, 
-        7765116u, 1987899516u, 3862693606u, 1019635324u, 
-        0u, 12u, 26112u, 0u, 
-        0u, 204u, 26112u, 0u, 
-        0u, 120u, 15360u, 0u, 
-        0u, 0u, 0u, 0u, 
-        0u, 0u, 0u, 0u, 
-        0u, 0u, 0u, 0u, 
-        0u, 268435456u, 7u, 205011712u, 
-        0u, 805306368u, 12u, 202141184u, 
-        0u, 805306368u, 12u, 202113032u, 
-        3698777212u, 4234556259u, 1667464972u, 202113052u, 
-        1724675782u, 812004195u, 912483896u, 458806u, 
-        1724671584u, 812004203u, 476253196u, 202113123u, 
-        1724670008u, 812004203u, 476256268u, 202113123u, 
-        1724669964u, 812004203u, 476262412u, 202113123u, 
-        1724670150u, 912662143u, 912483084u, 202113151u, 
-        2088562812u, 473631798u, 1665105671u, 204996608u, 
-        1611399168u, 0u, 196608u, 0u, 
-        1611399168u, 0u, 393216u, 0u, 
-        4028497920u, 0u, 8126464u, 0u, 
-        0u, 0u, 0u, 0u, 
-        0u, 0u, 0u, 56u, 
-        3088u, 6305792u, 268460032u, 408995436u, 
-        1020008504u, 3425725440u, 952512614u, 1009778744u, 
-        1711288428u, 1587200u, 1811945472u, 1712852992u, 
-        3254779904u, 60u, 0u, 14392u, 
-        3234626680u, 2021161062u, 2088533048u, 943221868u, 
-        3234645516u, 202116192u, 3334915608u, 404276934u, 
-        3234659964u, 2088533088u, 4278124056u, 404276934u, 
-        3268198604u, 3435973734u, 3233857560u, 404291326u, 
-        1724694732u, 3435973692u, 3233857560u, 404276934u, 
-        1020053196u, 3435973644u, 3334915608u, 404276934u, 
-        209091702u, 1987474950u, 2088533052u, 1010616006u, 
-        100663296u, 60u, 0u, 0u, 
-        2080374784u, 0u, 0u, 0u, 
-        0u, 0u, 0u, 0u, 
-        0u, 0u, 0u, 0u, 
-        402653184u, 0u, 0u, 0u, 
-        805306384u, 6303840u, 13026840u, 939587598u, 
-        1610628664u, 3325065264u, 3321888792u, 1818676251u, 
-        27756u, 1625112u, 8177212u, 1684458520u, 
-        4261465088u, 0u, 13026918u, 1614608408u, 
-        1724697724u, 2088553676u, 3334915680u, 4028154904u, 
-        1618411206u, 3334917324u, 3334915680u, 1618922622u, 
-        2083966150u, 3334917324u, 3334915680u, 1612242456u, 
-        1618922694u, 3334917324u, 3334915686u, 1618922520u, 
-        1624820934u, 3334917324u, 3334915644u, 1612237848u, 
-        1725484230u, 3334917324u, 3334915608u, 3860384792u, 
-        4268674684u, 2088531574u, 2122087448u, 4229482008u, 
-        0u, 0u, 100663296u, 216u, 
-        0u, 0u, 201326592u, 112u, 
-        0u, 0u, 2013265920u, 0u, 
-        0u, 0u, 0u, 0u, 
-        0u, 7733248u, 0u, 0u, 
-        403445784u, 14433336u, 192u, 3221225472u, 
-        806891568u, 1979739244u, 805306560u, 3222798336u, 
-        1613783136u, 3703991404u, 805306562u, 3256352768u, 
-        0u, 15089208u, 198u, 3321888768u, 
-        2016967884u, 3707109376u, 805306572u, 3424138968u, 
-        202950348u, 1727954556u, 822017560u, 404253804u, 
-        2081998540u, 1725825024u, 1623197232u, 806934582u, 
-        3424175820u, 1724776448u, 3233810016u, 1715235948u, 
-        3424175820u, 1724252160u, 3334473436u, 3460052696u, 
-        3424175820u, 1724252160u, 3334473350u, 2654732288u, 
-        1983675510u, 1724252160u, 2080374796u, 1041760256u, 
-        0u, 0u, 24u, 100663296u, 
-        0u, 0u, 62u, 100663296u, 
-        0u, 0u, 0u, 0u, 
-        290839832u, 404239872u, 3552768u, 909514752u, 
-        1152022296u, 404239872u, 3552768u, 909514752u, 
-        290839832u, 404239872u, 3552768u, 909514752u, 
-        1152022296u, 404239872u, 3552768u, 909514752u, 
-        290839832u, 404239872u, 3552768u, 909514752u, 
-        1152022296u, 418919936u, 4176885502u, 4130797568u, 
-        290839832u, 404239872u, 403060230u, 104208384u, 
-        1152022296u, 4177065726u, 4176885494u, 4278122744u, 
-        290839832u, 404239926u, 406206006u, 24u, 
-        1152022296u, 404239926u, 406206006u, 24u, 
-        290839832u, 404239926u, 406206006u, 24u, 
-        1152022296u, 404239926u, 406206006u, 24u, 
-        290839832u, 404239926u, 406206006u, 24u, 
-        1152022296u, 404239926u, 406206006u, 24u, 
-        290839832u, 404239926u, 406206006u, 24u, 
-        1152022296u, 404239926u, 406206006u, 24u, 
-        404226072u, 1579062u, 905983488u, 905983512u, 
-        404226072u, 1579062u, 905983488u, 905983512u, 
-        404226072u, 1579062u, 905983488u, 905983512u, 
-        404226072u, 1579062u, 905983488u, 905983512u, 
-        404226072u, 1579062u, 905983488u, 905983512u, 
-        404226072u, 1580854u, 926939135u, 939522047u, 
-        404226072u, 1579062u, 808452096u, 805306368u, 
-        536870687u, 4294909751u, 1060634615u, 939522047u, 
-        6168u, 1579062u, 3538998u, 905983488u, 
-        6168u, 1579062u, 3538998u, 905983488u, 
-        6168u, 1579062u, 3538998u, 905983488u, 
-        6168u, 1579062u, 3538998u, 905983488u, 
-        6168u, 1579062u, 3538998u, 905983488u, 
-        6168u, 1579062u, 3538998u, 905983488u, 
-        6168u, 1579062u, 3538998u, 905983488u, 
-        6168u, 1579062u, 3538998u, 905983488u, 
-        905969718u, 402653238u, 404226303u, 15732735u, 
-        905969718u, 402653238u, 404226303u, 15732735u, 
-        905969718u, 402653238u, 404226303u, 15732735u, 
-        905969718u, 402653238u, 404226303u, 15732735u, 
-        905969718u, 402653238u, 404226303u, 15732735u, 
-        922681398u, 522125366u, 4279763199u, 15732735u, 
-        905969718u, 404226102u, 404226303u, 15732735u, 
-        4294967103u, 522141695u, 4294451199u, 4293922560u, 
-        1586688u, 1586742u, 402659583u, 4293922560u, 
-        1586688u, 1586742u, 402659583u, 4293922560u, 
-        1586688u, 1586742u, 402659583u, 4293922560u, 
-        1586688u, 1586742u, 402659583u, 4293922560u, 
-        1586688u, 1586742u, 402659583u, 4293922560u, 
-        1586688u, 1586742u, 402659583u, 4293922560u, 
-        1586688u, 1586742u, 402659583u, 4293922560u, 
-        1586688u, 1586742u, 402659583u, 4293922560u, 
-        0u, 0u, 0u, 0u, 
-        0u, 0u, 0u, 0u, 
-        0u, 0u, 0u, 0u, 
-        7929344u, 0u, 14366u, 7168u, 
-        13420032u, 4261412864u, 2117626928u, 209020u, 
-        13420286u, 3321914998u, 409781784u, 417990u, 
-        1993130092u, 1618896604u, 1019659788u, 2122211526u, 
-        3705192556u, 819488280u, 1724302910u, 3688594630u, 
-        3637297260u, 416835096u, 1727949926u, 3688587462u, 
-        3636904044u, 819488280u, 1724279910u, 3690160326u, 
-        3636904044u, 1624800280u, 1019636838u, 2122211526u, 
-        3704012908u, 3336069144u, 409758822u, 6303942u, 
-        1993130092u, 4268777496u, 2117660220u, 12590278u, 
-        0u, 49152u, 0u, 0u, 
-        0u, 0u, 0u, 0u, 
-        0u, 0u, 0u, 0u, 
-        0u, 1572864u, 0u, 0u, 
-        0u, 1572864u, 0u, 0u, 
-        0u, 1572864u, 939524111u, 3631218688u, 
-        0u, 236453888u, 1811939340u, 1826095104u, 
-        12300u, 454557696u, 1811939340u, 1815085056u, 
-        4262991896u, 454563840u, 939524108u, 1818262528u, 
-        1575984u, 404232310u, 12u, 1825078272u, 
-        8259168u, 404226268u, 12u, 1828224000u, 
-        4262988848u, 404258304u, 1573100u, 31744u, 
-        1579032u, 416809078u, 1579116u, 31744u, 
-        12300u, 416815324u, 108u, 31744u, 
-        4261412864u, 416815104u, 60u, 31744u, 
-        16744062u, 409993216u, 28u, 0u, 
-        0u, 402653184u, 0u, 0u, 
-        0u, 402653184u, 0u, 0u, 
-        0u, 402653184u, 0u, 0u
-);
 
-int float2txt( float val, out int[128] txt ) {
-    if (val > 9999.9999) {
+#define str_bounds(uv,pos,font_w,font_h,len) \
+    ((step((pos).x, (uv).x) >= 0.5 \
+    && (step((pos).y, (uv).y)) >= 0.5 \
+    && step((uv).x, (pos).x + float((font_w)) * float((len))) >= 0.5 \
+    && step((uv).y, (pos).y + float((font_h))) >= 0.5))
+
+#define str_char(uv,pos, txt, start,len,font_w) \
+    ((txt)[uint((start) + uint(clamp((float((uv).x) - float((pos).x))/float((font_w)), 0, (len)-1)))])
+
+#define font_sample(char,offset,font_w,font_h,map_w,font_name) \
+    (font_data_ ## font_name [ \
+    ((uint((char)) % 16) * uint((font_w)) + uint((offset).x) \
+    + ((uint((char)) / 16) * uint((font_h)) + uint((offset).y)) * uint((map_w)))/32u \
+    ])
+
+#define font_bitmask(char,offset_x,font_w) (1u << ((((uint(char) % 16) * 8u + uint(offset_x)) % 32u) ) )
+    
+#define fontstr(uv,pos,txt,start,len,font_w,font_h,map_w,font_name) \
+    (str_bounds((uv),(pos),(font_w),(font_h),(len)) \
+    && (font_sample(str_char((uv),(pos),(txt),(start),(len),(font_w)), \
+        ivec2(uint(mod((float((uv).x) - float((pos).x)), float((font_w)))), uint(mod((float((uv).y) - float((pos).y)), float((font_h)))) ), \
+        (font_w), (font_h), (map_w), font_name) \
+        & font_bitmask(str_char((uv),(pos),(txt),(start),(len),(font_w)) , uint(mod((float((uv).x) - float((pos).x)), float((font_w)))) , (font_w)) ) != 0u)
+
+#define multiline_bounds(uv,pos,font_w,font_h,starts,lens) \
+    (lens).length() == (starts).length() \
+    && (step((pos).y, (uv).y) >= 0.5 \
+    && step((uv).y, ((pos).y + float((font_h)) * float((starts.length())))) >= 0.5 \
+    && step((pos).x, (uv).x) >= 0.5 \
+    && step(uint((uv).y/float((font_h))), (lens).length()) >= 0.5 \
+    && step((uv).x, (pos).x + float((font_w)) * float((lens)[uint((uv).y/float((font_h)))])) >= 0.5)
+
+#define multiline_font(uv,pos,txt,starts,lens,font_w,font_h,map_w,font_name) \
+    ((multiline_bounds((uv),(pos),float((font_w)),float((font_h)),(starts),(lens))) \
+    && (fontstr( \
+        (uv), \
+        vec2((pos).x, (pos).y + floor(((uv).y - (pos.y))/float((font_h)))*float((font_h))), \
+        (txt), \
+        (starts)[uint((((uv).y - (pos.y))/float((font_h))))], \
+        (lens)[uint((((uv).y - (pos.y))/float((font_h))))], \
+        (uint((font_w))), \
+        (uint((font_h))), \
+        (uint((map_w))), \
+        font_name \
+    )))
+
+
+int float2txt( float val, out int[10] txt ) {
+    if (val > 9999.9999 || val < -9999.9999) {
         txt[0] = 0x4F; // no character type so this is the asci for OOPS
         txt[1] = 0x4F;
         txt[2] = 0x50;
@@ -308,66 +98,268 @@ int float2txt( float val, out int[128] txt ) {
     }
 }
 
-// referencing a pixel, for an extended ASCII character in Code Page 37
-//    expected ranges of char are 0-255
-//    expected ranges of offset are within the 8x16 neighborhood
-int fontRef( uint char, ivec2 offset ) {
-    bool offsetOOB = any( lessThan(         offset, ivec2( 0,  0 ) ) ) ||
-                     any( greaterThanEqual( offset, ivec2( 8, 16 ) ) );
-    bool charOOB = bool( clamp( char, 0u, 255u ) != char );
-    if ( offsetOOB || charOOB ) {
-        return -1; // oob
-    }
-    uvec2 sampleLoc = uvec2( char % 16u, char / 16u ) * uvec2( 8u, 16u ) + uvec2( offset );
-    uint idx = ( sampleLoc.x + sampleLoc.y * 128u ) / 32u;
-    uint packedData = data[ idx ];
-    uint bitMask = 1u << ( 31u - sampleLoc.x % 32u );
-    return int( ( packedData & bitMask ) != 0u );
-}
+uint font_data_mono_8x16[ 1024 ] = uint[](
+   0x0, 0x0, 0xFF00FF, 0x0,
+    0x0, 0x0, 0xFF00FF, 0x0,
+    0x7E7E00, 0x0, 0x78FF00FF, 0xFEFC3C,
+    0xFF8100, 0x181800, 0x70FF00FF, 0x18C6CC66,
+    0x36DBA500, 0x3C3C08, 0x58FF00FF, 0x18FEFC66,
+    0x7FFF8100, 0x7E3C1C, 0x4CC33CFF, 0xDBC60C66,
+    0x7FFF8100, 0x18FFE73E, 0x1E9966E7, 0x3CC60C66,
+    0x7FC3BD00, 0x3CFFE77F, 0x33BD42C3, 0xE7C60C3C,
+    0x7FE79900, 0x3C7EE73E, 0x33BD42C3, 0x3CC60C18,
+    0x3EFF8100, 0x1818181C, 0x339966E7, 0xDBE60E7E,
+    0x1CFF8100, 0x181808, 0x33C33CFF, 0x18E70F18,
+    0x87E7E00, 0x3C3C00, 0x1EFF00FF, 0x18670718,
+    0x0, 0x0, 0xFF00FF, 0x30000,
+    0x0, 0x0, 0xFF00FF, 0x0,
+    0x0, 0x0, 0xFF00FF, 0x0,
+    0x0, 0x0, 0xFF00FF, 0x0,
+    0x0, 0x0, 0x0, 0x0,
+    0x4001, 0x3E00, 0x0, 0x0,
+    0x66186003, 0x180063FE, 0x1818, 0x0,
+    0x663C7007, 0x3C0006DB, 0x183C, 0x0,
+    0x667E780F, 0x7E001CDB, 0x187E, 0x7F080000,
+    0x66187C1F, 0x180036DB, 0xC181818, 0x7F1C1400,
+    0x66187F7F, 0x180063DE, 0x6301818, 0x3E1C3603,
+    0x66187C1F, 0x180063D8, 0x7F7F1818, 0x3E3E7F03,
+    0x667E780F, 0x7E7F36D8, 0x6301818, 0x1C3E3603,
+    0x3C7007, 0x3C7F1CD8, 0xC187E18, 0x1C7F147F,
+    0x66186003, 0x187F30D8, 0x3C18, 0x87F0000,
+    0x66004001, 0x7E7F63D8, 0x1818, 0x0,
+    0x0, 0x3E00, 0x0, 0x0,
+    0x0, 0x0, 0x0, 0x0,
+    0x0, 0x0, 0x0, 0x0,
+    0x0, 0x0, 0x0, 0x0,
+    0x0, 0x18, 0x0, 0x0,
+    0x660000, 0xC000018, 0x0, 0x0,
+    0x661800, 0xC1C003E, 0xC30, 0x0,
+    0x36663C00, 0xC360063, 0x1818, 0x0,
+    0x36243C00, 0x6364343, 0x300C, 0x40000000,
+    0x7F003C00, 0x1C6303, 0x1866300C, 0x60000000,
+    0x36001800, 0x6E303E, 0x183C300C, 0x30000000,
+    0x36001800, 0x3B1860, 0x7EFF300C, 0x18007F00,
+    0x36001800, 0x330C60, 0x183C300C, 0xC000000,
+    0x7F000000, 0x330661, 0x1866300C, 0x6000018,
+    0x36001800, 0x336363, 0x1818, 0x3180018,
+    0x36001800, 0x6E613E, 0xC30, 0x1180018,
+    0x0, 0x18, 0x0, 0xC,
+    0x0, 0x18, 0x0, 0x0,
+    0x0, 0x0, 0x0, 0x0,
+    0x0, 0x0, 0x0, 0x0,
+    0x0, 0x0, 0x0, 0x0,
+    0x0, 0x0, 0x0, 0x0,
+    0x3E3E181C, 0x7F1C7F30, 0x3E3E, 0x3E000000,
+    0x63631C36, 0x63060338, 0x6363, 0x63060060,
+    0x60601E63, 0x6003033C, 0x18186363, 0x630C0030,
+    0x60301863, 0x60030336, 0x18186363, 0x30187E18,
+    0x3C18186B, 0x303F3F33, 0x7E3E, 0x1830000C,
+    0x600C186B, 0x1863607F, 0x6063, 0x18600006,
+    0x60061863, 0xC636030, 0x6063, 0x18307E0C,
+    0x60031863, 0xC636030, 0x18186063, 0x180018,
+    0x63631836, 0xC636330, 0x18183063, 0x180C0030,
+    0x3E7F7E1C, 0xC3E3E78, 0xC001E3E, 0x18060060,
+    0x0, 0x0, 0x0, 0x0,
+    0x0, 0x0, 0x0, 0x0,
+    0x0, 0x0, 0x0, 0x0,
+    0x0, 0x0, 0x0, 0x0,
+    0x0, 0x0, 0x0, 0x0,
+    0x0, 0x0, 0x0, 0x0,
+    0x3C3F0800, 0x3C7F7F1F, 0x67783C63, 0x3E63630F,
+    0x66661C3E, 0x66666636, 0x66301863, 0x63677706,
+    0x43663663, 0x43464666, 0x66301863, 0x636F7F06,
+    0x3666363, 0x3161666, 0x36301863, 0x637F7F06,
+    0x33E637B, 0x31E1E66, 0x1E30187F, 0x637B6B06,
+    0x3667F7B, 0x7B161666, 0x1E301863, 0x63736306,
+    0x366637B, 0x63060666, 0x36331863, 0x63636306,
+    0x4366633B, 0x63064666, 0x66331863, 0x63636346,
+    0x66666303, 0x66066636, 0x66331863, 0x63636366,
+    0x3C3F633E, 0x5C0F7F1F, 0x671E3C63, 0x3E63637F,
+    0x0, 0x0, 0x0, 0x0,
+    0x0, 0x0, 0x0, 0x0,
+    0x0, 0x0, 0x0, 0x0,
+    0x0, 0x0, 0x0, 0x0,
+    0x0, 0x0, 0x0, 0x80000,
+    0x0, 0x0, 0x0, 0x1C0000,
+    0x3E3F3E3F, 0x6363637E, 0x3C7F6663, 0x363C00,
+    0x63666366, 0x6363637E, 0xC636663, 0x633001,
+    0x63666366, 0x6363635A, 0xC616636, 0x3003,
+    0x6666366, 0x63636318, 0xC30663E, 0x3007,
+    0x1C3E633E, 0x6B636318, 0xC183C1C, 0x300E,
+    0x30366306, 0x6B636318, 0xC0C181C, 0x301C,
+    0x60666306, 0x6B636318, 0xC06183E, 0x3038,
+    0x63666B06, 0x7F366318, 0xC431836, 0x3070,
+    0x63667B06, 0x771C6318, 0xC631863, 0x3060,
+    0x3E673E0F, 0x36083E3C, 0x3C7F3C63, 0x3C40,
+    0x3000, 0x0, 0x0, 0x0,
+    0x7000, 0x0, 0x0, 0xFF000000,
+    0x0, 0x0, 0x0, 0x0,
+    0x0, 0x0, 0x0, 0x0,
+    0xC, 0x0, 0x0, 0x0,
+    0xC, 0x0, 0x0, 0x0,
+    0x70018, 0x1C0038, 0x7601807, 0x1C,
+    0x60000, 0x360030, 0x6601806, 0x18,
+    0x60000, 0x260030, 0x6000006, 0x18,
+    0x3E1E1E00, 0x6E063E3C, 0x66701C36, 0x3E3B3718,
+    0x63363000, 0x330F6336, 0x3660186E, 0x63667F18,
+    0x3663E00, 0x33067F33, 0x1E601866, 0x63666B18,
+    0x3663300, 0x33060333, 0x1E601866, 0x63666B18,
+    0x3663300, 0x33060333, 0x36601866, 0x63666B18,
+    0x63663300, 0x33066333, 0x66601866, 0x63666B18,
+    0x3E3E6E00, 0x3E0F3E6E, 0x67603C67, 0x3E66633C,
+    0x0, 0x30000000, 0x660000, 0x0,
+    0x0, 0x33000000, 0x660000, 0x0,
+    0x0, 0x1E000000, 0x3C0000, 0x0,
+    0x0, 0x0, 0x0, 0x0,
+    0x0, 0x0, 0x0, 0x0,
+    0x0, 0x0, 0x0, 0x0,
+    0x0, 0x8, 0x70000000, 0x6E0E18,
+    0x0, 0xC, 0x18000000, 0x3B1818,
+    0x0, 0xC, 0x18000000, 0x8001818,
+    0x3E3B6E3B, 0x6366333F, 0x187F6363, 0x1C001818,
+    0x636E3366, 0x6366330C, 0xE336336, 0x36007000,
+    0x6663366, 0x6B66330C, 0x1818631C, 0x63001818,
+    0x1C063366, 0x6B66330C, 0x180C631C, 0x63001818,
+    0x30063366, 0x6B66330C, 0x1806631C, 0x63001818,
+    0x63063366, 0x7F3C336C, 0x18636336, 0x7F001818,
+    0x3E0F3E3E, 0x36186E38, 0x707F7E63, 0xE18,
+    0x3006, 0x0, 0x6000, 0x0,
+    0x3006, 0x0, 0x3000, 0x0,
+    0x780F, 0x0, 0x1F00, 0x0,
+    0x0, 0x0, 0x0, 0x0,
+    0x0, 0x0, 0x0, 0x1C000000,
+    0x8300000, 0x1C0600, 0x60008, 0x36630618,
+    0x1C18333C, 0x360C33, 0x660C631C, 0x1C000C3C,
+    0x360C0066, 0x1C1800, 0x180036, 0x81866,
+    0x43, 0x3C000000, 0x0, 0x1C1C0000,
+    0x1E3E3303, 0x661E1E1E, 0x1C3E3E3E, 0x36361C1C,
+    0x30633303, 0x6303030, 0x18636363, 0x63631818,
+    0x3E7F3303, 0x63E3E3E, 0x187F7F7F, 0x63631818,
+    0x33033343, 0x66333333, 0x18030303, 0x7F7F1818,
+    0x33033366, 0x3C333333, 0x18030303, 0x63631818,
+    0x3363333C, 0x30333333, 0x18636363, 0x63631818,
+    0x6E3E6E30, 0x606E6E6E, 0x3C3E3E3E, 0x63633C3C,
+    0x60, 0x3C000000, 0x0, 0x0,
+    0x3E, 0x0, 0x0, 0x0,
+    0x0, 0x0, 0x0, 0x0,
+    0x0, 0x0, 0x0, 0x0,
+    0x18, 0x0, 0x0, 0x0,
+    0x800000C, 0x60C0600, 0x18636300, 0x701F001C,
+    0x1C7C0006, 0xC1E0C63, 0x18000063, 0xD8336636,
+    0x36360000, 0x18331800, 0x3C633E00, 0x18336626,
+    0x33007F, 0x0, 0x66636300, 0x181F3C06,
+    0x3E333366, 0x33333E3E, 0x6636363, 0x1823180F,
+    0x637F6E06, 0x33336363, 0x6636363, 0x7E337E06,
+    0x63336C3E, 0x33336363, 0x6636363, 0x187B1806,
+    0x63337E06, 0x33336363, 0x66636363, 0x18337E06,
+    0x63331B06, 0x33336363, 0x3C636363, 0x18331806,
+    0x63331B66, 0x33336363, 0x18636363, 0x18331867,
+    0x3E73767F, 0x6E6E3E3E, 0x183E3E7E, 0x1863183F,
+    0x0, 0x0, 0x60, 0x1B000000,
+    0x0, 0x0, 0x30, 0xE000000,
+    0x0, 0x0, 0x1E, 0x0,
+    0x0, 0x0, 0x0, 0x0,
+    0x0, 0x6E00, 0x0, 0x0,
+    0x18183018, 0x1C3C3B00, 0x3000000, 0x3,
+    0xC0C180C, 0x3636006E, 0x300000C, 0x1803,
+    0x6060C06, 0x3636633B, 0x4300000C, 0x1843,
+    0x0, 0x1C7C6700, 0x63000000, 0x63,
+    0x333E1C1E, 0x6F3B, 0x3300000C, 0x1B6C1833,
+    0x33631830, 0x3E7E7F66, 0x187F7F0C, 0x36361818,
+    0x3363183E, 0x7B66, 0xC600306, 0x6C1B180C,
+    0x33631833, 0x7366, 0x6600303, 0x36363C66,
+    0x33631833, 0x6366, 0x3B600363, 0x1B6C3C73,
+    0x33631833, 0x6366, 0x61600363, 0x3C79,
+    0x6E3E3C6E, 0x6366, 0x3000003E, 0x187C,
+    0x0, 0x0, 0x18000000, 0x60,
+    0x0, 0x0, 0x7C000000, 0x60,
+    0x0, 0x0, 0x0, 0x0,
+    0x0, 0x0, 0x0, 0x0,
+    0x18BBAA88, 0x6C1818, 0x6C6C00, 0x186C6C,
+    0x18EE5522, 0x6C1818, 0x6C6C00, 0x186C6C,
+    0x18BBAA88, 0x6C1818, 0x6C6C00, 0x186C6C,
+    0x18EE5522, 0x6C1818, 0x6C6C00, 0x186C6C,
+    0x18BBAA88, 0x6C1818, 0x6C6C00, 0x186C6C,
+    0x18EE5522, 0x6C1F18, 0x7F6C6F1F, 0x1F6C6F,
+    0x18BBAA88, 0x6C1818, 0x606C6018, 0x186C60,
+    0x18EE5522, 0x7F6F1F1F, 0x6F6C6F1F, 0x1F1F7F7F,
+    0x18BBAA88, 0x6C6C1818, 0x6C6C6C18, 0x18000000,
+    0x18EE5522, 0x6C6C1818, 0x6C6C6C18, 0x18000000,
+    0x18BBAA88, 0x6C6C1818, 0x6C6C6C18, 0x18000000,
+    0x18EE5522, 0x6C6C1818, 0x6C6C6C18, 0x18000000,
+    0x18BBAA88, 0x6C6C1818, 0x6C6C6C18, 0x18000000,
+    0x18EE5522, 0x6C6C1818, 0x6C6C6C18, 0x18000000,
+    0x18BBAA88, 0x6C6C1818, 0x6C6C6C18, 0x18000000,
+    0x18EE5522, 0x6C6C1818, 0x6C6C6C18, 0x18000000,
+    0x18001818, 0x6C181800, 0x6C006C, 0x186C006C,
+    0x18001818, 0x6C181800, 0x6C006C, 0x186C006C,
+    0x18001818, 0x6C181800, 0x6C006C, 0x186C006C,
+    0x18001818, 0x6C181800, 0x6C006C, 0x186C006C,
+    0x18001818, 0x6C181800, 0x6C006C, 0x186C006C,
+    0x18001818, 0x6CF81800, 0xFFEFFCEC, 0xFFEFFFEC,
+    0x18001818, 0x6C181800, 0xC0C, 0xC,
+    0xF8FFFFF8, 0xECF8FFFF, 0xEFFFECFC, 0xFFEFFFEC,
+    0x18180000, 0x6C181800, 0x6C006C00, 0x6C006C,
+    0x18180000, 0x6C181800, 0x6C006C00, 0x6C006C,
+    0x18180000, 0x6C181800, 0x6C006C00, 0x6C006C,
+    0x18180000, 0x6C181800, 0x6C006C00, 0x6C006C,
+    0x18180000, 0x6C181800, 0x6C006C00, 0x6C006C,
+    0x18180000, 0x6C181800, 0x6C006C00, 0x6C006C,
+    0x18180000, 0x6C181800, 0x6C006C00, 0x6C006C,
+    0x18180000, 0x6C181800, 0x6C006C00, 0x6C006C,
+    0x6C00006C, 0x6C000018, 0xFF001818, 0xFFF00F00,
+    0x6C00006C, 0x6C000018, 0xFF001818, 0xFFF00F00,
+    0x6C00006C, 0x6C000018, 0xFF001818, 0xFFF00F00,
+    0x6C00006C, 0x6C000018, 0xFF001818, 0xFFF00F00,
+    0x6C00006C, 0x6C000018, 0xFF001818, 0xFFF00F00,
+    0x6C00FF6C, 0x6C00F8F8, 0xFF0018FF, 0xFFF00F00,
+    0x6C00006C, 0x6C001818, 0xFF001818, 0xFFF00F00,
+    0xFCFFFFFF, 0xFFFCF8F8, 0xFFF81FFF, 0xF00FFF,
+    0x6C1800, 0x6C6C1800, 0xFF180018, 0xF00FFF,
+    0x6C1800, 0x6C6C1800, 0xFF180018, 0xF00FFF,
+    0x6C1800, 0x6C6C1800, 0xFF180018, 0xF00FFF,
+    0x6C1800, 0x6C6C1800, 0xFF180018, 0xF00FFF,
+    0x6C1800, 0x6C6C1800, 0xFF180018, 0xF00FFF,
+    0x6C1800, 0x6C6C1800, 0xFF180018, 0xF00FFF,
+    0x6C1800, 0x6C6C1800, 0xFF180018, 0xF00FFF,
+    0x6C1800, 0x6C6C1800, 0xFF180018, 0xF00FFF,
+    0x0, 0x0, 0x0, 0x0,
+    0x0, 0x0, 0x0, 0x0,
+    0x7F1E00, 0x7F, 0x781C1C1C, 0x0,
+    0x663300, 0x63, 0xC363608, 0x3E000000,
+    0x463300, 0x660046, 0x1863633E, 0x63000000,
+    0x7F06332E, 0x7E667E0C, 0x3063636B, 0x637C387E,
+    0x36061B33, 0x18661318, 0x7C637F6B, 0x63066ADB,
+    0x36063333, 0x18663318, 0x6663636B, 0x63066BDB,
+    0x36066333, 0x1866330C, 0x6636636B, 0x631C6BDB,
+    0x36066333, 0x183E3346, 0x6636633E, 0x63066B7E,
+    0x36066333, 0x58063363, 0x66363608, 0x63066B00,
+    0x360F336E, 0x30061E7F, 0x3C771C1C, 0x637C3E00,
+    0x0, 0x30000, 0x0, 0x800,
+    0x0, 0x0, 0x0, 0x800,
+    0x0, 0x0, 0x0, 0x800,
+    0x0, 0x0, 0x0, 0x0,
+    0x0, 0x1800, 0x0, 0x0,
+    0x0, 0x1800, 0xF000001C, 0xE1B,
+    0x0, 0x1870, 0x30000036, 0x1B36,
+    0x300C0000, 0x18D8, 0x30000036, 0xC36,
+    0x1818187F, 0x1818D8, 0x3000001C, 0x3E0636,
+    0xC301800, 0x6E181818, 0x30000000, 0x3E1336,
+    0x6607E00, 0x3B001818, 0x30000000, 0x3E1F36,
+    0xC30187F, 0x7E1818, 0x37001800, 0x3E0000,
+    0x18181800, 0x6E001B18, 0x36181800, 0x3E0000,
+    0x300C0000, 0x3B181B18, 0x36000000, 0x3E0000,
+    0x7F, 0x181B18, 0x3C000000, 0x3E0000,
+    0x7E7EFF00, 0xE18, 0x38000000, 0x0,
+    0x0, 0x18, 0x0, 0x0,
+    0x0, 0x18, 0x0, 0x0,
+    0x0, 0x18, 0x0, 0x0,
+    0x0, 0x18, 0x0, 0x0
+);
 
-vec4 draw_text(in vec4 in_color, in vec2 uv_in, in vec2 pos_in, in vec2 resolution_in, in int[128] textData, in int len) {
-    ivec2 uv = ivec2( uv_in );
-    ivec2 pos = ivec2( pos_in );
-    ivec2 resolution = ivec2( resolution_in );
-    if (uv.x < pos.x || uv.y < pos.y|| uv.x >= (pos.x + int(8 * len)) || uv.y >= (pos.y + 16)) {
-        return in_color;
-    }
-
-    int charIndex = (uv.x - pos.x) / 8;
-    int charCode = int( textData[ uint(charIndex) ] & 0xFFu );
-    int onGlyph = fontRef(charCode, ivec2(mod(uv.x - pos.x, 8), mod(uv.y - pos.y, 16)) );
-    vec3 col = vec3( 0.0f );
-    switch ( onGlyph ) {
-        case -1: col = vec3( 0.1618f ); break; // out of bounds
-        case  0: col = vec3( 0.0f );    break; // "off" pixel
-        case  1: col = vec3( 0.7f );  break; // "on" pixel
-    }
-
-    // Output to screen
-    return vec4( col, 1.0f );
-}
-
-
-vec4 char8x16(in vec4 in_color, in vec2 uv, in vec2 pos, float scale, in int charCode) {
-    float scaledWidth = 8.0f * scale;
-    float scaledHeight = 16.0f * scale;
-    if (uv.x < pos.x || uv.y < pos.y|| uv.x >= (pos.x + scaledWidth) || uv.y >= (pos.y + scaledHeight)) {
-        return in_color;
-    }
-
-    int bit_w = int((uv.x - pos.x) / scaledWidth * 8.0);
-    int bit_h = int((uv.y - pos.y) / scaledHeight * 16.0);
-    int onGlyph = fontRef(charCode, ivec2(bit_w, bit_h) );
-    vec3 col = vec3( 0.0f );
-    switch ( onGlyph ) {
-        case -1: col = vec3( 0.1618f ); break; // out of bounds
-        case  0: col = vec3( 0.0f );    break; // "off" pixel
-        case  1: col = vec3( 0.7f );  break; // "on" pixel
-    }
-
-    // Output to screen
-    return vec4( col, 1.0f );
-}
+#define font_8x16(uv,pos,txt,start,len) (fontstr(uv,pos,txt,start,len,8,16,128,mono_8x16))
+#define multiline_8x16(uv,pos,txt,starts,lens) \
+    multiline_font((uv), (pos), (txt), (starts), (lens), 8, 16, 128, mono_8x16)
 
 /*
 medievalish_font (PNM).
@@ -389,7 +381,7 @@ as part of other packs.
 /*
   m.h (GIF).
 */
- uint medievalish_font[512] = uint[](
+ uint font_data_fantasy[512] = uint[](
 0x0, 0x0, 0x0, 0x0,
 0x7070700, 0x7070707, 0x7070707, 0x7070707,
 0x5050500, 0x5050505, 0x5050505, 0x5050505,
@@ -520,74 +512,12 @@ as part of other packs.
 0x0, 0x0, 0x0, 0x0
 );
 
-// Additional fontref and draw_text functions for medievalish_font
-int fontRefMedieval( uint char, ivec2 offset ) {
-    // 8x8 font checks
-    bool offsetOOB = any( lessThan(         offset, ivec2( 0,  0 ) ) ) ||
-                     any( greaterThanEqual( offset, ivec2( 8,  8 ) ) );
-    bool charOOB = bool( clamp( char, 0u, 255u ) != char );
-    if ( offsetOOB || charOOB ) {
-        return -1; // oob
-    }
-    // 8x8 grid, 16 columns
-    uvec2 sampleLoc = uvec2( char % 16u, char / 16u ) * uvec2( 8u, 8u ) + uvec2( offset );
-    
-    // Image width is 128.
-    uint totalBitIdx = sampleLoc.x + sampleLoc.y * 128u;
-    uint wordIdx = totalBitIdx / 32u;
-    uint bitMask = 1u << ( (totalBitIdx % 32u) );
-    
-    if (wordIdx >= 515u) return 0;
-    
-    return int( ( medievalish_font[wordIdx] & bitMask ) != 0u );
-}
 
-vec4 draw_textMedieval(in vec4 in_color, in vec2 uv_in, in vec2 pos_in, in vec2 resolution_in, in int[128] textData, in int len) {
-    ivec2 uv = ivec2( uv_in );
-    ivec2 pos = ivec2( pos_in );
-    // Check bounds for 8x8 font (width 8*len, height 8)
-    if (uv.x < pos.x || uv.y < pos.y|| uv.x >= (pos.x + int(8 * len)) || uv.y >= (pos.y + 8)) {
-        return in_color;
-    }
+#define font_fantasy(uv,pos,txt,start,len) (fontstr(uv,pos,txt,start,len,8,8,128,fantasy))
+#define multiline_fantasy(uv,pos,txt,starts,lens) \
+    multiline_font((uv), (pos), (txt), (starts), (lens), 8, 8, 128, fantasy)
 
-    int charIndex = (uv.x - pos.x) / 8;
-    // Look up character code
-    int charCode = int( textData[ uint(charIndex) ] & 0xFFu );
-    
-    // Look up pixel. Note 8 height.
-    int onGlyph = fontRefMedieval(uint(charCode), ivec2((uv.x - pos.x) % 8, (uv.y - pos.y) % 8) );
-    
-    vec3 col = vec3( 0.0f );
-    switch ( onGlyph ) {
-        case -1: col = vec3( 0.1618f ); break; // out of bounds
-        case  0: col = vec3( 0.0f );    break; // "off" pixel
-        case  1: col = vec3( 0.7f );    break; // "on" pixel
-    }
-
-    // Output to screen
-    return vec4( col, 1.0f );
-}
-
-
-vec4 fantasy_char(in vec4 in_color, in ivec2 uv, in ivec2 pos, in ivec2 resolution, in int charCode) {
-    if (uv.x < pos.x || uv.y < pos.y|| uv.x >= (pos.x + 8) || uv.y >= (pos.y + 16)) {
-        return in_color;
-    }
-
-    int onGlyph = fontRefMedieval(charCode, ivec2(mod(uv.x - pos.x, 8), mod(uv.y - pos.y, 16)) );
-    vec3 col = vec3( 0.0f );
-    switch ( onGlyph ) {
-        case -1: col = vec3( 0.1618f ); break; // out of bounds
-        case  0: col = vec3( 0.0f );    break; // "off" pixel
-        case  1: col = vec3( 0.7f );  break; // "on" pixel
-    }
-
-    // Output to screen
-    return vec4( col, 1.0f );
-}
-
-
-int font8x8[512] = {
+int font_data_8x8[512] = {
     0x6C3C3C00, 0x103810, 0xE0FF00FF, 0x1218103C,
     0xFE7E4200, 0x387C38, 0xC0FF00FF, 0xD6683066,
     0xFEDBA500, 0x187C387C, 0x7CC33CE7, 0x7C987066,
@@ -718,46 +648,6 @@ int font8x8[512] = {
     0x0, 0x18, 0x8000000, 0x0,
 };
 
-int fontRef8x8( int char, ivec2 offset ) {
-    // 8x8 font checks
-    bool offsetOOB = any( lessThan(         offset, ivec2( 0,  0 ) ) ) ||
-                     any( greaterThanEqual( offset, ivec2( 8,  8 ) ) );
-    bool charOOB = bool( clamp( char, 0, 127 ) != char );
-    if ( offsetOOB || charOOB ) {
-        return -1; // oob
-    }
-    // 8x8 grid, 16 columns
-    ivec2 sampleLoc = ivec2( char % 16, char / 16 ) * ivec2( 8, 8 ) + ivec2( offset );
-    
-    // Image width is 128
-    int totalBitIdx = sampleLoc.x + sampleLoc.y * 128;
-    int wordIdx = totalBitIdx / 32;
-    int bitMask = 1 << ( (totalBitIdx % 32) );
-    
-    if (wordIdx >= 512) return 0;
-    
-    return int( ( font8x8[wordIdx] & bitMask ) != 0 );
-}
-
-vec4 char8x8(in vec4 in_color, in vec2 uv, in ivec2 mn, float scale, in int charCode) {
-    float scaledWidth = 8.0f * scale;
-    float scaledHeight = 8.0f * scale;
-    vec2 pos = vec2(mn) * vec2(scaledWidth, scaledHeight);
-
-    if (uv.x < pos.x || uv.y < pos.y|| uv.x >= (pos.x + scaledWidth) || uv.y >= (pos.y + scaledHeight)) {
-        return in_color;
-    }
-
-    int bit_w = int((uv.x - pos.x) / scaledWidth * 8.0);
-    int bit_h = int((uv.y - pos.y) / scaledHeight * 8.0);
-    int onGlyph = fontRef8x8(charCode, ivec2(bit_w, bit_h) );
-    vec3 col = vec3( 0.0f );
-    switch ( onGlyph ) {
-        case -1: col = vec3( 0.1618f ); break; // out of bounds
-        case  0: col = vec3( 0.0f );    break; // "off" pixel
-        case  1: col = vec3( 0.7f );  break; // "on" pixel
-    }
-
-    // Output to screen
-    return vec4( col, 1.0f );
-}
+#define font_8x8(uv,pos,txt,start,len) (fontstr(uv,pos,txt,start,len,8,8,128,8x8))
+#define multiline_8x8(uv,pos,txt,starts,lens) \
+    multiline_font((uv), (pos), (txt), (starts), (lens), 8, 8, 128, 8x8)

@@ -14,13 +14,15 @@ if (fract(uv.x/10) < 0.5) {
 }
 
 for (int i = 0; i < num_labels; i++) {
+    if (font_fantasy(uv, label_pos[i], label_txt, label_idx[i], label_len[i])) {
+        color = vec4(1.0, 1.0, 1.0, 1.0);
+    }
+}
+
+for (int i = 0; i < num_labels; i++) {
     vec2 pos = label_pos[i];
-    int idx = label_idx[i];
-    int len = label_len[i];
-    if (uv.x > pos.x && uv.x < pos.x + float(len) * FONT_W &&
-        uv.y > pos.y && uv.y < pos.y + FONT_H) {
-        int m = int((uv.x - pos.x) / FONT_W);
-        int char = label_txt[idx + m];
-        color = char8x16(color, uv, pos + vec2(float(m) * FONT_W, 0.0), 1.0, char);
+    pos.y += 100;
+    if (font_8x8(uv, pos, label_txt, label_idx[i], label_len[i])) {
+        color = vec4(1.0, 1.0, 1.0, 1.0);
     }
 }

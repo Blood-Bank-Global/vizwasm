@@ -28,7 +28,7 @@ party_stats_t stats[4] = {
 };
 #define get_stat(member, stat) stats[member].line_[stat]
 
-vec2 uv = src_coord.xy/2.0 * iResolution.xy;
+vec2 uv = src_coord.xy/4.0 * iResolution.xy;
 color = vec4(0.0, 0.0, 0.0, 1.0);
 
 if (false) { // class stats
@@ -70,11 +70,12 @@ if (false) { // class stats
             txt[16] = 0x30 + int(mod(stat2, 10));
         }
         // color = draw_text(color, uv, line_pos, iResolution.xy, txt, len);
-        color = draw_textMedieval(color, uv, line_pos, iResolution.xy, txt, len);
+        // color = draw_textMedieval(color, uv, line_pos, iResolution.xy, txt, len);
     }
 }
 
-#define QUEST_LINE_LEN 16.0
+#define QUEST_LINE_LEN 16
+#define QUEST_LINE_H 8.0
 if (true) {
     struct quest_message_t {
         int msg[128];
@@ -93,22 +94,33 @@ if (true) {
     int qindex = int(floor((1.0 + randf(uint(iTime)))/2.0 * 8.0));
 
 
+    quest_message_t qmsg = quest_messages[qindex];   
+    int starts[9] = int[9](
+        min(qmsg.len, 0), 
+        min(qmsg.len, 16),
+        min(qmsg.len, 32), 
+        min(qmsg.len, 48),
+        min(qmsg.len, 64), 
+        min(qmsg.len, 80),
+        min(qmsg.len, 96),
+        min(qmsg.len, 112), 
+        min(qmsg.len, 128));
+    int lens[9] = int[9](
+        qmsg.len > 0 ? min(QUEST_LINE_LEN, qmsg.len) : 0,
+        qmsg.len > 16 ? min(QUEST_LINE_LEN, qmsg.len - 16) : 0,
+        qmsg.len > 32 ? min(QUEST_LINE_LEN, qmsg.len - 32) : 0,
+        qmsg.len > 48 ? min(QUEST_LINE_LEN, qmsg.len - 48) : 0,
+        qmsg.len > 64 ? min(QUEST_LINE_LEN, qmsg.len - 64) : 0,
+        qmsg.len > 80 ? min(QUEST_LINE_LEN, qmsg.len - 80) : 0,
+        qmsg.len > 96 ? min(QUEST_LINE_LEN, qmsg.len - 96) : 0,
+        qmsg.len > 112 ? min(QUEST_LINE_LEN, qmsg.len - 112) : 0,
+        qmsg.len > 128 ? min(QUEST_LINE_LEN, qmsg.len - 128) : 0);
+    
+    vec2 uv = vec2(uv.x, uv.y - 16.0);
 
-    quest_message_t qmsg = quest_messages[qindex];
-
-    float scale = iResolution.x / (float(QUEST_LINE_LEN) * 16.0);
-    vec2 uv = vec2(uv.x, uv.y - 16.0 * 2) / scale;
-
-    float line_ = floor(uv.y / float(QUEST_LINE_LEN));
-    int char_offset = int(line_) * int(QUEST_LINE_LEN);
-
-    if (char_offset >= 0 && char_offset < qmsg.len) {
-        int remainder = clamp(qmsg.len - char_offset, 0, (int(QUEST_LINE_LEN)-1));
-        int txt[128];
-        for (int i = 0; (i <= remainder) && i + char_offset < 128; i++) {
-            txt[i] = qmsg.msg[i + char_offset];
-        }
-
-        color = draw_textMedieval(color, uv, vec2(0.0, floor(16.0*line_)), iResolution.xy, txt, (remainder+1));
+    int test_starts[2] = int[2](0,16);
+    int test_lens[2] = int[2](16,16);
+    if (multiline_fantasy(uv, vec2(0.0, 0.0), qmsg.msg, test_starts, test_lens)) {
+        color = vec4(0.7, 0.7, 0.7, 1.0);
     }
 }

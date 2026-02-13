@@ -158,43 +158,9 @@ if (true) {
     }
 }
 
-//!STR debug_str "v=0000x0000 k=0000x0000"
-if (false) {
-    debug_str[2] = 0x30 + int(mod(VIEW_RESOLUTION.x/1000.0, 10.0));
-    debug_str[3] = 0x30 + int(mod(VIEW_RESOLUTION.x/100.0, 10.0));
-    debug_str[4] = 0x30 + int(mod(VIEW_RESOLUTION.x/10.0, 10.0));
-    debug_str[5] = 0x30 + int(mod(VIEW_RESOLUTION.x, 10.0));
-
-    debug_str[7] = 0x30 + int(mod(VIEW_RESOLUTION.y/1000.0, 10.0));
-    debug_str[8] = 0x30 + int(mod(VIEW_RESOLUTION.y/100.0, 10.0));
-    debug_str[9] = 0x30 + int(mod(VIEW_RESOLUTION.y/10.0, 10.0));
-    debug_str[10] = 0x30 + int(mod(VIEW_RESOLUTION.y, 10.0));
-
-    debug_str[14] = 0x30 + int(mod(BLANK_RESOLUTION.x/1000.0, 10.0));
-    debug_str[15] = 0x30 + int(mod(BLANK_RESOLUTION.x/100.0, 10.0));
-    debug_str[16] = 0x30 + int(mod(BLANK_RESOLUTION.x/10.0, 10.0));
-    debug_str[17] = 0x30 + int(mod(BLANK_RESOLUTION.x, 10.0));
-    
-    debug_str[19] = 0x30 + int(mod(BLANK_RESOLUTION.y/1000.0, 10.0));
-    debug_str[20] = 0x30 + int(mod(BLANK_RESOLUTION.y/100.0, 10.0));
-    debug_str[21] = 0x30 + int(mod(BLANK_RESOLUTION.y/10.0, 10.0));
-    debug_str[22] = 0x30 + int(mod(BLANK_RESOLUTION.y, 10.0));
-
-    color = draw_text(color, uv, vec2(100,10), VIEW_RESOLUTION.xy, debug_str, debug_str_length);
-}
-
 if (false) {
     vec4 quest_color = texture(QUEST_TEX, QUEST_COORD.xy);
     if (distance(quest_color.rgb, vec3(0.0, 0.0, 0.0))   > 0.1) {
         color.rgb = blend_by_mode(color, quest_color, BLEND_ALPHA).rgb;
     }
-}
-
-//!STR cc_value "cc=000"
-if (false) {
-    float v = cc_iac_driver_bus_1_0_0;
-    cc_value[3] = 0x30 + int(mod(v/100.0, 10.0));
-    cc_value[4] = 0x30 + int(mod(v/10.0, 10.0));
-    cc_value[5] = 0x30 + int(mod(v, 10.0));
-    color = draw_text(color, uv, vec2(100,10), VIEW_RESOLUTION.xy, cc_value, cc_value_length);
 }
