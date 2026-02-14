@@ -459,6 +459,8 @@ impl AllSettings {
                         "\n",
                         include_str!("glsl/strings.glsl"),
                         "\n",
+                        include_str!("glsl/font_8x16.glsl"),
+                        "\n",
                     ))
                     .body(include_str!("glsl/wireframe.glsl"))
                     .build(),
@@ -483,6 +485,8 @@ impl AllSettings {
                         "\n",
                         include_str!("glsl/strings.glsl"),
                         "\n",
+                        include_str!("glsl/font_8x16.glsl"),
+                        "\n",
                     ))
                     .body(include_str!("glsl/logs.glsl"))
                     .build(),
@@ -506,6 +510,10 @@ impl AllSettings {
                         include_str!("glsl/utils.glsl"),
                         "\n",
                         include_str!("glsl/strings.glsl"),
+                        "\n",
+                        include_str!("glsl/font_fantasy.glsl"),
+                        "\n",
+                        include_str!("glsl/font_8x8.glsl"),
                         "\n",
                     ))
                     .body(include_str!("glsl/status.glsl"))

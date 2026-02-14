@@ -118,122 +118,160 @@ if (uv.x > OFFSET_X && uv.x < (640.0 - OFFSET_X) && uv.y > OFFSET_Y && uv.y < (4
     if (uv.y > line1_pos.y && uv.y < line1_pos.y + BUTTON_H && (k == 2 || k == 1) && m < 12) {
         vec2 line_pos = line1_pos + vec2(0.0, float(k) * (FONT_H + 4.0));
         bool draw = false;
+        int len = 0;
         switch (i * 4 + j) {
             case 0:
                 if (k == 1 && m < button1_len) {
                     draw = font_8x16(uv, line_pos, button1_txt, 0, 11);
+                    len = button1_len;
                 } else if (k == 2 && m < button1_val_len) {
                     draw = font_8x16(uv, line_pos, button1_val, 0, 11);
+                    len = button1_val_len;
                 }
                 break;
             case 1:
                 if (k == 1 && m < button2_len) {
                     draw = font_8x16(uv, line_pos, button2_txt, 0, 11);
+                    len = button2_len;
                 } else if (k == 2 && m < button2_val_len) {
                     draw = font_8x16(uv, line_pos, button2_val, 0, 11);
+                    len = button2_val_len;
                 }
                 break;
             case 2:
                 if (k == 1 && m < button3_len) {
                     draw = font_8x16(uv, line_pos, button3_txt, 0, 11);
+                    len = button3_len;
                 } else if (k == 2 && m < button3_val_len) {
                     draw = font_8x16(uv, line_pos, button3_val, 0, 11);
+                    len = button3_val_len;
                 }
                 break;
             case 3:
                 if (k == 1 && m < button4_len) {
                     draw = font_8x16(uv, line_pos, button4_txt, 0, 11);
+                    len = button4_len;
                 } else if (k == 2 && m < button4_val_len) {
                     draw = font_8x16(uv, line_pos, button4_val, 0, 11);
+                    len = button4_val_len;
                 }
                 break;
             case 4:
                 if (k == 1 && m < button5_len) {
                     draw = font_8x16(uv, line_pos, button5_txt, 0, 11);
+                    len = button5_len;
                 } else if (k == 2 && m < button5_val_len) {
                     draw = font_8x16(uv, line_pos, button5_val, 0, 11);
+                    len = button5_val_len;
                 }
                 break;
             case 5:
                 if (k == 1 && m < button6_len) {
                     draw = font_8x16(uv, line_pos, button6_txt, 0, 11);
+                    len = button6_len;
                 } else if (k == 2 && m < button6_val_len) {
                     draw = font_8x16(uv, line_pos, button6_val, 0, 11);
+                    len = button6_val_len;
                 }
                 break;
             case 6:
                 if (k == 1 && m < button7_len) {
                     draw = font_8x16(uv, line_pos, button7_txt, 0, 11);
+                    len = button7_len;
                 } else if (k == 2 && m < button7_val_len) {
                     draw = font_8x16(uv, line_pos, button7_val, 0, 11);
+                    len = button7_val_len;
                 }
                 break;
             case 7:
                 if (k == 1 && m < button8_len) {
                     draw = font_8x16(uv, line_pos, button8_txt, 0, 11);
+                    len = button8_len;
                 } else if (k == 2 && m < button8_val_len) {
                     draw = font_8x16(uv, line_pos, button8_val, 0, 11);
+                    len = button8_val_len;
                 }
                 break;
             case 8:
                 if (k == 1 && m < button9_len) {
                     draw = font_8x16(uv, line_pos, button9_txt, 0, 11);
+                    len = button9_len;
                 } else if (k == 2 && m < button9_val_len) {
                     draw = font_8x16(uv, line_pos, button9_val, 0, 11);
+                    len = button9_val_len;
                 }
                 break;
             case 9:
                 if (k == 1 && m < button10_len) {
                     draw = font_8x16(uv, line_pos, button10_txt, 0, 11);
+                    len = button10_len;
                 } else if (k == 2 && m < button10_val_len) {
                     draw = font_8x16(uv, line_pos, button10_val, 0, 11);
+                    len = button10_val_len;
                 }
                 break;
             case 10:
                 if (k == 1 && m < button11_len) {
                     draw = font_8x16(uv, line_pos, button11_txt, 0, 11);
+                    len = button11_len;
                 } else if (k == 2 && m < button11_val_len) {
                     draw = font_8x16(uv, line_pos, button11_val, 0, 11);
+                    len = button11_val_len;
                 }
                 break;
             case 11:
                 if (k == 1 && m < button12_len) {
                     draw = font_8x16(uv, line_pos, button12_txt, 0, 11);
+                    len = button12_len;
                 } else if (k == 2 && m < button12_val_len) {
                     draw = font_8x16(uv, line_pos, button12_val, 0, 11);
+                    len = button12_val_len;
                 }
                 break;
             case 12:
                 if (k == 1 && m < button13_len) {
                     draw = font_8x16(uv, line_pos, button13_txt, 0, 11);
+                    len = button13_len;
                 } else if (k == 2 && m < button13_val_len) {
                     draw = font_8x16(uv, line_pos, button13_val, 0, 11);
+                    len = button13_val_len;
                 }
                 break;
             case 13:
                 if (k == 1 && m < button14_len) {
                     draw = font_8x16(uv, line_pos, button14_txt, 0, 11);
+                    len = button14_len;
                 } else if (k == 2 && m < button14_val_len) {
                     draw = font_8x16(uv, line_pos, button14_val, 0, 11);
+                    len = button14_val_len;
                 }
                 break;
             case 14:
                 if (k == 1 && m < button15_len) {
                     draw = font_8x16(uv, line_pos, button15_txt, 0, 11);
+                    len = button15_len;
                 } else if (k == 2 && m < button15_val_len) {
                     draw = font_8x16(uv, line_pos, button15_val, 0, 11);
+                    len = button15_val_len;
                 }
                 break;
             case 15:
                 if (k == 1 && m < button16_len) {
                     draw = font_8x16(uv, line_pos, button16_txt, 0, 11);
+                    len = button16_len;
                 } else if (k == 2 && m < button16_val_len) {
                     draw = font_8x16(uv, line_pos, button16_val, 0, 11);
+                    len = button16_val_len;
                 }
                 break;
             default:
                 draw = false;
         }
+
+        if ((k == 1 || k == 2) && m < len) {
+            color = vec4(0.0, 0.0, 0.0, 1.0);
+        }
+        
         if (draw) {
             color = vec4(0.7, 0.7, 0.7, 1.0);
         }
