@@ -157,6 +157,7 @@ pub struct AllSettings {
     pub mix_configs: HashMap<String, MixConfig>,
     pub playback_names: Vec<String>,
     pub distort_names: Vec<(String, String)>,
+    pub warp_names: Vec<(String, String)>,
     pub distort_edge_types: Vec<String>,
     pub overlay_names: Vec<String>,
     pub lut_names: Vec<String>,
@@ -180,7 +181,7 @@ impl AllSettings {
         &[("black", "0x000000")]
     }
 
-    pub fn distort_names() -> &'static [(&'static str, &'static str)] {
+    pub fn distort_warp_base_names() -> &'static [(&'static str, &'static str)] {
         &[
             //("none", "none"), removed to reduce complexity
             ("neutral", "neutral"),
@@ -372,52 +373,60 @@ impl AllSettings {
             .map(|mc| (mc.def.name.clone(), mc))
             .collect::<HashMap<_, _>>();
 
-        let distort_names = Self::distort_names()
+        let distort_warp_base_names = Self::distort_warp_base_names()
             .iter()
             .map(|(k, v)| (k.to_string(), v.to_string()))
             .collect::<Vec<_>>();
 
-        let distort_set = distort_names
-            .iter()
-            .map(|(x, y)| vec![x, y])
-            .flatten()
-            .cloned()
-            .collect::<HashSet<_>>();
+        let mut distort_names = vec![];
+        let mut warp_names = vec![];
 
-        stream_defs.extend(
-            distort_set
-                .iter()
-                .map(|s| {
+        for name in distort_warp_base_names {
+            let (distort_dx, distort_dy, warp_dx, warp_dy) = (
+                format!("distort_{}_dx", name.0),
+                format!("distort_{}_dy", name.1),
+                format!("warp_{}_dx", name.0),
+                format!("warp_{}_dy", name.1),
+            );
+
+            distort_names.push((distort_dx.clone(), distort_dy.clone()));
+            warp_names.push((warp_dx.clone(), warp_dy.clone()));
+
+            for (name, mapped_name) in [
+                (&name.0, &distort_dx),
+                (&name.1, &distort_dy),
+                (&name.0, &warp_dx),
+                (&name.1, &warp_dy),
+            ] {
+                stream_defs.push(
                     Vid::builder()
-                        .name(s)
-                        .path(&format!("{asset_path}/distorts/{s}.mp4"))
+                        .name(mapped_name.clone())
+                        .path(&format!("{asset_path}/distorts/{}.mp4", name))
                         .resolution((640, 480))
                         .tbq((1, 12800))
                         .pix_fmt("yuv420p")
                         .repeat(true)
                         .realtime(false)
                         .hardware_decode(false)
-                        .build()
-                })
-                .collect::<Vec<_>>(),
-        );
-        mix_configs.extend(distort_set.iter().map(|s| {
-            (
-                format!("{s}_mix"),
-                MixConfig {
-                    def: VidMixer::builder()
-                        .name(format!("{s}_mix"))
-                        .width(640)
-                        .height(480)
                         .build(),
-                    mix: Mix::builder()
-                        .name(format!("{s}_mix"))
-                        .video(s)
-                        .no_display(true)
-                        .build(),
-                },
-            )
-        }));
+                );
+                mix_configs.insert(
+                    format!("{}_mix", mapped_name),
+                    MixConfig {
+                        def: VidMixer::builder()
+                            .name(format!("{}_mix", mapped_name))
+                            .width(640)
+                            .height(480)
+                            .build(),
+                        mix: Mix::builder()
+                            .name(format!("{}_mix", mapped_name))
+                            .video(mapped_name)
+                            .no_display(true)
+                            .build(),
+                    },
+                );
+            }
+        }
 
         let wireframe = Vid::builder()
             .name("wireframe")
@@ -656,6 +665,7 @@ impl AllSettings {
             feedback_modes,
             overlay_names,
             distort_names,
+            warp_names,
             distort_edge_types,
             lut_names,
             colors,
@@ -852,11 +862,11 @@ impl AllSettings {
                         n = n.clamp(0.0, (self.overlay_names.len() - 1) as f64);
                         Some(self.overlay_names[n as usize].clone())
                     } else if field == StreamSettingsField::DistortScan {
-                        n = n.clamp(0.0, (self.distort_names.len() - 1) as f64);
-                        Some(self.distort_names[n as usize].0.clone())
+                        n = n.clamp(0.0, (Self::distort_warp_base_names().len() - 1) as f64);
+                        Some(Self::distort_warp_base_names()[n as usize].0.to_string())
                     } else if field == StreamSettingsField::WarpScan {
-                        n = n.clamp(0.0, (self.distort_names.len() - 1) as f64);
-                        Some(self.distort_names[n as usize].1.clone())
+                        n = n.clamp(0.0, (Self::distort_warp_base_names().len() - 1) as f64);
+                        Some(Self::distort_warp_base_names()[n as usize].1.to_string())
                     } else {
                         None
                     };
@@ -1794,7 +1804,7 @@ impl AllSettings {
                         .get_field(&StreamSettingsField::DistortSelected)
                         as usize]
                         .clone();
-                    let (warp_x, warp_y) = self.distort_names[self.playback[fidx]
+                    let (warp_x, warp_y) = self.warp_names[self.playback[fidx]
                         .stream
                         .get_field(&StreamSettingsField::WarpSelected)
                         as usize]

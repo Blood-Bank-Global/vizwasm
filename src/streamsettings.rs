@@ -298,7 +298,7 @@ static PROPERTIES: LazyLock<HashMap<StreamSettingsField, StreamSettingsFieldProp
             0,
             5,
             0.0,
-            AllSettings::distort_names().len() as f64 - 1.0,
+            AllSettings::distort_warp_base_names().len() as f64 - 1.0,
             0.2,
             0.0,
             "distort"
@@ -308,7 +308,7 @@ static PROPERTIES: LazyLock<HashMap<StreamSettingsField, StreamSettingsFieldProp
             1,
             5,
             0.0,
-            AllSettings::distort_names().len() as f64 - 1.0,
+            AllSettings::distort_warp_base_names().len() as f64 - 1.0,
             0.2,
             0.0,
             "distort"
@@ -318,7 +318,7 @@ static PROPERTIES: LazyLock<HashMap<StreamSettingsField, StreamSettingsFieldProp
             0,
             6,
             0.0,
-            AllSettings::distort_names().len() as f64 - 1.0,
+            AllSettings::distort_warp_base_names().len() as f64 - 1.0,
             0.2,
             0.0,
             "warp"
@@ -328,7 +328,7 @@ static PROPERTIES: LazyLock<HashMap<StreamSettingsField, StreamSettingsFieldProp
             1,
             6,
             0.0,
-            AllSettings::distort_names().len() as f64 - 1.0,
+            AllSettings::distort_warp_base_names().len() as f64 - 1.0,
             0.2,
             0.0,
             "warp"
