@@ -27,6 +27,9 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
     let mut vids = vec![];
 
     let vid640x480 = [
+        "flowers",
+        "vase",
+        "me",
         "a_sword_in_the_stone",
         "arthur",
         "columns",
@@ -122,31 +125,34 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
     }
 
     // Cameras
-    // vids.push(
-    //     Vid::builder()
-    //         .name("front cam")
-    //         .path("MacBook Pro Camera")
-    //         .format("avfoundation")
-    //         .opts(&vec![
-    //             ("pixel_format", "bgr0"),
-    //             ("framerate", "30.0"),
-    //             ("video_size", "1280x720"),
-    //         ])
-    //         .resolution((1280, 720))
-    //         .tbq((1, 1000000))
-    //         .pix_fmt("bgr0")
-    //         .repeat(false)
-    //         .realtime(true)
-    //         .hardware_decode(false)
-    //         .build()
-    //         .into(),
-    // );
+    vids.push(
+        Vid::builder()
+            .name("front cam")
+            .path("MacBook Pro Camera")
+            .format("avfoundation")
+            .opts(&vec![
+                ("pixel_format", "bgr0"),
+                ("framerate", "30.0"),
+                ("video_size", "1280x720"),
+            ])
+            .resolution((1280, 720))
+            .tbq((1, 1000000))
+            .pix_fmt("bgr0")
+            .repeat(false)
+            .realtime(true)
+            .hardware_decode(false)
+            .build()
+            .into(),
+    );
     vids
 });
 
 static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
     let names = [
         "blank",
+        "flowers",
+        "vase",
+        "me",
         "status",
         "sopranos",
         "a_sword_in_the_stone",
@@ -157,7 +163,7 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "statue",
         "the_moon",
         "the_snow_queen",
-        //"front cam",
+        "front cam",
         "sunrise_scene",
         "sunrise_combo",
         "columns",
