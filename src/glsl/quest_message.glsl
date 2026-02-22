@@ -6,7 +6,7 @@
 //!STR quest3 "Restore the     reliquary,      Discover truth."
 //!STR quest4 "The enemy does  not come in     dragon form."
 //!STR quest5 "Is the treasure cursed, or is   the curse the   treasure itself?"
-//!STR quest6 "Do not be       fooled by those who would say   your power is a  prison."
+//!STR quest6 "Do not be       fooled by those who would say   your power is a prison."
 //!STR quest7 "A TRAP HAS BEEN       SPRUNG!    "
 
 #define QUEST_LINE_LEN 16
@@ -47,7 +47,7 @@ if (true) {
         quest_extents[i].lens[5] = min(QUEST_LINE_LEN, lenghts[i] > 80u ? lenghts[i] - 80u : 0u);
     }
 
-    vec2 uv = (iResolution.xy * src_coord.xy * 0.25) + vec2(0.0, -16.0);
+    vec2 uv = (iResolution.xy * src_coord.xy * 0.25 ) + vec2(0.0, -16.0);
 
 #define display_msg(i) \
     multiline_fantasy( \

@@ -257,7 +257,8 @@
 //! 0x0 0x18 0x0 0x0 
 //! 0x0 0x18 0x0 0x0
 //!ENDLONGVAR
-
+#define font_8x16_width 8
+#define font_8x16_height 16
 #define font_8x16(uv,pos,txt,start,len) (fontstr(uv,pos,txt,start,len,8,16,128,mono_8x16))
 #define multiline_8x16(uv,pos,txt,starts,lens) \
     multiline_font((uv), (pos), (txt), (starts), (lens), 8, 16, 128, mono_8x16)

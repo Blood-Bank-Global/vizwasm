@@ -18,7 +18,7 @@
     + ((uint((char)) / 16) * uint((font_h)) + uint((offset).y)) * uint((map_w)))/32u \
     ])
 
-#define font_bitmask(char,offset_x,font_w) (1u << ((((uint(char) % 16) * 8u + uint(offset_x)) % 32u) ) )
+#define font_bitmask(char,offset_x,font_w) (1u << ((((uint(char) % 16) * uint(font_w) + uint(offset_x)) % 32u) ) )
     
 #define fontstr(uv,pos,txt,start,len,font_w,font_h,map_w,font_name) \
     (str_bounds((uv),(pos),(font_w),(font_h),(len)) \
@@ -32,8 +32,8 @@
     && (step((pos).y, (uv).y) >= 0.5 \
     && step((uv).y, ((pos).y + float((font_h)) * float((starts.length())))) >= 0.5 \
     && step((pos).x, (uv).x) >= 0.5 \
-    && step(uint((uv).y/float((font_h))), (lens).length()) >= 0.5 \
-    && step((uv).x, (pos).x + float((font_w)) * float((lens)[uint((uv).y/float((font_h)))])) >= 0.5)
+    && (step(uint(((uv).y - (pos).y)/float((font_h))), (lens).length()) >= 0.5) \
+    && step((uv).x, (pos).x + float((font_w)) * float((lens)[uint(((uv).y - (pos).y)/float((font_h)))])) >= 0.5)
 
 #define multiline_font(uv,pos,txt,starts,lens,font_w,font_h,map_w,font_name) \
     ((multiline_bounds((uv),(pos),float((font_w)),float((font_h)),(starts),(lens))) \

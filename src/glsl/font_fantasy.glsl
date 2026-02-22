@@ -150,7 +150,8 @@ as part of other packs.
 //! 0x7070707 0x7070707 0x7070707 0x70707
 //! 0x0 0x0 0x0 0x0
 //!ENDLONGVAR
-
+#define font_fantasy_width (8)
+#define font_fantasy_height (8)
 #define font_fantasy(uv,pos,txt,start,len) (fontstr(uv,pos,txt,start,len,8,8,128,fantasy))
 #define multiline_fantasy(uv,pos,txt,starts,lens) \
     multiline_font((uv), (pos), (txt), (starts), (lens), 8, 8, 128, fantasy)

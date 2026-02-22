@@ -125,31 +125,33 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
     }
 
     // Cameras
-    vids.push(
-        Vid::builder()
-            .name("front cam")
-            .path("MacBook Pro Camera")
-            .format("avfoundation")
-            .opts(&vec![
-                ("pixel_format", "bgr0"),
-                ("framerate", "30.0"),
-                ("video_size", "1280x720"),
-            ])
-            .resolution((1280, 720))
-            .tbq((1, 1000000))
-            .pix_fmt("bgr0")
-            .repeat(false)
-            .realtime(true)
-            .hardware_decode(false)
-            .build()
-            .into(),
-    );
+    // vids.push(
+    //     Vid::builder()
+    //         .name("front cam")
+    //         .path("MacBook Pro Camera")
+    //         .format("avfoundation")
+    //         .opts(&vec![
+    //             ("pixel_format", "bgr0"),
+    //             ("framerate", "30.0"),
+    //             ("video_size", "1280x720"),
+    //         ])
+    //         .resolution((1280, 720))
+    //         .tbq((1, 1000000))
+    //         .pix_fmt("bgr0")
+    //         .repeat(false)
+    //         .realtime(true)
+    //         .hardware_decode(false)
+    //         .build()
+    //         .into(),
+    // );
     vids
 });
 
 static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
     let names = [
         "blank",
+        "demo_fonts",
+        "quest_message",
         "flowers",
         "vase",
         "me",
@@ -159,11 +161,10 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "arthur",
         "a_sword_in_the_stone_combo",
         "jam",
-        "quest_message",
         "statue",
         "the_moon",
         "the_snow_queen",
-        "front cam",
+        // "front cam",
         "sunrise_scene",
         "sunrise_combo",
         "columns",
@@ -296,13 +297,67 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
                     "\n",
                     include_str!("../glsl/font_fantasy.glsl"),
                     "\n",
-                    // include_str!("../glsl/patch_check_scroll_px.glsl"),
-                    // include_str!("../glsl/patch_blob_px.glsl")
                 ))
                 .body(include_str!("../glsl/quest_message.glsl"))
                 .build(),
             mix: Mix::builder()
                 .name("quest_message_mix")
+                .mixed("blank_overlay")
+                .no_display(true)
+                .build(),
+        });
+
+        configs.push(MixConfig {
+            def: VidMixer::builder()
+                .name("demo_fonts_mix")
+                .width(vid.resolution.0 as u32)
+                .height(vid.resolution.1 as u32)
+                .header(concat!(
+                    include_str!("../glsl/utils.glsl"),
+                    "\n",
+                    include_str!("../glsl/strings.glsl"),
+                    "\n",
+                    include_str!("../glsl/font_8x8.glsl"),
+                    "\n",
+                    include_str!("../glsl/font_8x16.glsl"),
+                    "\n",
+                    include_str!("../glsl/font_ample.glsl"),
+                    "\n",
+                    include_str!("../glsl/font_typical.glsl"),
+                    "\n",
+                    include_str!("../glsl/font_arcade.glsl"),
+                    "\n",
+                    include_str!("../glsl/font_bubbly.glsl"),
+                    "\n",
+                    include_str!("../glsl/font_willow.glsl"),
+                    "\n",
+                    include_str!("../glsl/font_fantasy.glsl"),
+                    "\n",
+                    include_str!("../glsl/font_future.glsl"),
+                    "\n",
+                    include_str!("../glsl/font_fancy.glsl"),
+                    "\n",
+                    include_str!("../glsl/font_retro.glsl"),
+                    "\n",
+                    include_str!("../glsl/font_cyber.glsl"),
+                    "\n",
+                    include_str!("../glsl/font_high.glsl"),
+                    "\n",
+                    include_str!("../glsl/font_strong.glsl"),
+                    "\n",
+                    include_str!("../glsl/font_nobel.glsl"),
+                    "\n",
+                    include_str!("../glsl/font_logic.glsl"),
+                    "\n",
+                    include_str!("../glsl/font_small.glsl"),
+                    "\n",
+                    include_str!("../glsl/font_8x14.glsl"),
+                    "\n",
+                ))
+                .body(include_str!("../glsl/demo_fonts.glsl"))
+                .build(),
+            mix: Mix::builder()
+                .name("demo_fonts_mix")
                 .mixed("blank_overlay")
                 .no_display(true)
                 .build(),
