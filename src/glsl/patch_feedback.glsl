@@ -2,6 +2,7 @@
 #define FEEDBACK_JAM 1
 #define FEEDBACK_MATH 2
 #define FEEDBACK_XOR 3
+#define FEEDBACK_YUV 4
 
 vec4 patch_feedback_basic(in vec4 base, in vec4 feedback) {
     // underlay feedback
@@ -38,6 +39,16 @@ vec4 patch_feedback_xor(in vec4 base, in vec4 feedback) {
     return blend_by_mode(feedback, base, BLEND_ALPHA);
 }
 
+vec4 patch_feedback_yuv(in vec4 base, in vec4 feedback) {
+    vec3 yuv = rgb2yuv_bt709(feedback.rgb);
+    
+    yuv[0] = 0.5;
+    float range = pow(0.0625 - yuv[1]*yuv[1], 0.5);
+    yuv[2] = mod(yuv[2] + 0, range);
+    feedback.rgb = yuv2rgb_bt709(yuv);
+    return blend_by_mode(feedback, base, BLEND_ALPHA);
+}
+
 vec4 patch_feedback(in vec4 base) {
     if (base.a >= 1.0) {
         return base;
@@ -68,6 +79,9 @@ vec4 patch_feedback(in vec4 base) {
         case FEEDBACK_XOR:
             // xor feedback
             return patch_feedback_xor(base, feedback);
+        case FEEDBACK_YUV:
+            // yuv feedback
+            return patch_feedback_yuv(base, feedback);
         default:
             return vec4(0, 0.5, 0, 1.0);
     }

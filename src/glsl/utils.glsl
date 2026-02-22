@@ -505,6 +505,36 @@ vec3 rgb2hsv(vec3 c)
     return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
 }
 
+vec3 rgb2yuv_bt709(vec3 rgb) {
+    mat3x3 rgb2yuv_mat = mat3x3(
+        0.2126, -0.09991,  0.615,
+        0.7152, -0.33609, -0.55861,
+        0.0722,  0.436,    -0.05639
+    );
+    vec3 yuv = rgb * rgb2yuv_mat;
+    return vec3(yuv.x, yuv.y + 0.5, yuv.z + 0.5);
+}
+
+vec3 yuv2rgb_bt709(vec3 yuv) {
+    // 1. Shift U and V back to the [-0.5, 0.5] range
+    float y = yuv.x;
+    float u = yuv.y - 0.5;
+    float v = yuv.z - 0.5;
+
+    // 2. BT.709 Full Range Inverse Matrix
+    // Formulas based on:
+    // R = Y + 1.5748 * V
+    // G = Y - 0.1873 * U - 0.4681 * V
+    // B = Y + 1.8556 * U
+    
+    vec3 rgb;
+    rgb.r = y + (1.5748 * v);
+    rgb.g = y - (0.1873 * u) - (0.4681 * v);
+    rgb.b = y + (1.8556 * u);
+
+    // 3. Clamp the output to ensure valid [0.0, 1.0] RGB values
+    return clamp(rgb, 0.0, 1.0);
+}
 
 bool pointInRhombus(vec2 point, mat4x2 corners) {
     bool inside = false;

@@ -475,13 +475,22 @@ static PROPERTIES: LazyLock<HashMap<StreamSettingsField, StreamSettingsFieldProp
         /*
         feedback mode
          */
-        mk!(FeedbackModeScan, 0, 48, 0.0, 3.0, 0.2, 0.0, "feedback_mode");
+        mk!(
+            FeedbackModeScan,
+            0,
+            48,
+            0.0,
+            AllSettings::feedback_modes().len() as f64 - 1.0,
+            0.2,
+            0.0,
+            "feedback_mode"
+        );
         mk!(
             FeedbackModeSelected,
             1,
             48,
             0.0,
-            3.0,
+            AllSettings::feedback_modes().len() as f64 - 1.0,
             0.2,
             0.0,
             "feedback_mode_selected"
