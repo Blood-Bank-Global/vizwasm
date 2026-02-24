@@ -506,10 +506,14 @@ vec3 rgb2hsv(vec3 c)
 }
 
 vec3 rgb2yuv_bt709(vec3 rgb) {
+    // BT.709 matrix (column-major order for vec * mat multiplication)
+    // Y =  0.2126*R + 0.7152*G + 0.0722*B
+    // U = -0.1146*R - 0.3854*G + 0.5000*B
+    // V =  0.5000*R - 0.4542*G - 0.0458*B
     mat3x3 rgb2yuv_mat = mat3x3(
-        0.2126, -0.09991,  0.615,
-        0.7152, -0.33609, -0.55861,
-        0.0722,  0.436,    -0.05639
+        0.2126,  0.7152,  0.0722,
+       -0.1146, -0.3854,  0.5,
+        0.5,    -0.4542, -0.0458
     );
     vec3 yuv = rgb * rgb2yuv_mat;
     return vec3(yuv.x, yuv.y + 0.5, yuv.z + 0.5);
