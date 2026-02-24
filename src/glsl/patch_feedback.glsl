@@ -42,7 +42,7 @@ vec4 patch_feedback_xor(in vec4 base, in vec4 feedback) {
 
 vec4 patch_feedback_sea(in vec4 base, in vec4 feedback) {
     vec3 yuv = rgb2yuv_bt709(feedback.rgb);
-    yuv.y = max(0.25, mod(yuv.y + 0.05, 0.75));
+    yuv.y = max(0.25, mod(yuv.y + 0.015, 0.75));
     yuv.x = 0.4 + 0.6 * ((1.0 - yuv.y - 0.25)/0.5);
     yuv.z = (1.0 - yuv.y);
     feedback.rgb = yuv2rgb_bt709(yuv);
@@ -51,7 +51,7 @@ vec4 patch_feedback_sea(in vec4 base, in vec4 feedback) {
 
 vec4 patch_feedback_alien(in vec4 base, in vec4 feedback) {
     vec3 yuv = rgb2yuv_bt709(feedback.rgb);
-    yuv.y = max(0.25, mod(yuv.y + 0.05, 0.75));
+    yuv.y = max(0.25, mod(yuv.y + 0.01, 0.75));
     yuv.x = 0.3 + 0.4 * ((1.0 - yuv.y - 0.25)/0.5);
     yuv.z = yuv.y;
     feedback.rgb = yuv2rgb_bt709(yuv);
