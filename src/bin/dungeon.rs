@@ -15,8 +15,8 @@ use sdlrig::{
     renderspec::{Mix, RenderSpec, SendCmd, SendValue},
 };
 
-use vizwasm::beat_time_boilerplate;
 use vizwasm::vizconfig::{time_code_2_float, AllSettings, MixConfig};
+use vizwasm::{beat_time_boilerplate, streamsettings::StreamSettingsField};
 fn main() {}
 
 static STREAM_PATH: &'static str = "/Users/ttie/Desktop/dungeon/streams";
@@ -125,26 +125,36 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
         );
     }
 
-    // Cameras
-    // vids.push(
-    //     Vid::builder()
-    //         .name("front cam")
-    //         .path("MacBook Pro Camera")
-    //         .format("avfoundation")
-    //         .opts(&vec![
-    //             ("pixel_format", "bgr0"),
-    //             ("framerate", "30.0"),
-    //             ("video_size", "1280x720"),
-    //         ])
-    //         .resolution((1280, 720))
-    //         .tbq((1, 1000000))
-    //         .pix_fmt("bgr0")
-    //         .repeat(false)
-    //         .realtime(true)
-    //         .hardware_decode(false)
-    //         .build()
-    //         .into(),
-    // );
+    //Cameras
+    vids.push(
+        Vid::builder()
+            .name("front cam")
+            .path("MacBook Pro Camera")
+            // .path("Logitech BRIO")
+            .format("avfoundation")
+            .opts(&vec![
+                ("pixel_format", "bgr0"),
+                ("framerate", "30.0"),
+                ("video_size", "1280x720"),
+                // ("video_size", "640x360"),
+                // ("video_size", "1920x1080"),
+                ("fflags", "+nobuffer+flush_packets"),
+                ("probesize", "32"),
+                ("flags", "low_delay"),
+                ("analyzeduration", "0"),
+                ("rtbufsize", "5000000"),
+            ])
+            .resolution((1280, 720))
+            // .resolution((640, 360))
+            // .resolution((1920, 1080))
+            .tbq((1, 1000000))
+            .pix_fmt("bgr0")
+            .repeat(false)
+            .realtime(true)
+            .hardware_decode(false)
+            .build()
+            .into(),
+    );
     vids
 });
 
@@ -166,7 +176,8 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "jam",
         "statue",
         "the_snow_queen",
-        // "front cam",
+        "front cam",
+        "text cam",
         "sunrise_scene",
         "sunrise_combo",
         "columns",
@@ -361,6 +372,28 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
             mix: Mix::builder()
                 .name("demo_fonts_mix")
                 .mixed("blank_overlay")
+                .no_display(true)
+                .build(),
+        });
+
+        configs.push(MixConfig {
+            def: VidMixer::builder()
+                .name("text cam_mix")
+                .width(vid.resolution.0 as u32)
+                .height(vid.resolution.1 as u32)
+                .header(concat!(
+                    include_str!("../glsl/utils.glsl"),
+                    "\n",
+                    include_str!("../glsl/strings.glsl"),
+                    "\n",
+                    include_str!("../glsl/font_cyber.glsl"),
+                    "\n",
+                ))
+                .body(include_str!("../glsl/text_cam.glsl"))
+                .build(),
+            mix: Mix::builder()
+                .name("text cam_mix")
+                .mixed("front cam_overlay")
                 .no_display(true)
                 .build(),
         });
@@ -656,6 +689,7 @@ pub fn do_display<T: AsRef<str>>(
 const IAC: &str = "IAC Driver Bus 1";
 pub fn mega_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
     a_sword_in_the_stone_cb(all_settings, event);
+    alien_cb(all_settings, event);
 }
 
 pub fn a_sword_in_the_stone_cb(_all_settings: &mut AllSettings, event: &MidiEvent) {
@@ -688,4 +722,23 @@ pub fn a_sword_in_the_stone_cb(_all_settings: &mut AllSettings, event: &MidiEven
         "a_sword_in_the_stone_combo",
         time_codes
     );
+}
+
+pub fn alien_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
+    let text_cam = all_settings
+        .playback
+        .iter_mut()
+        .find(|p| p.stream.ident.name == "text cam");
+    if let Some(pb) = text_cam {
+        match (event.kind, event.device.as_str(), event.key, event.velocity) {
+            (MIDI_CONTROL_CHANGE, IAC, 0, value) => {
+                if value > 10 {
+                    pb.stream.set_field(StreamSettingsField::WarpLevel, 0.05);
+                } else {
+                    pb.stream.set_field(StreamSettingsField::WarpLevel, 0.0);
+                }
+            }
+            _ => {}
+        }
+    }
 }

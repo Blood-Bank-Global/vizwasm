@@ -1255,10 +1255,11 @@ impl AllSettings {
                                 }
                             } else {
                                 self.playback[selected_idx].loops.record_buffer = Some(Loop {
-                                    tween: self.playback[selected_idx]
-                                        .stream
-                                        .get_field(&StreamSettingsField::Tween)
-                                        >= 0.0,
+                                    // tween: self.playback[selected_idx]
+                                    //     .stream
+                                    //     .get_field(&StreamSettingsField::Tween)
+                                    //     >= 0.0,
+                                    tween: false,
                                     events: vec![],
                                     end: i64::MIN,
                                 });
