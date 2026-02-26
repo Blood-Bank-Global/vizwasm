@@ -20,7 +20,7 @@ $HATS: arrange(
     [1, hats.struct("1 [1 1] 1 1")]
 ).sometimesBy(.5, x => x.n(4))
 
-$CHORDS: chord("<Am C D Em Am C D E^>")
+S$CHORDS: chord("<Am C D Em Am C D E^>")
     .voicing()
     .slow(1)
     .s("supersaw")
@@ -44,18 +44,17 @@ _$KEYS: "c3"
     .rib(0, 8)
     .lpf(1500)
     ._pianoroll()
-_$STILL_NOT_RIGHT_BUT_W_E: "{c2 d2 e2 f2 a2 b2 c#3 d3}%8"
+_$KEYS2: "{cb4 d4 e4 f4 a4 b4 cb4 d4}%8"
     .add(12)
     .gain(1)
     .sometimes(x => x.rev())
     .note()
-    .s("gm_lead_8_bass_lead")
-    .n("4,1")
+    .s("triangle")
     .att(.1)
     .dec(.45)
     .degradeBy(.25)
     .rib(0, 8)
     ._pianoroll()
 
-// $ALLLPF: all(apply(x=>x.lpf(1000)))
+//$ALLLPF: all(apply(x=>x.lpf(1000)))
 // $ALLHPF: all(apply(x => x.hpf(2000)))
