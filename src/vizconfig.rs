@@ -1,15 +1,14 @@
 use sdlrig::gfxinfo::MidiEvent;
 #[allow(unused_imports)]
 use sdlrig::gfxinfo::{MIDI_CONTROL_CHANGE, MIDI_NOTE_OFF, MIDI_NOTE_ON};
-use sdlrig::renderspec::{CopyEx, HudText, Mix, MixInput, Reset, SendCmd, SendMidi, SendValue};
+use sdlrig::renderspec::{CopyEx, Mix, MixInput, Reset, SendCmd, SendMidi, SendValue};
 use sdlrig::{
-    gfxinfo::{Asset, GfxEvent, KeyCode, KeyEvent, Knob, Vid, VidInfo, VidMixer},
+    gfxinfo::{Asset, GfxEvent, KeyCode, KeyEvent, Knob, Vid, VidMixer},
     renderspec::RenderSpec,
 };
 
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
-use std::iter::repeat;
 use std::sync::LazyLock;
 use std::{error::Error, i64, io::Write};
 
@@ -828,18 +827,17 @@ impl AllSettings {
             }
         }
 
-        specs.push(
-            HudText {
-                text: self.hud(&VidInfo::default()),
-            }
-            .into(),
-        );
-
         // WIRE FRAME DATA
+        let mut label_data = String::new();
+        let mut label_starts = vec![];
+        let mut label_lens = vec![];
+        let mut value_data = String::new();
+        let mut value_starts = vec![];
+        let mut value_lens = vec![];
+
         let page = self.selected_knobs as u8 / 16;
         for i in 0..16 {
             let cc = i + (16 * page);
-            let button = i + 1;
             let (label, val, extra) = if let Some(field) = StreamSettings::find_field(0, cc) {
                 let mut n = self.playback[self.active_idx].stream.get_field(&field);
                 let val = format!("{}{:>5.05}", if n >= 0.0 { " " } else { "" }, n);
@@ -878,60 +876,113 @@ impl AllSettings {
                 ("none".to_string(), "".to_string(), None)
             };
 
-            let txt = label
-                .bytes()
-                .map(|b| b as i32)
-                .chain(repeat(0).take((128 - label.len()).clamp(0, 128)))
-                .collect::<Vec<_>>();
+            let start = label_data.len() as u32;
+            label_starts.push(start);
+            label_data.push_str(&format!(" "));
+            label_data.push_str(&label);
+            label_data.push_str(&format!(" "));
+            label_lens.push(label_data.len() as u32 - start);
 
-            specs.push(
-                SendCmd::builder()
-                    .mix("wireframe_data_mix")
-                    .name(format!("button{button}_len"))
-                    .value(SendValue::Integer(label.len() as i32))
-                    .build()
-                    .into(),
-            );
-            specs.push(
-                SendCmd::builder()
-                    .mix("wireframe_data_mix")
-                    .name(format!("button{button}_txt"))
-                    .value(SendValue::IVector(txt))
-                    .build()
-                    .into(),
-            );
-
-            let txt = if let Some(mut extra) = extra.clone() {
-                extra.truncate(11);
-                extra
-                    .bytes()
-                    .map(|b| b as i32)
-                    .chain(repeat(0).take((128 - extra.len()).clamp(0, 128)))
-                    .collect::<Vec<_>>()
+            let start = value_data.len() as u32;
+            value_starts.push(start);
+            if let Some(extra) = extra.clone() {
+                value_data.push_str(&format!(" "));
+                value_data.push_str(&extra);
             } else {
-                val.bytes()
-                    .map(|b| b as i32)
-                    .chain(repeat(0).take((128 - val.len()).clamp(0, 128)))
-                    .collect::<Vec<_>>()
-            };
-
-            specs.push(
-                SendCmd::builder()
-                    .mix("wireframe_data_mix")
-                    .name(format!("button{button}_val_len"))
-                    .value(SendValue::Integer(val.len() as i32))
-                    .build()
-                    .into(),
-            );
-            specs.push(
-                SendCmd::builder()
-                    .mix("wireframe_data_mix")
-                    .name(format!("button{button}_val"))
-                    .value(SendValue::IVector(txt))
-                    .build()
-                    .into(),
-            );
+                value_data.push_str(&val);
+            }
+            label_data.push_str(&format!(" "));
+            value_lens.push(value_data.len() as u32 - start);
         }
+
+        // add current active
+        let start = label_data.len() as u32;
+        label_starts.push(start);
+        label_data.push_str("Active");
+        label_lens.push(label_data.len() as u32 - start);
+
+        let start = value_data.len() as u32;
+        value_starts.push(start);
+        value_data.push_str(&self.playback[self.active_idx].stream.ident.name);
+        value_lens.push(value_data.len() as u32 - start);
+
+        // add current display
+        let start = label_data.len() as u32;
+        label_starts.push(start);
+        label_data.push_str("Display");
+        label_lens.push(label_data.len() as u32 - start);
+
+        let display_name = &self.playback[self.display_idx].stream.ident.name;
+        let start = value_data.len() as u32;
+        value_starts.push(start);
+        value_data.push_str(display_name);
+        value_lens.push(value_data.len() as u32 - start);
+
+        //add scanned video
+        let start = label_data.len() as u32;
+        label_starts.push(start);
+        label_data.push_str("Scanned");
+        label_lens.push(label_data.len() as u32 - start);
+
+        let scanned_name = &self.playback[self.scan_idx].stream.ident.name;
+        let start = value_data.len() as u32;
+        value_starts.push(start);
+        value_data.push_str(scanned_name);
+        value_lens.push(value_data.len() as u32 - start);
+
+        // Labels text data, starts, and lens
+        let txt = label_data.bytes().map(|b| b as u32).collect::<Vec<_>>();
+        specs.push(
+            SendCmd::builder()
+                .mix("wireframe_data_mix")
+                .name(format!("label_data"))
+                .value(SendValue::UVector(txt))
+                .build()
+                .into(),
+        );
+        specs.push(
+            SendCmd::builder()
+                .mix("wireframe_data_mix")
+                .name(format!("label_starts"))
+                .value(SendValue::UVector(label_starts.clone()))
+                .build()
+                .into(),
+        );
+        specs.push(
+            SendCmd::builder()
+                .mix("wireframe_data_mix")
+                .name(format!("label_lens"))
+                .value(SendValue::UVector(label_lens.clone()))
+                .build()
+                .into(),
+        );
+
+        // Values text data, starts, and lens
+        let txt = value_data.bytes().map(|b| b as u32).collect::<Vec<_>>();
+        specs.push(
+            SendCmd::builder()
+                .mix("wireframe_data_mix")
+                .name(format!("value_data"))
+                .value(SendValue::UVector(txt))
+                .build()
+                .into(),
+        );
+        specs.push(
+            SendCmd::builder()
+                .mix("wireframe_data_mix")
+                .name(format!("value_starts"))
+                .value(SendValue::UVector(value_starts.clone()))
+                .build()
+                .into(),
+        );
+        specs.push(
+            SendCmd::builder()
+                .mix("wireframe_data_mix")
+                .name(format!("value_lens"))
+                .value(SendValue::UVector(value_lens.clone()))
+                .build()
+                .into(),
+        );
 
         specs.push(
             SendCmd::builder()
@@ -1509,54 +1560,40 @@ impl AllSettings {
                         } => {
                             self.adjust(Knob::CB, *shift, 1.0);
                         }
-                        // KeyEvent {
-                        //     key: KeyCode::SDLK_9,
-                        //     shift,
-                        //     down: true,
-                        //     ..
-                        // } => {
-                        //     self.adjust(Knob::L, *shift, -1.0);
-                        // }
-                        // KeyEvent {
-                        //     key: KeyCode::SDLK_0,
-                        //     shift,
-                        //     down: true,
-                        //     ..
-                        // } => {
-                        //     self.adjust(Knob::L, *shift, 1.0);
-                        // }
-                        // KeyEvent {
-                        //     key: KeyCode::SDLK_MINUS,
-                        //     shift,
-                        //     down: true,
-                        //     ..
-                        // } => {
-                        //     self.adjust(Knob::CL, *shift, 1.0);
-                        // }
-                        // KeyEvent {
-                        //     key: KeyCode::SDLK_LEFTBRACKET,
-                        //     shift,
-                        //     down: true,
-                        //     ..
-                        // } => {
-                        //     self.adjust(Knob::R, *shift, -1.0);
-                        // }
-                        // KeyEvent {
-                        //     key: KeyCode::SDLK_RIGHTBRACKET,
-                        //     shift,
-                        //     down: true,
-                        //     ..
-                        // } => {
-                        //     self.adjust(Knob::R, *shift, 1.0);
-                        // }
-                        // KeyEvent {
-                        //     key: KeyCode::SDLK_BACKSLASH,
-                        //     shift,
-                        //     down: true,
-                        //     ..
-                        // } => {
-                        //     self.adjust(Knob::CR, *shift, 1.0);
-                        // }
+                        KeyEvent {
+                            key: KeyCode::SDLK_LEFTBRACKET,
+                            shift,
+                            down: true,
+                            ..
+                        } => {
+                            let scale = if *shift { 10 } else { 1 };
+                            self.scan_idx = (self.scan_idx as i64 - scale)
+                                .clamp(0, self.playback.len() as i64 - 1)
+                                as usize;
+                        }
+                        KeyEvent {
+                            key: KeyCode::SDLK_RIGHTBRACKET,
+                            shift,
+                            down: true,
+                            ..
+                        } => {
+                            let scale = if *shift { 10 } else { 1 };
+                            self.scan_idx = (self.scan_idx as i64 + scale)
+                                .clamp(0, self.playback.len() as i64 - 1)
+                                as usize;
+                        }
+                        KeyEvent {
+                            key: KeyCode::SDLK_BACKSLASH,
+                            shift,
+                            down: true,
+                            ..
+                        } => {
+                            if *shift {
+                                self.display_idx = self.scan_idx;
+                            } else {
+                                self.active_idx = self.scan_idx;
+                            }
+                        }
                         _ => (),
                     }
                 }
