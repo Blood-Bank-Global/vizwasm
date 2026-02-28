@@ -1,4 +1,6 @@
 //!VAR int selected_button 0
+//!VAR uint[] selected_button_str
+//!VAR uint[] frame_info
 
 
 //!VAR uint[] label_data
@@ -71,7 +73,6 @@ if (uv.x > OFFSET_X && uv.x < (640.0 - OFFSET_X) && uv.y > OFFSET_Y && uv.y < (4
 
 }
 
-
 #define ACTIVE_LABEL_POS vec2(OFFSET_X + AREA_W + FONT_W, OFFSET_Y + BUTTON_H)
 #define ACTIVE_VALUE_POS vec2(OFFSET_X + AREA_W + FONT_W, OFFSET_Y + BUTTON_H + FONT_H)
 #define DISPLAY_LABEL_POS vec2(OFFSET_X + AREA_W + FONT_W, OFFSET_Y + BUTTON_H * 2.0)
@@ -83,8 +84,8 @@ if (blank(uv, ACTIVE_LABEL_POS, label_lens[ACTIVE_NAME_IDX]) \
     || blank(uv, DISPLAY_LABEL_POS, label_lens[DISPLAY_NAME_IDX]) \
     ||blank(uv, ACTIVE_VALUE_POS, value_lens[ACTIVE_NAME_IDX]) \
     || blank(uv, DISPLAY_VALUE_POS, value_lens[DISPLAY_NAME_IDX]) \
-    || blank(uv, SCAN_LABEL_POS, label_lens[SCAN_NAME_IDX]) \
-    || blank(uv, SCAN_VALUE_POS, value_lens[SCAN_NAME_IDX])) {
+    || blank(uv, SCAN_LABEL_POS, min(label_lens[SCAN_NAME_IDX], 10)) \
+    || blank(uv, SCAN_VALUE_POS, min(value_lens[SCAN_NAME_IDX], 10))) {
     color = vec4(0.0, 0.0, 0.0, 1.0);
 }
 
@@ -92,21 +93,14 @@ if (font_8x16(uv, ACTIVE_LABEL_POS, label_data, label_starts[ACTIVE_NAME_IDX], l
     || font_8x16(uv, ACTIVE_VALUE_POS, value_data, value_starts[ACTIVE_NAME_IDX], value_lens[ACTIVE_NAME_IDX]) \
     || font_8x16(uv, DISPLAY_LABEL_POS, label_data, label_starts[DISPLAY_NAME_IDX], label_lens[DISPLAY_NAME_IDX]) \
     || font_8x16(uv, DISPLAY_VALUE_POS, value_data, value_starts[DISPLAY_NAME_IDX], value_lens[DISPLAY_NAME_IDX]) \
-    || font_8x16(uv, SCAN_LABEL_POS, label_data, label_starts[SCAN_NAME_IDX], label_lens[SCAN_NAME_IDX]) \
-    || font_8x16(uv, SCAN_VALUE_POS, value_data, value_starts[SCAN_NAME_IDX], value_lens[SCAN_NAME_IDX])) {
+    || font_8x16(uv, SCAN_LABEL_POS, label_data, label_starts[SCAN_NAME_IDX], min(label_lens[SCAN_NAME_IDX], 10)) \
+    || font_8x16(uv, SCAN_VALUE_POS, value_data, value_starts[SCAN_NAME_IDX], min(value_lens[SCAN_NAME_IDX], 10))) {
     color = vec4(1.0, 1.0, 1.0, 1.0);
 }
 
-if (uv.x > OFFSET_X && 
-    uv.x < OFFSET_X + AREA_W && 
-    uv.y > OFFSET_Y + AREA_H &&
-    uv.y < OFFSET_Y + AREA_H + FONT_H) {
-    int txt[3];
-    int len = 3;
-    txt[0] = selected_button / 100 + 48;
-    txt[1] = (selected_button / 10) % 10 + 48;
-    txt[2] = selected_button % 10 + 48;
-    if (font_8x16(uv, vec2(OFFSET_X, OFFSET_Y + AREA_H), txt, 0, len)) {
-        color = vec4(1.0, 1.0, 1.0, 1.0);
-    }
+if (blank(uv, vec2(OFFSET_X, OFFSET_Y + AREA_H), selected_button_str.length()) ) {
+    color = vec4(0.0, 0.0, 0.0, 1.0);
+}
+if (font_8x16(uv, vec2(OFFSET_X, OFFSET_Y + AREA_H), selected_button_str, 0, selected_button_str.length())) {
+    color = vec4(1.0, 1.0, 1.0, 1.0);
 }

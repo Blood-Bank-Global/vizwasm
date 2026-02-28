@@ -715,6 +715,8 @@ impl AllSettings {
         }
 
         // Always capture live events even while recording is playing
+
+        let current_selected_knob = self.selected_knobs as u8;
         self.update(reg_events, frame, midi_callback)?;
 
         let active_diff = self.playback[self.active_idx]
@@ -725,6 +727,20 @@ impl AllSettings {
         if self.playback[self.active_idx].was_reset || active_diff.len() > 0 {
             self.playback[self.active_idx].was_reset = false;
             specs.append(&mut self.reload_encoders_for_active_idx());
+        }
+
+        if current_selected_knob != self.selected_knobs as u8 {
+            specs.push(RenderSpec::SendMidi(SendMidi {
+                event: MidiEvent {
+                    device: MFT.to_string(),
+                    channel: 4,
+                    kind: MIDI_CONTROL_CHANGE,
+                    key: (self.selected_knobs as u8) / 16,
+                    velocity: 127,
+                    timestamp: 0,
+                },
+            }));
+            eprintln!("SENDING {:#?}", specs.last());
         }
 
         for i in 0..self.playback.len() {
@@ -990,6 +1006,21 @@ impl AllSettings {
                 .name("selected_button")
                 .value(SendValue::Integer(
                     self.selected_knobs as i32 - (16 * page as i32),
+                ))
+                .build()
+                .into(),
+        );
+
+        specs.push(
+            SendCmd::builder()
+                .mix("wireframe_data_mix")
+                .name("selected_button_str")
+                .value(SendValue::UVector(
+                    format!("{:03}", self.selected_knobs as i32 - (16 * page as i32))
+                        .into_bytes()
+                        .iter()
+                        .map(|b| *b as u32)
+                        .collect::<Vec<_>>(),
                 ))
                 .build()
                 .into(),
@@ -1953,6 +1984,11 @@ impl AllSettings {
     pub fn video_fight_cb(&mut self, event: &MidiEvent) {
         if event.device != MFT || event.kind != MIDI_CONTROL_CHANGE {
             return;
+        }
+        if event.channel == 1 || event.channel == 0 {
+            self.selected_knobs = event.key as usize;
+        } else if event.channel == 3 || event.velocity > 0 {
+            self.selected_knobs = (event.key * 16) as usize;
         }
         if let Some(field) = StreamSettingsField::find(event.channel, event.key) {
             let idx = self.active_idx;
