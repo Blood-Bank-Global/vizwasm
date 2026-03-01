@@ -34,8 +34,13 @@ vec4 patch_feedback_math(in vec4 base, in vec4 feedback) {
 
 vec4 patch_feedback_xor(in vec4 base, in vec4 feedback) {
     vec3 hsv = rgb2hsv(feedback.rgb);
-    hsv[0] = mod(hsv[0] * 360.0 + 180.0, 360.0)/360.0;
-    hsv[1] = 1.0;
+    if (hsv[1] > 0.2) {
+        hsv[0] = mod(hsv[0] * 360.0 + 180.0, 360.0)/360.0;
+        hsv[1] = 1.0;
+    } else {
+        hsv[1] = 0.0;
+        hsv[2] = 0.0;
+    }
     feedback.rgb = hsv2rgb(hsv);
     return blend_by_mode(feedback, base, BLEND_ALPHA);
 }
