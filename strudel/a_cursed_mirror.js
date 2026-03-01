@@ -150,7 +150,7 @@ $METRO: pick(metro_p, picks('metro')).s().bank("tr909").gain(0.25)
 const filt_p = [
     "0.15",
     "0.5",
-    "1.0"
+    "0.8"
 ];
 
 $FILT: djf(pick(filt_p, picks('filt1').add(picks('filt2').mul(2)))).o("<0,1,2>").gain(0)
