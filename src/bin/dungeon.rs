@@ -27,6 +27,7 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
     let mut vids = vec![];
 
     let vid640x480 = [
+        "oreo",
         "cat",
         "flowers",
         "vase",
@@ -161,6 +162,7 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
 static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
     let names = [
         "blank",
+        "oreo",
         "demo_fonts",
         "a_sword_in_the_stone",
         "the_moon",

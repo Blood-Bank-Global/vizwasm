@@ -1982,43 +1982,70 @@ impl AllSettings {
     }
 
     pub fn video_fight_cb(&mut self, event: &MidiEvent) {
-        if event.device != MFT || event.kind != MIDI_CONTROL_CHANGE {
+        if event.kind != MIDI_CONTROL_CHANGE {
             return;
         }
-        if event.channel == 1 || event.channel == 0 {
-            self.selected_knobs = event.key as usize;
-        } else if event.channel == 3 || event.velocity > 0 {
-            self.selected_knobs = (event.key * 16) as usize;
-        }
-        if let Some(field) = StreamSettingsField::find(event.channel, event.key) {
-            let idx = self.active_idx;
-            match event.velocity {
-                63 => {
-                    self.playback[idx].stream.adjust_field(&field, -1.0);
-                }
-                65 => {
-                    self.playback[idx].stream.adjust_field(&field, 1.0);
-                }
-                127 => {
-                    // this is an "assign" command, adjust is overriden and the 0 is ignored
-                    self.playback[idx].stream.adjust_field(&field, 0.0);
-                }
-                _ => {}
-            }
-        } else if let Some(field) = StreamSettingsField::find(0, event.key) {
-            if event.channel == 1 {
-                //special case - channel was NOT zero but there is a setting at this key
-                // reset to default
-                let idx = self.active_idx;
 
-                self.playback[idx].stream.set_field(
-                    field,
-                    field
-                        .properties()
-                        .unwrap_or_default()
-                        .default
-                        .unwrap_or_default(),
-                );
+        if event.device == MFT {
+            if event.channel == 1 || event.channel == 0 {
+                self.selected_knobs = event.key as usize;
+            } else if event.channel == 3 && event.velocity > 0 {
+                self.selected_knobs = (event.key * 16) as usize;
+            }
+
+            if let Some(field) = StreamSettingsField::find(event.channel, event.key) {
+                let idx = self.active_idx;
+                match event.velocity {
+                    63 => {
+                        self.playback[idx].stream.adjust_field(&field, -1.0);
+                    }
+                    65 => {
+                        self.playback[idx].stream.adjust_field(&field, 1.0);
+                    }
+                    127 => {
+                        // this is an "assign" command, adjust is overriden and the 0 is ignored
+                        self.playback[idx].stream.adjust_field(&field, 0.0);
+                    }
+                    _ => {}
+                }
+            } else if let Some(field) = StreamSettingsField::find(0, event.key) {
+                if event.channel == 1 {
+                    //special case - channel was NOT zero but there is a setting at this key
+                    // reset to default
+                    let idx = self.active_idx;
+
+                    self.playback[idx].stream.set_field(
+                        field,
+                        field
+                            .properties()
+                            .unwrap_or_default()
+                            .default
+                            .unwrap_or_default(),
+                    );
+                }
+            }
+        } else if event.device == IAC {
+            let channel = if event.channel == 4 {
+                0
+            } else if event.channel == 5 {
+                1
+            } else {
+                return;
+            };
+            if let Some(field) = StreamSettingsField::find(channel, event.key) {
+                let idx = self.active_idx;
+                let min = field
+                    .properties()
+                    .unwrap_or_default()
+                    .min
+                    .unwrap_or_default();
+                let max = field
+                    .properties()
+                    .unwrap_or_default()
+                    .max
+                    .unwrap_or_default();
+                let value = event.velocity as f64 / 127.0 * (max - min) + min;
+                self.playback[idx].stream.set_field(field, value);
             }
         }
     }
