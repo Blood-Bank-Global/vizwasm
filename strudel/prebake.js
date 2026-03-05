@@ -1,3 +1,26 @@
+// Manual version of the code below
+// if (false) {
+//     window.myrepl = {};
+//     window.myrepl.values = {
+//         36: 0, // bottom left
+//         37: 0,
+//         38: 0,
+//         39: 0,
+//         40: 0,
+//         41: 0,
+//         42: 0,
+//         43: 0,
+//         44: 1,
+//         45: 1,
+//         46: 1,
+//         47: 1,
+//         48: 1,
+//         49: 1,
+//         50: 1,
+//         51: 1 // top right
+//     };
+// }
+
 if (useMidiFighter && !window.doNotUpdate) {
     window.doNotUpdate = true;
     window.myrepl = {}
