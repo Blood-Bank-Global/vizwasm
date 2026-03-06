@@ -21,7 +21,7 @@
 //     };
 // }
 
-if (useMidiFighter && !window.doNotUpdate) {
+if (false && !window.doNotUpdate) {
     window.doNotUpdate = true;
     window.myrepl = {}
     window.myrepl.values = {};
@@ -60,6 +60,6 @@ if (useMidiFighter && !window.doNotUpdate) {
         .catch(err => alert(err));
 }
 
-const tog = (on, note) => {
+window.tog = (on, note) => {
     return ref(() => (window.myrepl.values[note] == undefined || window.myrepl.values[note] == 0) ? "-" : on);
 };
