@@ -10,17 +10,17 @@ if (true) {
         42: 0,
         43: 0,
         44: 0,
-        45: 0,
-        46: 0,
-        47: 0,
-        48: 0,
-        49: 0,
-        50: 0,
+        45: 1,
+        46: 1,
+        47: 1,
+        48: 1,
+        49: 1,
+        50: 1,
         51: 0 // top right
     };
 }
 
-$FILT: djf(".75").orbit("1,2").gain(0);
+$FILT: djf(".5").orbit("1,2").gain(0);
 
 setCpm(165 / 4);
 $METRO: tog("rim".struct("[1 1 1 1]"), 39).s().bank("tr909").postgain(.4).spectrum()
@@ -29,20 +29,21 @@ $SNARE: n("2").s("hftu_snare").struct(tog("<[1 1 1 1] [1 1 1 [1 1]] [1 1 [1 1] [
 $KICK: tog("1 1 1 1", 45).n().s("hftu_kick").almostNever(ply("2")).postgain(.6).room(.5).roomsize(1).delay(.1).delayfb(.1)
 $HAT: n(tog("0", 46)).s("hftu_hat").struct("<[1 1 1 1]!2 0>".late(.125))
 
-_$GLIDE: s("hftu_glide").att(.3).dec(.99).rel(1).sus(1).delay(.5).room(.1).lpf(3000)
+$GLIDE: s(tog("sine", 44)).note("g2")
+    .att(.04).sus(.5).dec(.9).rel(1)
+    .postgain(4).lpf(200).room(.2).roomsize(2)
 
 $STAB: tog("[c2 c3 a2 c3]*2", 50)
-    // .add.squeeze(saw.seg(8))
-    .s("hftu_stab:11")
+    .s("hftu_stab:5")
     // .add(24).s("sine").gain(3)
     .note()
     .degradeBy(.4)
     .room(.9)
     .roomsize(2)
     .duck(2)
-    .duckatt(.25)
-    .duckdepth(.5)
-    .rib("0", "<2@2 2@2 6@6>")
+    .duckatt(.15)
+    .duckdepth(.9)
+    .rib("<0@10 _@10 8@10>", "<2@2 2@2 6@6>")
     .postgain(.6)
     ._punchcard()
 
@@ -51,7 +52,7 @@ $MELODY: tog("<Cm Dm F@2 Cm Dm Gm Gm>", 48)
     .hpf(1000)
     .voicing()
     .s("gm_synth_strings_1:6")
-    .o(2).delay(.2).delayfb(.3).room(.5)
+    .delay(.2).delayfb(.3).room(.5)
 
 
-$VOCAL: tog("g4", 49).note().s("gm_choir_aahs:2").gain(1).o(2).lpf(1000)
+$VOCAL: tog("g4", 49).note().s("gm_choir_aahs:2").gain(1).o(2).lpf(1000).hpf(500)
