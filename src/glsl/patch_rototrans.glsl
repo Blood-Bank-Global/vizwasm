@@ -5,8 +5,8 @@ vec4 patch_rototrans(
     sampler2D distort_x_tex, 
     sampler2D distort_y_tex,
     float rotation, 
-    float distort_x,
-    float distort_y,
+    float my_distort_x,
+    float my_distort_y,
     float distort_level, 
     uint distort_edge) {
 
@@ -22,8 +22,8 @@ vec4 patch_rototrans(
     distort_coord *= rot;
     distort_coord += center;
 
-    vec4 distort_dx_combined = vec4(distort_coord.x - distort_dx) + vec4(distort(distort_coord, distort_x_tex, distort_level), 0.0);
-    vec4 distort_dy_combined = vec4(distort_coord.y - distort_dy) + vec4(distort(distort_coord, distort_y_tex, distort_level), 0.0);
+    vec4 distort_dx_combined = vec4(distort_coord.x - my_distort_x) + vec4(distort(distort_coord, distort_x_tex, distort_level), 0.0);
+    vec4 distort_dy_combined = vec4(distort_coord.y - my_distort_y) + vec4(distort(distort_coord, distort_y_tex, distort_level), 0.0);
     mat4x2 distort_matrix = mat4x2(
         distort_dx_combined[0], distort_dy_combined[0],
         distort_dx_combined[1], distort_dy_combined[1],

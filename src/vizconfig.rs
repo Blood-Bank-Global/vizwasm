@@ -104,8 +104,10 @@ impl MixerGraph {
                         "\n",
                         include_str!("glsl/patch_feedback.glsl"),
                         "\n",
+                        include_str!("glsl/patch_mixer.glsl"),
+                        "\n"
                     ))
-                    .body(include_str!("glsl/mixer.glsl"))
+                    .body(include_str!("glsl/main_pipeline.glsl"))
                     .build(),
                 mix: Mix::builder()
                     .name(format!("{}_main_mix", name.as_ref()))

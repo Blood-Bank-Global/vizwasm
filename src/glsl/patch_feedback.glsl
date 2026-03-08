@@ -63,22 +63,10 @@ vec4 patch_feedback_alien(in vec4 base, in vec4 feedback) {
     return blend_by_mode(feedback, base, BLEND_ALPHA);
 }
 
-vec4 patch_feedback(in vec4 base) {
+vec4 patch_feedback(in vec4 base, in vec4 feedback) {
     if (base.a >= 1.0) {
         return base;
     } 
-
-    vec4 feedback = patch_rototrans(
-        src_coord0.xy,
-        src_tex0,
-        src_tex2,
-        src_tex3,
-        feedback_rotation,
-        distort_dx,
-        distort_dy,
-        distort_level,
-        distort_edge
-    );
 
     switch (feedback_mode_selected) {
         case FEEDBACK_BASIC:
