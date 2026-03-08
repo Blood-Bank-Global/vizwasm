@@ -1,3 +1,5 @@
+#ifndef FONT_HIGH_GLSL
+#define FONT_HIGH_GLSL
 // Pixel dimensions: 144 wide x 240 tall
 // Padded scanline width (map_w for shader): 160
 // Character grid: 16x16
@@ -160,3 +162,4 @@
 #define font_high_height (15)
 #define font_high(uv,pos,txt,start,len) (fontstr(uv,pos,txt,start,len,9,15,160,high))
 #define multiline_high(uv,pos,txt,starts,lens) multiline_font((uv), (pos), (txt), (starts), (lens), 9, 15, 160, high)
+#endif

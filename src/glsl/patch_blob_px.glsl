@@ -1,5 +1,6 @@
 
-
+#ifndef PATCH_BLOB_PX_GLSL
+#define PATCH_BLOB_PX_GLSL
 #define PATCH_BLOB_PX_ANGLE_BUCKET_COUNT 10.0
 #define PATCH_BLOB_PX_OFFSET_CYCLE 600.0
 #define PATCH_BLOB_PX_OFFSET_BUCKET_COUNT 600.0
@@ -78,3 +79,4 @@ vec4 patch_blob_px(
     
     return return_color;
 }
+#endif

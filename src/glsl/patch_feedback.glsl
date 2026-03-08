@@ -1,3 +1,5 @@
+#ifndef PATCH_FEEDBACK_GLSL
+#define PATCH_FEEDBACK_GLSL
 #define FEEDBACK_BASIC 0
 #define FEEDBACK_JAM 1
 #define FEEDBACK_MATH 2
@@ -91,3 +93,4 @@ vec4 patch_feedback(in vec4 base, in vec4 feedback) {
             return vec4(0, 0.5, 0, 1.0);
     }
 }
+#endif

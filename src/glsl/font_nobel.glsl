@@ -1,3 +1,5 @@
+#ifndef FONT_NOBEL_GLSL
+#define FONT_NOBEL_GLSL
 // Pixel dimensions: 160 wide x 256 tall
 // Padded scanline width (map_w for shader): 160
 // Character grid: 16x16
@@ -170,3 +172,4 @@
 #define font_nobel_height (16)
 #define font_nobel(uv,pos,txt,start,len) (fontstr(uv,pos,txt,start,len,10,16,160,nobel))
 #define multiline_nobel(uv,pos,txt,starts,lens) multiline_font((uv), (pos), (txt), (starts), (lens), 10, 16, 160, nobel)
+#endif

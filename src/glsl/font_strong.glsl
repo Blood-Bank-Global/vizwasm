@@ -1,3 +1,5 @@
+#ifndef FONT_STRONG_GLSL
+#define FONT_STRONG_GLSL
 // Pixel dimensions: 128 wide x 256 tall
 // Padded scanline width (map_w for shader): 128
 // Character grid: 16x16
@@ -138,3 +140,4 @@
 #define font_strong_height (16)
 #define font_strong(uv,pos,txt,start,len) (fontstr(uv,pos,txt,start,len,8,16,128,strong))
 #define multiline_strong(uv,pos,txt,starts,lens) multiline_font((uv), (pos), (txt), (starts), (lens), 8, 16, 128, strong)
+#endif

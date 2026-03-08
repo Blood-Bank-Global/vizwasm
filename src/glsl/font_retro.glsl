@@ -1,3 +1,6 @@
+#ifndef FONT_RETRO_GLSL
+#define FONT_RETRO_GLSL
+
 // Pixel dimensions: 368 wide x 624 tall
 // Padded scanline width (map_w for shader): 384
 // Character grid: 16x16
@@ -946,3 +949,4 @@
 #define font_retro_height (39)
 #define font_retro(uv,pos,txt,start,len) (fontstr(uv,pos,txt,start,len,23,39,384,retro))
 #define multiline_retro(uv,pos,txt,starts,lens) multiline_font((uv), (pos), (txt), (starts), (lens), 23, 39, 384, retro)
+#endif

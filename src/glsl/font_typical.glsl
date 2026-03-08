@@ -1,3 +1,5 @@
+#ifndef FONT_TYPICAL_GLSL
+#define FONT_TYPICAL_GLSL
 // Pixel dimensions: 160 wide x 192 tall
 // Padded scanline width (map_w for shader): 160
 // Character grid: 16x16
@@ -130,3 +132,4 @@
 #define font_typical_height (12)
 #define font_typical(uv,pos,txt,start,len) (fontstr(uv,pos,txt,start,len,10,12,160,typical))
 #define multiline_typical(uv,pos,txt,starts,lens) multiline_font((uv), (pos), (txt), (starts), (lens), 10, 12, 160, typical)
+#endif

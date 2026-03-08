@@ -1,3 +1,5 @@
+#ifndef FONT_WILLOW_GLSL
+#define FONT_WILLOW_GLSL
 // Pixel dimensions: 160 wide x 320 tall
 // Padded scanline width (map_w for shader): 160
 // Character grid: 16x16
@@ -210,3 +212,4 @@
 #define font_willow_height (20)
 #define font_willow(uv,pos,txt,start,len) (fontstr(uv,pos,txt,start,len,10,20,160,willow))
 #define multiline_willow(uv,pos,txt,starts,lens) multiline_font((uv), (pos), (txt), (starts), (lens), 10, 20, 160, willow)
+#endif

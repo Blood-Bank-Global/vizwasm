@@ -1,3 +1,5 @@
+#ifndef UTILS_GLSL
+#define UTILS_GLSL
 /* Shader toy compatibility inputs */
 //!VAR vec3 iResolution 1.0 1.0 1.0
 //!VAR float iTime 0.0
@@ -575,3 +577,4 @@ float bicubic_mix(float v0, float v1, float v2, float v3, float f) {
 
     return P * f * f * f + Q * f * f + R * f + S;
 }
+#endif

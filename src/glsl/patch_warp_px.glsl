@@ -1,3 +1,5 @@
+#ifndef PATCH_WARP_PX_GLSL
+#define PATCH_WARP_PX_GLSL
 uint patch_warp_px_hash(uint seed) {
     seed = (seed ^ 61u) ^ (seed >> 16u);
     seed *= 9u;
@@ -66,3 +68,4 @@ vec2 patch_warp_px(vec2 uv, vec2 size, float strength, vec2 resolution, float se
         bicubic_mix(rows[0].y, rows[1].y, rows[2].y, rows[3].y, fy)
     );
 }
+#endif

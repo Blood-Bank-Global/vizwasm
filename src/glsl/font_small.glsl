@@ -1,3 +1,5 @@
+#ifndef FONT_SMALL_GLSL
+#define FONT_SMALL_GLSL
 // Pixel dimensions: 96 wide x 128 tall
 // Padded scanline width (map_w for shader): 96
 // Character grid: 16x16
@@ -58,3 +60,4 @@
 #define font_small_height (8)
 #define font_small(uv,pos,txt,start,len) (fontstr(uv,pos,txt,start,len,6,8,96,small))
 #define multiline_small(uv,pos,txt,starts,lens) multiline_font((uv), (pos), (txt), (starts), (lens), 6, 8, 96, small)
+#endif

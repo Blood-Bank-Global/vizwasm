@@ -1,3 +1,5 @@
+#ifndef PATCH_MIXER_GLSL
+#define PATCH_MIXER_GLSL
 //!VAR float mix_rr 1.0
 //!VAR float mix_rg 0.0
 //!VAR float mix_rb 0.0
@@ -74,3 +76,4 @@ vec4 patch_mixer(vec4 base) {
 
     return base;
 }
+#endif

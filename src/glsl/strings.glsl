@@ -1,3 +1,5 @@
+#ifndef STRINGS_GLSL
+#define STRINGS_GLSL
 //this code has been heavily reworked but some references:
 //taken from https://www.shadertoy.com/view/mtGcWd
 //referenced by https://vdmx.vidvox.net/tutorials/techniques-for-drawing-text-in-glsl
@@ -98,3 +100,4 @@ int float2txt( float val, out int[10] txt ) {
         len += j;
     }
 }
+#endif

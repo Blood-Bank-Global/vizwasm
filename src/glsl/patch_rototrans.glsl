@@ -1,3 +1,5 @@
+#ifndef PATCH_ROTOTRANS_GLSL
+#define PATCH_ROTOTRANS_GLSL
 
 vec4 patch_rototrans(
     vec2 coord, 
@@ -37,3 +39,5 @@ vec4 patch_rototrans(
                 texture(feedback_tex, distort_matrix[3]).a);
 
 }
+
+#endif

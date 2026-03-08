@@ -1,3 +1,6 @@
+#ifndef FONT_LOGIC_GLSL
+#define FONT_LOGIC_GLSL
+
 // Pixel dimensions: 320 wide x 608 tall
 // Padded scanline width (map_w for shader): 320
 // Character grid: 16x16
@@ -770,3 +773,4 @@
 #define font_logic_height (38)
 #define font_logic(uv,pos,txt,start,len) (fontstr(uv,pos,txt,start,len,20,38,320,logic))
 #define multiline_logic(uv,pos,txt,starts,lens) multiline_font((uv), (pos), (txt), (starts), (lens), 20, 38, 320, logic)
+#endif
