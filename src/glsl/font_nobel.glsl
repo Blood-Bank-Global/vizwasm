@@ -1,5 +1,6 @@
 #ifndef FONT_NOBEL_GLSL
 #define FONT_NOBEL_GLSL
+#include "strings.glsl"
 // Pixel dimensions: 160 wide x 256 tall
 // Padded scanline width (map_w for shader): 160
 // Character grid: 16x16

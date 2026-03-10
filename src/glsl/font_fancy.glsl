@@ -1,3 +1,7 @@
+#ifndef FONT_FANCY_GLSL
+#define FONT_FANCY_GLSL
+#include "strings.glsl"
+
 // Pixel dimensions: 160 wide x 320 tall
 // Padded scanline width (map_w for shader): 160
 // Character grid: 16x16
@@ -210,3 +214,4 @@
 #define font_fancy_height (20)
 #define font_fancy(uv,pos,txt,start,len) (fontstr(uv,pos,txt,start,len,10,20,160,fancy))
 #define multiline_fancy(uv,pos,txt,starts,lens) multiline_font((uv), (pos), (txt), (starts), (lens), 10, 20, 160, fancy)
+#endif

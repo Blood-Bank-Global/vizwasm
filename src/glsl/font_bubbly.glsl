@@ -1,3 +1,7 @@
+#ifndef FONT_BUBBLY_GLSL
+#define FONT_BUBBLY_GLSL
+#include "strings.glsl"
+
 // Pixel dimensions: 256 wide x 464 tall
 // Padded scanline width (map_w for shader): 256
 // Character grid: 16x16
@@ -474,3 +478,4 @@
 #define font_bubbly_height (29)
 #define font_bubbly(uv,pos,txt,start,len) (fontstr(uv,pos,txt,start,len,16,29,256,bubbly))
 #define multiline_bubbly(uv,pos,txt,starts,lens) multiline_font((uv), (pos), (txt), (starts), (lens), 16, 29, 256, bubbly)
+#endif

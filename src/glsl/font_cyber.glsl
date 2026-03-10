@@ -1,3 +1,7 @@
+#ifndef FONT_CYBER_GLSL
+#define FONT_CYBER_GLSL
+#include "strings.glsl"
+
 // Pixel dimensions: 240 wide x 464 tall
 // Padded scanline width (map_w for shader): 256
 // Character grid: 16x16
@@ -474,3 +478,4 @@
 #define font_cyber_height (29)
 #define font_cyber(uv,pos,txt,start,len) (fontstr(uv,pos,txt,start,len,15,29,256,cyber))
 #define multiline_cyber(uv,pos,txt,starts,lens) multiline_font((uv), (pos), (txt), (starts), (lens), 15, 29, 256, cyber)
+#endif

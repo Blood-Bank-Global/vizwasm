@@ -1,3 +1,6 @@
+#ifndef FONT_ARCADE_GLSL
+#define FONT_ARCADE_GLSL
+#include "strings.glsl"
 // Pixel dimensions: 160 wide x 240 tall
 // Padded scanline width (map_w for shader): 160
 // Character grid: 16x16
@@ -160,3 +163,4 @@
 #define font_arcade_height (15)
 #define font_arcade(uv,pos,txt,start,len) (fontstr(uv,pos,txt,start,len,10,15,160,arcade))
 #define multiline_arcade(uv,pos,txt,starts,lens) multiline_font((uv), (pos), (txt), (starts), (lens), 10, 15, 160, arcade)
+#endif

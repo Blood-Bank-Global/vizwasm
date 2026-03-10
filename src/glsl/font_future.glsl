@@ -1,3 +1,7 @@
+#ifndef FONT_FUTURE_GLSL
+#define FONT_FUTURE_GLSL
+#include "strings.glsl"
+
 // Pixel dimensions: 240 wide x 512 tall
 // Padded scanline width (map_w for shader): 256
 // Character grid: 16x16
@@ -522,3 +526,5 @@
 #define font_future_height (32)
 #define font_future(uv,pos,txt,start,len) (fontstr(uv,pos,txt,start,len,15,32,256,future))
 #define multiline_future(uv,pos,txt,starts,lens) multiline_font((uv), (pos), (txt), (starts), (lens), 15, 32, 256, future)
+
+#endif

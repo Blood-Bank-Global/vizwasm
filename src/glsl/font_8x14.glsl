@@ -1,3 +1,6 @@
+#ifndef FONT_8X14_GLSL
+#define FONT_8X14_GLSL
+#include "strings.glsl"
 // Pixel dimensions: 128 wide x 224 tall
 // Padded scanline width (map_w for shader): 128
 // Character grid: 16x16
@@ -122,3 +125,4 @@
 #define font_8x14_height (14)
 #define font_8x14(uv,pos,txt,start,len) (fontstr(uv,pos,txt,start,len,8,14,128,8x14))
 #define multiline_8x14(uv,pos,txt,starts,lens) multiline_font((uv), (pos), (txt), (starts), (lens), 8, 14, 128, 8x14)
+#endif

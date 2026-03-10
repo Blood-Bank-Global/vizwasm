@@ -1,5 +1,6 @@
 #ifndef FONT_WILLOW_GLSL
 #define FONT_WILLOW_GLSL
+#include "strings.glsl"
 // Pixel dimensions: 160 wide x 320 tall
 // Padded scanline width (map_w for shader): 160
 // Character grid: 16x16

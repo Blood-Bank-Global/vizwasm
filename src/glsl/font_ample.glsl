@@ -1,3 +1,6 @@
+#ifndef FONT_AMPLE_GLSL
+#define FONT_AMPLE_GLSL
+#include "strings.glsl"
 // Pixel dimensions: 160 wide x 240 tall
 // Padded scanline width (map_w for shader): 160
 // Character grid: 16x16
@@ -160,3 +163,4 @@
 #define font_ample_height (15)
 #define font_ample(uv,pos,txt,start,len) (fontstr(uv,pos,txt,start,len,10,15,160,ample))
 #define multiline_ample(uv,pos,txt,starts,lens) multiline_font((uv), (pos), (txt), (starts), (lens), 10, 15, 160, ample)
+#endif

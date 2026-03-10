@@ -1,3 +1,6 @@
+#ifndef FONT_FANTASY_GLSL
+#define FONT_FANTASY_GLSL
+#include "strings.glsl"
 // Note, must also have strings.glsl
 
 /*
@@ -155,3 +158,4 @@ as part of other packs.
 #define font_fantasy(uv,pos,txt,start,len) (fontstr(uv,pos,txt,start,len,8,8,128,fantasy))
 #define multiline_fantasy(uv,pos,txt,starts,lens) \
     multiline_font((uv), (pos), (txt), (starts), (lens), 8, 8, 128, fantasy)
+#endif

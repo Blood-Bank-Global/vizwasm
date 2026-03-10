@@ -1,5 +1,6 @@
 #ifndef FONT_RETRO_GLSL
 #define FONT_RETRO_GLSL
+#include "strings.glsl"
 
 // Pixel dimensions: 368 wide x 624 tall
 // Padded scanline width (map_w for shader): 384

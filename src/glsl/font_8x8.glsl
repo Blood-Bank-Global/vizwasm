@@ -1,3 +1,7 @@
+#ifndef FONT_8X8_GLSL
+#define FONT_8X8_GLSL
+#include "strings.glsl"
+
 // Note must also have strings.glsl
 //!LONGVAR uint[] font_data_8x8
 //! 0x6C3C3C00 0x103810 0xE0FF00FF 0x1218103C 
@@ -134,3 +138,4 @@
 #define font_8x8(uv,pos,txt,start,len) (fontstr(uv,pos,txt,start,len,8,8,128,8x8))
 #define multiline_8x8(uv,pos,txt,starts,lens) \
     multiline_font((uv), (pos), (txt), (starts), (lens), 8, 8, 128, 8x8)
+#endif
