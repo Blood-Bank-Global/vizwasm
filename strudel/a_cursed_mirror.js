@@ -1,3 +1,19 @@
+// window.myrepl = {}
+// window.myrepl.values = {
+//     'filt0': 0,
+//     'filt1': 1,
+//     'filt2': 0,
+//     'metro': 0,
+//     //skip 40,41,42,43
+//     'pad': 1,
+//     'chord': 1,
+//     'drum': 1,
+//     //skip 47
+//     'choir': 1,
+//     'choir2': 1,
+//     'tubular':1,
+//     'jingle':1 ,};
+
 if (!window.doNotUpdate) {
     window.doNotUpdate = true;
     window.myrepl = {}
