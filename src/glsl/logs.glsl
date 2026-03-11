@@ -1,3 +1,6 @@
+#include "font_8x16.glsl"
+#include "utils.glsl"
+
 //!VAR int[] txt 0 0
 //!VAR int[] line_start 0 0
 //!VAR int[] line_end 0 0
@@ -11,15 +14,17 @@
 #define NUM_LINES (int((iResolution.y - (BOTTOM_MARGIN)) / FONT_H))
 #define LINE_OFFSET (int((100 - NUM_LINES)))
 
-color = vec4(0.0, 0.0, 0.0, 1.0);
+void main_frag(out vec4 color) {
+    color = vec4(0.0, 0.0, 0.0, 1.0);
 
-vec2 uv = src_coord.xy * iResolution.xy;
-uv.y = uv.y + BOTTOM_MARGIN;
+    vec2 uv = src_coord.xy * iResolution.xy;
+    uv.y = uv.y + BOTTOM_MARGIN;
 
-int n = int(uv.y / (FONT_H));
-if (n < NUM_LINES) {
-    int len = line_end[n + LINE_OFFSET] - line_start[n + LINE_OFFSET];
-    if (font_8x16(uv, vec2(0.0, float(n) * FONT_H), txt, line_start[n + LINE_OFFSET], len)) {
-        color = vec4(0.7, 0.7, 0.7, 1.0);
+    int n = int(uv.y / (FONT_H));
+    if (n < NUM_LINES) {
+        int len = line_end[n + LINE_OFFSET] - line_start[n + LINE_OFFSET];
+        if (font_8x16(uv, vec2(0.0, float(n) * FONT_H), txt, line_start[n + LINE_OFFSET], len)) {
+            color = vec4(0.7, 0.7, 0.7, 1.0);
+        }
     }
 }

@@ -1,5 +1,7 @@
 #ifndef PATCH_EDGE_DETECT_GLSL
 #define PATCH_EDGE_DETECT_GLSL
+#include "utils.glsl"
+
 // Basic edge detection in base_tex using uv
 bool patch_edge_detect(vec2 uv, sampler2D base_tex, vec2 resolution) {     
     // Define a small offset for sampling neighboring pixels.

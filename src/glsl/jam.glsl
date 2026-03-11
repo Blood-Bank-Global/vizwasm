@@ -1,3 +1,9 @@
+#include "patch_check_scroll_px.glsl"
+#include "patch_edge_detect.glsl"
+#include "patch_blob_px.glsl"
+#include "patch_warp_px.glsl"
+#include "utils.glsl"
+
 //!VAR vec2 iResolution0 1.0 1.0
 //!VAR vec2 iResolution1 1.0 1.0
 //!VAR vec2 iResolution2 1.0 1.0
@@ -53,114 +59,115 @@
 #define HEIGHT (iResolution.y)
 
 
+void main_frag(out vec4 color) {
+    //////////// GET TO PIXELS
+    vec2 uv = src_coord.xy * VIEW_RESOLUTION;
+    color = vec4(0.0, 0.0, 0.0, 1.0);
 
-//////////// GET TO PIXELS
-vec2 uv = src_coord.xy * VIEW_RESOLUTION;
-color = vec4(0.0, 0.0, 0.0, 1.0);
-
-//////////// BACKGROUND 
-if (true) {
-    vec2 coord = CLOUD_COORD * 0.75 + vec2(0.125, 0.125);
-    color = texture(CLOUD_TEX, (coord.xy * VIEW_RESOLUTION.x) / CLOUD_RESOLUTION.xy * (CLOUD_RESOLUTION.x / VIEW_RESOLUTION.x));
-    vec3 hsv = rgb2hsv(color.rgb);
-    color.rgb = hsv2rgb(vec3(hsv.x, hsv.y, hsv.z + cc_iac_driver_bus_1_0_0/127.0));
-}
-
-//////////// GROUND SCROLL
-if (true) {
-    vec4 s1 = vec4(0.0, 0.0, 0.20, 1.0);
-    vec4 s2 = vec4(0.0, 0.15, 0.35, 1.0);
-    color = patch_check_scroll_px(
-        uv,                       // coord in px
-        VIEW_RESOLUTION,           // resolution
-        color, // color in
-        s1,//vec4(0.0, 0.3, 0.05, 1.0), // square1
-        s2,//vec4(0.0, 0.35, 0.0, 1.0), // square2
-        vec2(10.0, 10.0),         // block dim in px
-        vec2(0.0, -fract(iTime/5.0) * HEIGHT), // offset
-        mat4x2(                   // corners
-            0.0, HEIGHT * 0.65,
-            WIDTH, HEIGHT * 0.65,
-            -1250.0, HEIGHT,
-            WIDTH + 1250.0, HEIGHT)
-    );
-}
-
-
-//////////// VISUBLOB
-#if 0
-#define BLOB_BG_TEX NIGHT_SKY_TEX
-#define BLOB_BG_COORD NIGHT_SKY_COORD
-#define BLOB_BG_RESOLUTION NIGHT_SKY_RESOLUTION
-#elif 1
-#define BLOB_BG_TEX QUEEN_TEX
-#define BLOB_BG_COORD QUEEN_COORD
-#define BLOB_BG_RESOLUTION QUEEN_RESOLUTION
-#else
-#define BLOB_BG_TEX STATUE_TEX
-#define BLOB_BG_COORD STATUE_COORD
-#define BLOB_BG_RESOLUTION STATUE_RESOLUTION
-#endif
-if (true) {
-    vec2 scale = vec2(1.0, 1.0);
-    vec2 uv = uv * scale;
-    uv.y -= 20.0;
-    vec2 center = VIEW_RESOLUTION * vec2(0.5, 0.5) * scale;
-    float rad = 250.0 * mix(0.3, 1.0, (1.0 + sin(fract(iTime/10.0) * M_PI * 2.0)/2.0));
-
-    vec2 blob_bg_resolution = BLOB_BG_RESOLUTION;
-    vec2 blob_bg_coord = BLOB_BG_COORD;
-
-    vec2 blob_bg_tx = (blob_bg_coord * VIEW_RESOLUTION.xy) / blob_bg_resolution.xy * blob_bg_resolution.x / VIEW_RESOLUTION.x;
-    vec4 blob_color = texture(BLOB_BG_TEX, blob_bg_tx);
-
-    color = patch_blob_px(
-        uv,                  // coord in px
-        VIEW_RESOLUTION,     // resolution
-        color,               // color in
-        blob_color,      // blob color
-        center,              // blob center
-        rad,                 // blob radius
-        iTime                // offset
-    );
-}
-
-
-//////////// FOREGROUND LAYER
-#if 1
-#define FG_RESOLUTION FACADE_RESOLUTION
-#define FG_COORD FACADE_COORD
-#define FG_TEX FACADE_TEX
-#else
-#define FG_RESOLUTION COL_RESOLUTION
-#define FG_COORD COL_COORD
-#define FG_TEX COL_TEX
-#endif
-if (true) {
-    float scale = FG_RESOLUTION.x / VIEW_RESOLUTION.x;
-    vec2 fg_coord = (FG_COORD * VIEW_RESOLUTION / FG_RESOLUTION) 
-        *  scale - vec2(0.0, (FG_RESOLUTION.y * scale - VIEW_RESOLUTION.y)/VIEW_RESOLUTION.y);
-    
-    vec2 fg_uv = fg_coord * FG_RESOLUTION;
-
-    fg_uv = patch_warp_px(fg_uv, vec2(25.0, 25.0), float(abs(usr_var))/100.0, FG_RESOLUTION, iTime/5.0);
-    fg_coord = fg_uv / FG_RESOLUTION;
-    // fg_coord = patch_warp_px(fg_coord, vec2(50.0, 50.0)/FG_RESOLUTION, 1.0, vec2(1.0,1.0), iTime/5.0);
-    
-    // fg_coord = fg_uv / FG_RESOLUTION;
-    vec4 fg_color = vec4(handle_edge(FG_TEX, fg_coord, EDGE_MODE_MIRROR), 1.0);
-
-    // float scale =  float(VIEW_RESOLUTION.x) / float(COL_RESOLUTION.x);
-    // vec2 fg_coord = (COL_COORD / scale);
-    // vec3 fg = handle_edge(COL_TEX, fg_coord, EDGE_MODE_MIRROR);
-    if (distance(fg_color.rgb, vec3(0.0, 0.0, 0.0)) > 0.08) {
-        color = fg_color;
+    //////////// BACKGROUND 
+    if (true) {
+        vec2 coord = CLOUD_COORD * 0.75 + vec2(0.125, 0.125);
+        color = texture(CLOUD_TEX, (coord.xy * VIEW_RESOLUTION.x) / CLOUD_RESOLUTION.xy * (CLOUD_RESOLUTION.x / VIEW_RESOLUTION.x));
+        vec3 hsv = rgb2hsv(color.rgb);
+        color.rgb = hsv2rgb(vec3(hsv.x, hsv.y, hsv.z + cc_iac_driver_bus_1_0_0/127.0));
     }
-}
 
-if (false) {
-    vec4 quest_color = texture(QUEST_TEX, QUEST_COORD.xy);
-    if (distance(quest_color.rgb, vec3(0.0, 0.0, 0.0))   > 0.1) {
-        color.rgb = blend_by_mode(color, quest_color, BLEND_ALPHA).rgb;
+    //////////// GROUND SCROLL
+    if (true) {
+        vec4 s1 = vec4(0.0, 0.0, 0.20, 1.0);
+        vec4 s2 = vec4(0.0, 0.15, 0.35, 1.0);
+        color = patch_check_scroll_px(
+            uv,                       // coord in px
+            VIEW_RESOLUTION,           // resolution
+            color, // color in
+            s1,//vec4(0.0, 0.3, 0.05, 1.0), // square1
+            s2,//vec4(0.0, 0.35, 0.0, 1.0), // square2
+            vec2(10.0, 10.0),         // block dim in px
+            vec2(0.0, -fract(iTime/5.0) * HEIGHT), // offset
+            mat4x2(                   // corners
+                0.0, HEIGHT * 0.65,
+                WIDTH, HEIGHT * 0.65,
+                -1250.0, HEIGHT,
+                WIDTH + 1250.0, HEIGHT)
+        );
+    }
+
+
+    //////////// VISUBLOB
+    #if 0
+    #define BLOB_BG_TEX NIGHT_SKY_TEX
+    #define BLOB_BG_COORD NIGHT_SKY_COORD
+    #define BLOB_BG_RESOLUTION NIGHT_SKY_RESOLUTION
+    #elif 1
+    #define BLOB_BG_TEX QUEEN_TEX
+    #define BLOB_BG_COORD QUEEN_COORD
+    #define BLOB_BG_RESOLUTION QUEEN_RESOLUTION
+    #else
+    #define BLOB_BG_TEX STATUE_TEX
+    #define BLOB_BG_COORD STATUE_COORD
+    #define BLOB_BG_RESOLUTION STATUE_RESOLUTION
+    #endif
+    if (true) {
+        vec2 scale = vec2(1.0, 1.0);
+        vec2 uv = uv * scale;
+        uv.y -= 20.0;
+        vec2 center = VIEW_RESOLUTION * vec2(0.5, 0.5) * scale;
+        float rad = 250.0 * mix(0.3, 1.0, (1.0 + sin(fract(iTime/10.0) * M_PI * 2.0)/2.0));
+
+        vec2 blob_bg_resolution = BLOB_BG_RESOLUTION;
+        vec2 blob_bg_coord = BLOB_BG_COORD;
+
+        vec2 blob_bg_tx = (blob_bg_coord * VIEW_RESOLUTION.xy) / blob_bg_resolution.xy * blob_bg_resolution.x / VIEW_RESOLUTION.x;
+        vec4 blob_color = texture(BLOB_BG_TEX, blob_bg_tx);
+
+        color = patch_blob_px(
+            uv,                  // coord in px
+            VIEW_RESOLUTION,     // resolution
+            color,               // color in
+            blob_color,      // blob color
+            center,              // blob center
+            rad,                 // blob radius
+            iTime                // offset
+        );
+    }
+
+
+    //////////// FOREGROUND LAYER
+    #if 1
+    #define FG_RESOLUTION FACADE_RESOLUTION
+    #define FG_COORD FACADE_COORD
+    #define FG_TEX FACADE_TEX
+    #else
+    #define FG_RESOLUTION COL_RESOLUTION
+    #define FG_COORD COL_COORD
+    #define FG_TEX COL_TEX
+    #endif
+    if (true) {
+        float scale = FG_RESOLUTION.x / VIEW_RESOLUTION.x;
+        vec2 fg_coord = (FG_COORD * VIEW_RESOLUTION / FG_RESOLUTION) 
+            *  scale - vec2(0.0, (FG_RESOLUTION.y * scale - VIEW_RESOLUTION.y)/VIEW_RESOLUTION.y);
+        
+        vec2 fg_uv = fg_coord * FG_RESOLUTION;
+
+        fg_uv = patch_warp_px(fg_uv, vec2(25.0, 25.0), float(abs(usr_var))/100.0, FG_RESOLUTION, iTime/5.0);
+        fg_coord = fg_uv / FG_RESOLUTION;
+        // fg_coord = patch_warp_px(fg_coord, vec2(50.0, 50.0)/FG_RESOLUTION, 1.0, vec2(1.0,1.0), iTime/5.0);
+        
+        // fg_coord = fg_uv / FG_RESOLUTION;
+        vec4 fg_color = vec4(handle_edge(FG_TEX, fg_coord, EDGE_MODE_MIRROR), 1.0);
+
+        // float scale =  float(VIEW_RESOLUTION.x) / float(COL_RESOLUTION.x);
+        // vec2 fg_coord = (COL_COORD / scale);
+        // vec3 fg = handle_edge(COL_TEX, fg_coord, EDGE_MODE_MIRROR);
+        if (distance(fg_color.rgb, vec3(0.0, 0.0, 0.0)) > 0.08) {
+            color = fg_color;
+        }
+    }
+
+    if (false) {
+        vec4 quest_color = texture(QUEST_TEX, QUEST_COORD.xy);
+        if (distance(quest_color.rgb, vec3(0.0, 0.0, 0.0))   > 0.1) {
+            color.rgb = blend_by_mode(color, quest_color, BLEND_ALPHA).rgb;
+        }
     }
 }

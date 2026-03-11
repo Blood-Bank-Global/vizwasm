@@ -12,6 +12,7 @@ use std::collections::{HashMap, HashSet};
 use std::sync::LazyLock;
 use std::{error::Error, i64, io::Write};
 
+use crate::shaderhelper::include_files;
 use crate::streamsettings::{self, StreamIdent, StreamSettings, StreamSettingsField};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -97,17 +98,8 @@ impl MixerGraph {
                     .name(format!("{}_main_mix", name.as_ref()))
                     .width(width)
                     .height(height)
-                    .header(concat!(
-                        include_str!("glsl/utils.glsl"),
-                        "\n",
-                        include_str!("glsl/patch_rototrans.glsl"),
-                        "\n",
-                        include_str!("glsl/patch_feedback.glsl"),
-                        "\n",
-                        include_str!("glsl/patch_mixer.glsl"),
-                        "\n"
-                    ))
-                    .body(include_str!("glsl/main_pipeline.glsl"))
+                    .header(include_files(include_str!("glsl/main_pipeline.glsl")))
+                    .body("main_frag(color);")
                     .build(),
                 mix: Mix::builder()
                     .name(format!("{}_main_mix", name.as_ref()))
@@ -137,8 +129,8 @@ impl MixerGraph {
                     .name(format!("{}_overlay", name.as_ref()))
                     .width(width)
                     .height(height)
-                    .header(include_str!("glsl/utils.glsl"))
-                    .body(include_str!("glsl/overlay.glsl"))
+                    .header(include_files(include_str!("glsl/overlay.glsl")))
+                    .body("main_frag(color);")
                     .build(),
                 mix: Mix::builder()
                     .name(format!("{}_overlay", name.as_ref()))
@@ -464,15 +456,8 @@ impl AllSettings {
                     .name("wireframe_data_mix")
                     .width(640)
                     .height(480)
-                    .header(concat!(
-                        include_str!("glsl/utils.glsl"),
-                        "\n",
-                        include_str!("glsl/strings.glsl"),
-                        "\n",
-                        include_str!("glsl/font_8x16.glsl"),
-                        "\n",
-                    ))
-                    .body(include_str!("glsl/wireframe.glsl"))
+                    .header(include_files(include_str!("glsl/wireframe.glsl")))
+                    .body("main_frag(color);")
                     .build(),
                 mix: Mix::builder()
                     .name("wireframe_data_mix")
@@ -490,46 +475,11 @@ impl AllSettings {
                     .name("logs_mix")
                     .width(640)
                     .height(480)
-                    .header(concat!(
-                        include_str!("glsl/utils.glsl"),
-                        "\n",
-                        include_str!("glsl/strings.glsl"),
-                        "\n",
-                        include_str!("glsl/font_8x16.glsl"),
-                        "\n",
-                    ))
-                    .body(include_str!("glsl/logs.glsl"))
+                    .header(include_files(include_str!("glsl/logs.glsl")))
+                    .body("main_frag(color);")
                     .build(),
                 mix: Mix::builder()
                     .name("logs_mix")
-                    .mixed("blank_mix")
-                    .no_display(true)
-                    .build(),
-            },
-        );
-
-        //config for status
-        mix_configs.insert(
-            "status_mix".to_string(),
-            MixConfig {
-                def: VidMixer::builder()
-                    .name("status_mix")
-                    .width(640)
-                    .height(480)
-                    .header(concat!(
-                        include_str!("glsl/utils.glsl"),
-                        "\n",
-                        include_str!("glsl/strings.glsl"),
-                        "\n",
-                        include_str!("glsl/font_fantasy.glsl"),
-                        "\n",
-                        include_str!("glsl/font_8x8.glsl"),
-                        "\n",
-                    ))
-                    .body(include_str!("glsl/status.glsl"))
-                    .build(),
-                mix: Mix::builder()
-                    .name("status_mix")
                     .mixed("blank_mix")
                     .no_display(true)
                     .build(),

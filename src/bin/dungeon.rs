@@ -12,11 +12,14 @@ use sdlrig::gfxinfo::{MIDI_CONTROL_CHANGE, MIDI_NOTE_OFF, MIDI_NOTE_ON};
 
 use sdlrig::{
     gfxinfo::{Asset, GfxEvent, GfxInfo, MidiEvent, Vid, VidMixer},
-    renderspec::{Mix, RenderSpec, SendCmd, SendValue},
+    renderspec::{Mix, RenderSpec, SendCmd},
 };
 
-use vizwasm::vizconfig::{time_code_2_float, AllSettings, MixConfig};
 use vizwasm::{beat_time_boilerplate, streamsettings::StreamSettingsField};
+use vizwasm::{
+    shaderhelper::include_files,
+    vizconfig::{time_code_2_float, AllSettings, MixConfig},
+};
 fn main() {}
 
 static STREAM_PATH: &'static str = "/Users/ttie/Desktop/dungeon/streams";
@@ -192,7 +195,6 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "flowers",
         "vase",
         "me",
-        "status",
         "sopranos",
         "arthur",
         "a_sword_in_the_stone_combo",
@@ -240,8 +242,8 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
             configs.push(MixConfig {
                 def: VidMixer::builder()
                     .name(concat!($name, "_mix"))
-                    .header(concat!(include_str!("../glsl/utils.glsl")))
-                    .body(include_str!(concat!("../glsl/", $name, ".glsl")))
+                    .header(include_files(include_str!(concat!("../glsl/", $name, ".glsl"))))
+                    .body("main_frag(color);")
                     .width(640)
                     .height(480)
                     .build(),
@@ -267,17 +269,8 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
                 .name("jam_mix")
                 .width(vid.resolution.0 as u32)
                 .height(vid.resolution.1 as u32)
-                .header(concat!(
-                    include_str!("../glsl/utils.glsl"),
-                    "\n",
-                    include_str!("../glsl/patch_check_scroll_px.glsl"),
-                    "\n",
-                    include_str!("../glsl/patch_blob_px.glsl"),
-                    "\n",
-                    include_str!("../glsl/patch_warp_px.glsl"),
-                    "\n",
-                ))
-                .body(include_str!("../glsl/jam.glsl"))
+                .header(include_files(include_str!("../glsl/jam.glsl")))
+                .body("main_frag(color);")
                 .build(),
             mix: Mix::builder()
                 .name("jam_mix")
@@ -303,15 +296,8 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
                 .name("quest_message_mix")
                 .width(vid.resolution.0 as u32)
                 .height(vid.resolution.1 as u32)
-                .header(concat!(
-                    include_str!("../glsl/utils.glsl"),
-                    "\n",
-                    include_str!("../glsl/strings.glsl"),
-                    "\n",
-                    include_str!("../glsl/font_fantasy.glsl"),
-                    "\n",
-                ))
-                .body(include_str!("../glsl/quest_message.glsl"))
+                .header(include_files(include_str!("../glsl/quest_message.glsl")))
+                .body("main_frag(color);")
                 .build(),
             mix: Mix::builder()
                 .name("quest_message_mix")
@@ -325,49 +311,8 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
                 .name("demo_fonts_mix")
                 .width(vid.resolution.0 as u32)
                 .height(vid.resolution.1 as u32)
-                .header(concat!(
-                    include_str!("../glsl/utils.glsl"),
-                    "\n",
-                    include_str!("../glsl/strings.glsl"),
-                    "\n",
-                    include_str!("../glsl/font_8x8.glsl"),
-                    "\n",
-                    include_str!("../glsl/font_8x16.glsl"),
-                    "\n",
-                    include_str!("../glsl/font_ample.glsl"),
-                    "\n",
-                    include_str!("../glsl/font_typical.glsl"),
-                    "\n",
-                    include_str!("../glsl/font_arcade.glsl"),
-                    "\n",
-                    include_str!("../glsl/font_bubbly.glsl"),
-                    "\n",
-                    include_str!("../glsl/font_willow.glsl"),
-                    "\n",
-                    include_str!("../glsl/font_fantasy.glsl"),
-                    "\n",
-                    include_str!("../glsl/font_future.glsl"),
-                    "\n",
-                    include_str!("../glsl/font_fancy.glsl"),
-                    "\n",
-                    include_str!("../glsl/font_retro.glsl"),
-                    "\n",
-                    include_str!("../glsl/font_cyber.glsl"),
-                    "\n",
-                    include_str!("../glsl/font_high.glsl"),
-                    "\n",
-                    include_str!("../glsl/font_strong.glsl"),
-                    "\n",
-                    include_str!("../glsl/font_nobel.glsl"),
-                    "\n",
-                    include_str!("../glsl/font_logic.glsl"),
-                    "\n",
-                    include_str!("../glsl/font_small.glsl"),
-                    "\n",
-                    include_str!("../glsl/font_8x14.glsl"),
-                    "\n",
-                ))
-                .body(include_str!("../glsl/demo_fonts.glsl"))
+                .header(include_files(include_str!("../glsl/demo_fonts.glsl")))
+                .body("main_frag(color);")
                 .build(),
             mix: Mix::builder()
                 .name("demo_fonts_mix")
@@ -381,15 +326,8 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
                 .name("text cam_mix")
                 .width(vid.resolution.0 as u32)
                 .height(vid.resolution.1 as u32)
-                .header(concat!(
-                    include_str!("../glsl/utils.glsl"),
-                    "\n",
-                    include_str!("../glsl/strings.glsl"),
-                    "\n",
-                    include_str!("../glsl/font_cyber.glsl"),
-                    "\n",
-                ))
-                .body(include_str!("../glsl/text_cam.glsl"))
+                .header(include_files(include_str!("../glsl/text_cam.glsl")))
+                .body("main_frag(color);")
                 .build(),
             mix: Mix::builder()
                 .name("text cam_mix")
@@ -536,101 +474,6 @@ pub fn calculate(
         mix_name,
         (TARGET_SIZE_W as i32, TARGET_SIZE_H as i32),
     ));
-
-    if seen.contains_key("status_mix") {
-        // let status = format!("{:?}", gfx_info.get("status_mix"));
-        // let all_txt = format!("{frame}\n{status}\nthe quick brown fox jumps over the lazy dog");
-        let all_txt =
-            format!("Frame: {frame}\nFPS: {fps}\n\nThe quick brown fox jumps over the lazy dog.");
-        let msgs = all_txt
-            .lines()
-            .into_iter()
-            .map(|s| {
-                let mut s = s.to_string();
-                let mut parts = vec![];
-                while s.len() > 72 {
-                    let part = s.split_off(72);
-                    parts.push(s);
-                    s = part;
-                }
-                parts.push(s);
-                parts
-            })
-            .flatten()
-            .collect::<Vec<_>>();
-        let positions = msgs
-            .iter()
-            .enumerate()
-            .map(|(n, _)| [10.0, n as f32 * 18.0])
-            .flatten()
-            .collect::<Vec<_>>();
-
-        let txt = msgs
-            .join("")
-            .as_bytes()
-            .iter()
-            .map(|b| *b as i32)
-            .collect::<Vec<_>>();
-
-        let starts = msgs
-            .iter()
-            .scan(0, |state, msg| {
-                let start = *state;
-                *state += msg.len() as i32;
-                Some(start)
-            })
-            .collect::<Vec<_>>();
-        let lens = msgs.iter().map(|msg| msg.len() as i32).collect::<Vec<_>>();
-        if positions.len() / 2 == msgs.len()
-            || positions.len() / 2 == starts.len()
-            || positions.len() / 2 == lens.len()
-        {
-            specs.push(
-                SendCmd::builder()
-                    .mix("status_mix")
-                    .name("num_labels")
-                    .value(SendValue::Integer(starts.len() as i32))
-                    .build()
-                    .into(),
-            );
-
-            specs.push(
-                SendCmd::builder()
-                    .mix("status_mix")
-                    .name("label_pos")
-                    .value(SendValue::Vector(positions))
-                    .build()
-                    .into(),
-            );
-
-            specs.push(
-                SendCmd::builder()
-                    .mix("status_mix")
-                    .name("label_txt")
-                    .value(SendValue::IVector(txt))
-                    .build()
-                    .into(),
-            );
-
-            specs.push(
-                SendCmd::builder()
-                    .mix("status_mix")
-                    .name("label_idx")
-                    .value(SendValue::IVector(starts))
-                    .build()
-                    .into(),
-            );
-
-            specs.push(
-                SendCmd::builder()
-                    .mix("status_mix")
-                    .name("label_len")
-                    .value(SendValue::IVector(lens))
-                    .build()
-                    .into(),
-            );
-        }
-    }
 
     let to_return = specs.clone();
     settings.clean_up_by_specs(&mut specs);

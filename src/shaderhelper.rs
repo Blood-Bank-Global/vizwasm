@@ -14,7 +14,6 @@ fn include_files_recusive<S: AsRef<str>>(shader: S, seen: &mut HashSet<String>) 
     let include_re = Regex::new(r#"(?m)^#include\s+"([^"]+)""#).unwrap();
     while last < shader_str.len() {
         if let Some(captures) = include_re.captures(&shader_str[last..]) {
-            eprintln!("Found include: {}", captures.get(1).unwrap().as_str());
             let start = last + captures.get(0).unwrap().start();
             let end = last + captures.get(0).unwrap().end();
             output.push_str(&shader_str[last..start]);

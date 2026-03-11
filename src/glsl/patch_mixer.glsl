@@ -1,5 +1,6 @@
 #ifndef PATCH_MIXER_GLSL
 #define PATCH_MIXER_GLSL
+#include "utils.glsl"
 //!VAR float mix_rr 1.0
 //!VAR float mix_rg 0.0
 //!VAR float mix_rb 0.0

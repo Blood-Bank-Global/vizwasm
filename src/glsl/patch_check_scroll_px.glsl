@@ -1,5 +1,6 @@
 #ifndef PATCH_CHECK_SCROLL_PX_GLSL
 #define PATCH_CHECK_SCROLL_PX_GLSL
+#include "utils.glsl"
 vec4 patch_check_scroll_px(
     vec2 uv,
     vec2 resolution,

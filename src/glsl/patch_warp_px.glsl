@@ -1,5 +1,6 @@
 #ifndef PATCH_WARP_PX_GLSL
 #define PATCH_WARP_PX_GLSL
+#include "utils.glsl"
 uint patch_warp_px_hash(uint seed) {
     seed = (seed ^ 61u) ^ (seed >> 16u);
     seed *= 9u;

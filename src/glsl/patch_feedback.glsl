@@ -1,5 +1,7 @@
 #ifndef PATCH_FEEDBACK_GLSL
 #define PATCH_FEEDBACK_GLSL
+#include "utils.glsl"
+
 #define FEEDBACK_BASIC 0
 #define FEEDBACK_JAM 1
 #define FEEDBACK_MATH 2

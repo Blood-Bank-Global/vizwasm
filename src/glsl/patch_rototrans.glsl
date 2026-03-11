@@ -1,6 +1,6 @@
 #ifndef PATCH_ROTOTRANS_GLSL
 #define PATCH_ROTOTRANS_GLSL
-
+#include "utils.glsl"
 vec4 patch_rototrans(
     vec2 coord, 
     sampler2D feedback_tex,
