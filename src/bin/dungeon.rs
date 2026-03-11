@@ -30,20 +30,14 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
     let mut vids = vec![];
 
     let vid640x480 = [
-        "oreo",
-        "cat",
-        "flowers",
-        "vase",
-        "me",
+        "CityHunter",
         "a_sword_in_the_stone",
         "arthur",
         "columns",
         "facade",
-        "wonderboy",
         "statue",
         "the_moon",
         "the_snow_queen",
-        "skate",
     ];
     for vid_name in vid640x480.iter() {
         vids.push(
@@ -165,7 +159,7 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
 static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
     let names = [
         "blank",
-        "oreo",
+        "CityHunter",
         "demo_fonts",
         "a_sword_in_the_stone",
         "the_moon",
@@ -191,11 +185,6 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "vestial1",
         "vestial2",
         "quest_message",
-        "cat",
-        "flowers",
-        "vase",
-        "me",
-        "sopranos",
         "arthur",
         "a_sword_in_the_stone_combo",
         "jam",
@@ -533,6 +522,7 @@ const IAC: &str = "IAC Driver Bus 1";
 pub fn mega_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
     a_sword_in_the_stone_cb(all_settings, event);
     alien_cb(all_settings, event);
+    city_hunter_cb(all_settings, event);
 }
 
 pub fn a_sword_in_the_stone_cb(_all_settings: &mut AllSettings, event: &MidiEvent) {
@@ -584,4 +574,37 @@ pub fn alien_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
             _ => {}
         }
     }
+}
+
+pub fn city_hunter_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
+    beat_time_boilerplate!(
+        all_settings,
+        event,
+        "CityHunter",
+        "CityHunter",
+        vec![
+            time_code_2_float("00:00:01:23"),
+            time_code_2_float("00:00:05:02"),
+            time_code_2_float("00:00:08:13"),
+            time_code_2_float("00:00:16:16"),
+            time_code_2_float("00:00:22:01"),
+            time_code_2_float("00:00:23:19"),
+            time_code_2_float("00:00:35:17"),
+            time_code_2_float("00:00:54:21"),
+            time_code_2_float("00:00:56:14"),
+            time_code_2_float("00:01:05:12"),
+            time_code_2_float("00:01:10:06"),
+            time_code_2_float("00:01:13:15"),
+            time_code_2_float("00:01:16:22"),
+            time_code_2_float("00:01:18:13"),
+            time_code_2_float("00:01:21:04"),
+            time_code_2_float("00:01:23:04"),
+            time_code_2_float("00:01:25:07"),
+            time_code_2_float("00:01:27:06"),
+            time_code_2_float("00:01:43:15"),
+            time_code_2_float("00:01:49:12"),
+            time_code_2_float("00:01:55:03"),
+            time_code_2_float("00:01:59:12"),
+        ]
+    );
 }

@@ -6,6 +6,6 @@ while (<>) {
         @f=split;
         @t=split /:/, $f[4];
         shift @t; 
-        printf("\"00:%s:%s:%s\",\n", @t);
+        printf("time_code_2_float(\"00:%s:%s:%s\"),\n", @t);
     }
 }
