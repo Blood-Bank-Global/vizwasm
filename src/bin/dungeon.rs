@@ -159,6 +159,7 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
 static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
     let names = [
         "blank",
+        "pixel_cam",
         "CityHunter",
         "demo_fonts",
         "a_sword_in_the_stone",
@@ -277,7 +278,7 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
         });
     }
 
-    // And config for the quest_message
+    // And config for the fragment shaders on blank
     let blank_vid = STREAM_DEFS.iter().find(|v| v.name == "blank");
     if let Some(vid) = blank_vid {
         configs.push(MixConfig {
@@ -320,6 +321,21 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
                 .build(),
             mix: Mix::builder()
                 .name("text cam_mix")
+                .mixed("front cam_overlay")
+                .no_display(true)
+                .build(),
+        });
+
+        configs.push(MixConfig {
+            def: VidMixer::builder()
+                .name("pixel_cam_mix")
+                .width(vid.resolution.0 as u32)
+                .height(vid.resolution.1 as u32)
+                .header(include_files(include_str!("../glsl/pixel_cam.glsl")))
+                .body("main_frag(color);")
+                .build(),
+            mix: Mix::builder()
+                .name("pixel_cam_mix")
                 .mixed("front cam_overlay")
                 .no_display(true)
                 .build(),
