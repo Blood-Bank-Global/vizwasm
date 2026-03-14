@@ -168,51 +168,51 @@ vec2 coord_mirror(in vec2 coord, in bool mirror_lr, in bool mirror_ud) {
     return base_coord;
 }
 
-vec3 handle_edge(sampler2D tex, in vec2 coord, in uint mode) {
+vec4 handle_edge(sampler2D tex, in vec2 coord, in uint mode) {
     switch (mode) {
         case EDGE_MODE_SMEAR:
-            return texture(tex, coord_smear(coord)).rgb;
+            return texture(tex, coord_smear(coord));
 
         case EDGE_MODE_WRAP:
-            return texture(tex, coord_wrap(coord, true, true)).rgb;
+            return texture(tex, coord_wrap(coord, true, true));
 
         case EDGE_MODE_MIRROR:
-            return texture(tex, coord_mirror(coord, true, true)).rgb;
+            return texture(tex, coord_mirror(coord, true, true));
 
         case EDGE_MODE_BLANK:
             if (coord.x <= EPSILON || coord.x >= (1.0 - EPSILON) ||
                 coord.y <= EPSILON || coord.y >= (1.0 - EPSILON)) {
-                return vec3(0.0, 0.0, 0.0);
+                return vec4(0.0, 0.0, 0.0, 1.0);
             } else {
-                return texture(tex, coord).rgb;
+                return texture(tex, coord);
             }
 
         case EDGE_MODE_WRAP_LR:
             if (coord.y <= EPSILON || coord.y >= (1.0 - EPSILON)) {
-               return vec3(0.0, 0.0, 0.0);
+               return vec4(0.0, 0.0, 0.0, 1.0);
             }
-            return texture(tex, coord_wrap(coord, true, false)).rgb;
+            return texture(tex, coord_wrap(coord, true, false));
 
         case EDGE_MODE_WRAP_UD:
             if (coord.x <= EPSILON || coord.x >= (1.0 - EPSILON)) {
-                return vec3(0.0, 0.0, 0.0);
+                return vec4(0.0, 0.0, 0.0, 1.0);
             }
-            return texture(tex, coord_wrap(coord, false, true)).rgb;
+            return texture(tex, coord_wrap(coord, false, true));
 
         case EDGE_MODE_MIRROR_LR:
             if (coord.y <= EPSILON || coord.y >= (1.0 - EPSILON)) {
-               return vec3(0.0, 0.0, 0.0);
+               return vec4(0.0, 0.0, 0.0, 1.0);
             }
-            return texture(tex, coord_mirror(coord, true, false)).rgb;
+            return texture(tex, coord_mirror(coord, true, false));
 
         case EDGE_MODE_MIRROR_UD:
             if (coord.x <= EPSILON || coord.x >= (1.0 - EPSILON)) {
-                return vec3(0.0, 0.0, 0.0);
+                return vec4(0.0, 0.0, 0.0, 1.0);
             }
-            return texture(tex, coord_mirror(coord, false, true)).rgb;
+            return texture(tex, coord_mirror(coord, false, true));
 
         default:
-            return vec3(1.0, 0.0, 0.0);
+            return vec4(1.0, 0.0, 0.0, 1.0);
     }
 }
 

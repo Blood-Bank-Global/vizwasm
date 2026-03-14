@@ -139,7 +139,7 @@ void pass3(out vec4 color) {
         float total_weight = 0.0;
         for (int d = -radius; d <= radius; d++) {
             vec2 sample_uv = (base_px + vec2(float(d), float(d))) / iResolution.xy;
-            vec3 s = handle_edge(pass_tex2, sample_uv, EDGE_MODE_BLANK);
+            vec3 s = handle_edge(pass_tex2, sample_uv, EDGE_MODE_BLANK).rgb;
             float luma = rgb2hsv(s).z;
             float g = exp(-float(d * d) / (2.0 * sigma * sigma));
             float w = g * luma;
@@ -157,7 +157,7 @@ void pass3(out vec4 color) {
         float total_weight = 0.0;
         for (int d = -radius; d <= radius; d++) {
             vec2 sample_uv = (base_px + vec2(float(d), float(d))) / iResolution.xy;
-            vec3 s = handle_edge(pass_tex2, sample_uv, EDGE_MODE_BLANK);
+            vec3 s = handle_edge(pass_tex2, sample_uv, EDGE_MODE_BLANK).rgb;
             float w = exp(-float(d * d) / (2.0 * sigma * sigma));
             accum += s * w;
             total_weight += w;

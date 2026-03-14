@@ -36,7 +36,7 @@ vec4 patch_rototrans(
     return vec4(handle_edge(feedback_tex, distort_matrix[0], distort_edge).r,
                 handle_edge(feedback_tex, distort_matrix[1], distort_edge).g,
                 handle_edge(feedback_tex, distort_matrix[2], distort_edge).b,
-                texture(feedback_tex, distort_matrix[3]).a);
+                handle_edge(feedback_tex, distort_matrix[3], distort_edge).a);
 
 }
 

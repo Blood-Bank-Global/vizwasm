@@ -26,7 +26,7 @@ if (cc_iac_driver_bus_1_0_5 > 5.0 || cc_iac_driver_bus_1_0_6 > 5.0) {
     base_coord.x += 0.025 * (0.0 - step(0.5, fract(base_coord.y / 0.025)));
 }
 
-color = vec4(handle_edge(src_tex0, base_coord, EDGE_MODE_MIRROR), 1.0);
+color = handle_edge(src_tex0, base_coord, EDGE_MODE_MIRROR);
 
 vec4 upper = texture(src_tex1, src_coord1);
 vec3 upper_hsv = rgb2hsv(upper.rgb);

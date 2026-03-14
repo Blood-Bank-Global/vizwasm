@@ -52,7 +52,7 @@ if (cc_iac_driver_bus_1_1_0 > 0.0) {
     base_coord = base_coord + offset;
 }
 
-color = vec4(handle_edge(src_tex0, base_coord.xy, EDGE_MODE_MIRROR), 1.0);
+color = handle_edge(src_tex0, base_coord.xy, EDGE_MODE_MIRROR);
 if (note_iac_driver_bus_1_0_37_on > 0u) {
     color.r = handle_edge(src_tex0, vec2(base_coord.x + 1.0/640.0 * (note_iac_driver_bus_1_0_37/127.0 * 20), base_coord.y), EDGE_MODE_SMEAR).r;
 }

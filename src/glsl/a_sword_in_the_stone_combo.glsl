@@ -29,7 +29,7 @@ void pass0(out vec4 color) {
         base_coord.y += 0.025 * (0.0 - step(0.5, fract(base_coord.x / 0.025)));
     }
 
-    color = vec4(handle_edge(src_tex0, base_coord, EDGE_MODE_MIRROR), 1.0);
+    color = handle_edge(src_tex0, base_coord, EDGE_MODE_MIRROR);
 
     vec4 arthur = texture(src_tex1, src_coord1);
     vec3 upper_hsv = rgb2hsv(arthur.rgb);

@@ -154,11 +154,11 @@ void pass0(out vec4 color) {
         // fg_coord = patch_warp_px(fg_coord, vec2(50.0, 50.0)/FG_RESOLUTION, 1.0, vec2(1.0,1.0), iTime/5.0);
         
         // fg_coord = fg_uv / FG_RESOLUTION;
-        vec4 fg_color = vec4(handle_edge(FG_TEX, fg_coord, EDGE_MODE_MIRROR), 1.0);
+        vec4 fg_color = (handle_edge(FG_TEX, fg_coord, EDGE_MODE_MIRROR);
 
         // float scale =  float(VIEW_RESOLUTION.x) / float(COL_RESOLUTION.x);
         // vec2 fg_coord = (COL_COORD / scale);
-        // vec3 fg = handle_edge(COL_TEX, fg_coord, EDGE_MODE_MIRROR);
+        // vec4 fg = handle_edge(COL_TEX, fg_coord, EDGE_MODE_MIRROR);
         if (distance(fg_color.rgb, vec3(0.0, 0.0, 0.0)) > 0.08) {
             color = fg_color;
         }
