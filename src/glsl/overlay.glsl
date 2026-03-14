@@ -4,7 +4,7 @@
 //!VAR uint scanline_kind 0
 
 // scanlines
-void main_frag(out vec4 color) {
+void pass0(out vec4 color) {
     if (scanline_kind != 0) {
         vec4 line = vec4(0.0, 0.0, 0.0, 1.0);
         float intensity = fract(src_coord0.y * 100000);

@@ -3,7 +3,7 @@
 
 //!VAR vec3 iResolution0 1.0 1.0 1.0
 
-void main_frag(out vec4 color) {
+void pass0(out vec4 color) {
     vec2 uv = src_coord.xy * iResolution.xy;
     float resize = iResolution0.y / iResolution.y;
     float offx = (iResolution0.x / resize - iResolution.x)/2.0;

@@ -15,7 +15,7 @@
 //!VAR float luma_blur 0.0
 //!VAR float bloom 0.0
 
-void main_frag(out vec4 color) {
+void pass0(out vec4 color) {
     // Scroll as needed
     vec2 base_coord = coord_wrap(vec2(src_coord.x + scrolled_h, src_coord.y + scrolled_v), true, true);
 

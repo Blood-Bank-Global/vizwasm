@@ -14,7 +14,7 @@
 
 #define QUEST_LINE_LEN 16
 
-void main_frag(out vec4 color) {
+void pass0(out vec4 color) {
     color = vec4(0.0, 0.0, 0.0, 1.0);
 
     if (true) {

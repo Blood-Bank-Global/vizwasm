@@ -77,10 +77,10 @@ pub struct MixConfig {
 }
 
 impl MixConfig {
-    pub fn add_header<T: AsRef<str>>(&mut self, header: T) {
-        let h = header.as_ref();
-        let o = self.def.header.as_deref().unwrap_or_default();
-        self.def.header.replace([o, h].join("\n"));
+    pub fn add_shader<T: AsRef<str>>(&mut self, shader: T) {
+        let h = shader.as_ref();
+        let o = self.def.shader.as_deref().unwrap_or_default();
+        self.def.shader.replace([o, h].join("\n"));
     }
 }
 
@@ -98,8 +98,7 @@ impl MixerGraph {
                     .name(format!("{}_main_mix", name.as_ref()))
                     .width(width)
                     .height(height)
-                    .header(include_files(include_str!("glsl/main_pipeline.glsl")))
-                    .body("main_frag(color);")
+                    .shader(include_files(include_str!("glsl/main_pipeline.glsl")))
                     .build(),
                 mix: Mix::builder()
                     .name(format!("{}_main_mix", name.as_ref()))
@@ -129,8 +128,7 @@ impl MixerGraph {
                     .name(format!("{}_overlay", name.as_ref()))
                     .width(width)
                     .height(height)
-                    .header(include_files(include_str!("glsl/overlay.glsl")))
-                    .body("main_frag(color);")
+                    .shader(include_files(include_str!("glsl/overlay.glsl")))
                     .build(),
                 mix: Mix::builder()
                     .name(format!("{}_overlay", name.as_ref()))
@@ -456,8 +454,7 @@ impl AllSettings {
                     .name("wireframe_data_mix")
                     .width(640)
                     .height(480)
-                    .header(include_files(include_str!("glsl/wireframe.glsl")))
-                    .body("main_frag(color);")
+                    .shader(include_files(include_str!("glsl/wireframe.glsl")))
                     .build(),
                 mix: Mix::builder()
                     .name("wireframe_data_mix")
@@ -475,8 +472,7 @@ impl AllSettings {
                     .name("logs_mix")
                     .width(640)
                     .height(480)
-                    .header(include_files(include_str!("glsl/logs.glsl")))
-                    .body("main_frag(color);")
+                    .shader(include_files(include_str!("glsl/logs.glsl")))
                     .build(),
                 mix: Mix::builder()
                     .name("logs_mix")

@@ -17,7 +17,7 @@
 #define DISPLAY_NAME_IDX 17
 #define SCAN_NAME_IDX 18
 
-void main_frag(out vec4 color) {
+void pass0(out vec4 color) {
     color = texture(src_tex0, src_coord0);
     vec2 uv = src_coord0 * iResolution.xy;
 

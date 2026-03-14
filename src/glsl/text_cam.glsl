@@ -5,7 +5,7 @@
 //!VAR float cc_iac_driver_bus_1_0_1 0.0
 //!STR words "ERROR WARNING ALERT DANGER CRITICAL ALARM BEEP OVERLOAD"
 
-void main_frag(out vec4 color) {
+void pass0(out vec4 color) {
     vec2 uv = src_coord.xy * iResolution.xy;
 
     float resize = iResolution0.y / iResolution.y;

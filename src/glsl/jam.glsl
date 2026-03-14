@@ -59,7 +59,7 @@
 #define HEIGHT (iResolution.y)
 
 
-void main_frag(out vec4 color) {
+void pass0(out vec4 color) {
     //////////// GET TO PIXELS
     vec2 uv = src_coord.xy * VIEW_RESOLUTION;
     color = vec4(0.0, 0.0, 0.0, 1.0);

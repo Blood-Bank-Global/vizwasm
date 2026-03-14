@@ -38,7 +38,7 @@
 #define font_offset_small (font_offset_cyber + font_cyber_height)
 #define font_offset_8x14 (font_offset_small + font_small_height)
 
-void main_frag(out vec4 color) {
+void pass0(out vec4 color) {
     color = vec4(0.0, 0.0, 0.0, 1.0);
     uint starts[1] = uint[1](0);
     uint lengths[1] = uint[1](demo_length);

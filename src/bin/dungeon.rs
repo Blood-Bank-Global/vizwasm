@@ -232,8 +232,7 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
             configs.push(MixConfig {
                 def: VidMixer::builder()
                     .name(concat!($name, "_mix"))
-                    .header(include_files(include_str!(concat!("../glsl/", $name, ".glsl"))))
-                    .body("main_frag(color);")
+                    .shader(include_files(include_str!(concat!("../glsl/", $name, ".glsl"))))
                     .width(640)
                     .height(480)
                     .build(),
@@ -259,8 +258,7 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
                 .name("jam_mix")
                 .width(vid.resolution.0 as u32)
                 .height(vid.resolution.1 as u32)
-                .header(include_files(include_str!("../glsl/jam.glsl")))
-                .body("main_frag(color);")
+                .shader(include_files(include_str!("../glsl/jam.glsl")))
                 .build(),
             mix: Mix::builder()
                 .name("jam_mix")
@@ -286,8 +284,7 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
                 .name("quest_message_mix")
                 .width(vid.resolution.0 as u32)
                 .height(vid.resolution.1 as u32)
-                .header(include_files(include_str!("../glsl/quest_message.glsl")))
-                .body("main_frag(color);")
+                .shader(include_files(include_str!("../glsl/quest_message.glsl")))
                 .build(),
             mix: Mix::builder()
                 .name("quest_message_mix")
@@ -301,8 +298,7 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
                 .name("demo_fonts_mix")
                 .width(vid.resolution.0 as u32)
                 .height(vid.resolution.1 as u32)
-                .header(include_files(include_str!("../glsl/demo_fonts.glsl")))
-                .body("main_frag(color);")
+                .shader(include_files(include_str!("../glsl/demo_fonts.glsl")))
                 .build(),
             mix: Mix::builder()
                 .name("demo_fonts_mix")
@@ -316,8 +312,7 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
                 .name("text cam_mix")
                 .width(vid.resolution.0 as u32)
                 .height(vid.resolution.1 as u32)
-                .header(include_files(include_str!("../glsl/text_cam.glsl")))
-                .body("main_frag(color);")
+                .shader(include_files(include_str!("../glsl/text_cam.glsl")))
                 .build(),
             mix: Mix::builder()
                 .name("text cam_mix")
@@ -331,8 +326,7 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
                 .name("pixel_cam_mix")
                 .width(vid.resolution.0 as u32)
                 .height(vid.resolution.1 as u32)
-                .header(include_files(include_str!("../glsl/pixel_cam.glsl")))
-                .body("main_frag(color);")
+                .shader(include_files(include_str!("../glsl/pixel_cam.glsl")))
                 .build(),
             mix: Mix::builder()
                 .name("pixel_cam_mix")

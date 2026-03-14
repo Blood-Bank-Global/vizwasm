@@ -14,7 +14,7 @@
 #define NUM_LINES (int((iResolution.y - (BOTTOM_MARGIN)) / FONT_H))
 #define LINE_OFFSET (int((100 - NUM_LINES)))
 
-void main_frag(out vec4 color) {
+void pass0(out vec4 color) {
     color = vec4(0.0, 0.0, 0.0, 1.0);
 
     vec2 uv = src_coord.xy * iResolution.xy;

@@ -18,7 +18,7 @@
 #define BUCKET_SZ 20.0
 #define BUCKET_COUNT (floor(SUN_RAD/ BUCKET_SZ))
 
-void main_frag(out vec4 color) {
+void pass0(out vec4 color) {
 
     vec4 sky_color = vec4(0.1 * cc_iac_driver_bus_1_0_4/127, 0.0, 0.5 * cc_iac_driver_bus_1_0_4/127, 1.0);
     vec4 square1 = vec4(0, 0.1, 0.4, 1.0);

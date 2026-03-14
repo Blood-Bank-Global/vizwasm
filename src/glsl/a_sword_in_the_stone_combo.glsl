@@ -12,7 +12,7 @@
 //SWIRL
 //!VAR float cc_iac_driver_bus_1_0_7 0.0
 
-void main_frag(out vec4 color) {
+void pass0(out vec4 color) {
     vec2 base_coord = src_coord0;
     if (cc_iac_driver_bus_1_0_7 > 5.0) {
         float angle = sin(dot(base_coord.xy, vec2(2.9898,3.233)) + iTime * 7.0) * 3.14159;
