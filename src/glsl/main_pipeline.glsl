@@ -22,7 +22,6 @@
 //!VAR float feedback_rotation 0.0
 //!VAR float luma_blur 0.0
 //!VAR float blur 0.0
-//!VAR float bloom 0.0
 
 void pass0(out vec4 color) {
     // Scroll as needed
@@ -82,29 +81,17 @@ void pass0(out vec4 color) {
 }
 
 void pass1(out vec4 color) {
-    //luma blur from the next N pixels, where N is determined by the luma_blur setting.
-    // incorporate the luma of each neighbor pixel into the weight so that the brighter 
-    // pixels contribute more to the blur, and the darker pixels contribute less. This 
-    if (luma_blur > 0.0) {
-        int radius = min(int(ceil(luma_blur)), 50);
-        float sigma = float(radius) * 0.5;
-        vec2 base_px = pass_coord0.xy * iResolution.xy;
-        // Pass 1: vertical blur
-        vec3 accum = vec3(0.0);
-        float total_weight = 0.0;
-        for (int j = -radius; j <= radius; j++) {
-            vec2 sample_uv = (base_px + vec2(0.0, float(j))) / iResolution.xy;
-            vec3 s = handle_edge(pass_tex0, sample_uv, EDGE_MODE_BLANK).rgb;
-            float luma = rgb2hsv(s).z;
-            float g = exp(-float(j * j) / (2.0 * sigma * sigma));
-            float w = g * luma;
-            accum += s * w;
-            total_weight += w;
-        }
-        //preserve alpha from pass0
-        float alpha = texture(pass_tex0, pass_coord0).a;
-        color = vec4(accum / max(total_weight, 0.001), alpha);
-    } else if (blur > 0.0) {
+    vec4 c_0 = texture(pass_tex0, pass_coord0);
+    vec3 hsv = rgb2hsv(c_0.rgb);
+    if (hsv.z >= luma_blur) {
+        color = c_0;
+    } else {
+        color = vec4(0.0, 0.0, 0.0, c_0.a);
+    }
+}
+
+void pass2(out vec4 color) {
+     if (blur > 0.0) {
         int radius = min(int(ceil(blur)), 50);
         float sigma = float(radius) * 0.5;
         vec2 base_px = pass_coord0.xy * iResolution.xy;
@@ -118,37 +105,18 @@ void pass1(out vec4 color) {
             accum += s * w;
             total_weight += w;
         }
-        //preserve alpha from pass0
-        float alpha = texture(pass_tex0, pass_coord0).a;
+        //preserve alpha from pass1
+        float alpha = texture(pass_tex1, pass_coord1).a;
         color = vec4(accum / max(total_weight, 0.001), alpha);
     
     } else {
-        color = texture(pass_tex0, pass_coord0);
+        color = texture(pass_tex1, pass_coord1);
     }
 }
 
-void pass2(out vec4 color) {
+void pass3(out vec4 color) {
     // Pass 2: vertical blur over the horizontal results in pass1
-    if (luma_blur > 0.0) {
-        int radius = min(int(ceil(luma_blur)), 50);
-        float sigma = float(radius) * 0.5;
-        vec2 base_px = pass_coord1.xy * iResolution.xy;
-        // Pass 2: horizontal blur
-        vec3 accum = vec3(0.0);
-        float total_weight = 0.0;
-        for (int i = -radius; i <= radius; i++) {
-            vec2 sample_uv = (base_px + vec2(float(i), 0.0)) / iResolution.xy;
-            vec3 s = handle_edge(pass_tex1, sample_uv, EDGE_MODE_BLANK).rgb;
-            float luma = rgb2hsv(s).z;
-            float g = exp(-float(i * i) / (2.0 * sigma * sigma));
-            float w = g * luma;
-            accum += s * w;
-            total_weight += w;
-        }
-        //preserve alpha from pass 1
-        float alpha = texture(pass_tex1, pass_coord1).a;
-        color = vec4(accum / max(total_weight, 0.001), alpha);
-    } else if (blur > 0.0) {
+    if (blur > 0.0) {
         int radius = min(int(ceil(blur)), 50);
         float sigma = float(radius) * 0.5;
         vec2 base_px = pass_coord1.xy * iResolution.xy;
@@ -157,49 +125,8 @@ void pass2(out vec4 color) {
         float total_weight = 0.0;
         for (int i = -radius; i <= radius; i++) {
             vec2 sample_uv = (base_px + vec2(float(i), 0.0)) / iResolution.xy;
-            vec3 s = handle_edge(pass_tex1, sample_uv, EDGE_MODE_BLANK).rgb;
+            vec3 s = handle_edge(pass_tex2, sample_uv, EDGE_MODE_BLANK).rgb;
             float w = exp(-float(i * i) / (2.0 * sigma * sigma));
-            accum += s * w;
-            total_weight += w;
-        }
-        //preserve alpha from pass 1
-        float alpha = texture(pass_tex1, pass_coord1).a;
-        color = vec4(accum / max(total_weight, 0.001), alpha);
-    } else {
-        color = texture(pass_tex1, pass_coord1);
-    }
-}
-
-void pass3(out vec4 color) {
-    // Pass 3: diagonal blur (45°) to round out the separable passes
-    if (luma_blur > 0.0) {
-        int radius = min(int(ceil(luma_blur * 0.707)), 35); // scaled by 1/sqrt(2)
-        float sigma = float(radius) * 0.5;
-        vec2 base_px = pass_coord2.xy * iResolution.xy;
-        vec3 accum = vec3(0.0);
-        float total_weight = 0.0;
-        for (int d = -radius; d <= radius; d++) {
-            vec2 sample_uv = (base_px + vec2(float(d), float(d))) / iResolution.xy;
-            vec3 s = handle_edge(pass_tex2, sample_uv, EDGE_MODE_BLANK).rgb;
-            float luma = rgb2hsv(s).z;
-            float g = exp(-float(d * d) / (2.0 * sigma * sigma));
-            float w = g * luma;
-            accum += s * w;
-            total_weight += w;
-        }
-        //preserve alpha from pass 2
-        float alpha = texture(pass_tex2, pass_coord2).a;
-        color = vec4(accum / max(total_weight, 0.001), alpha);
-    }  else if (blur > 0.0) {
-        int radius = min(int(ceil(blur * 0.707)), 35); // scaled by 1/sqrt(2)
-        float sigma = float(radius) * 0.5;
-        vec2 base_px = pass_coord2.xy * iResolution.xy;
-        vec3 accum = vec3(0.0);
-        float total_weight = 0.0;
-        for (int d = -radius; d <= radius; d++) {
-            vec2 sample_uv = (base_px + vec2(float(d), float(d))) / iResolution.xy;
-            vec3 s = handle_edge(pass_tex2, sample_uv, EDGE_MODE_BLANK).rgb;
-            float w = exp(-float(d * d) / (2.0 * sigma * sigma));
             accum += s * w;
             total_weight += w;
         }
@@ -212,6 +139,40 @@ void pass3(out vec4 color) {
 }
 
 void pass4(out vec4 color) {
+    // Pass 3: diagonal blur (45°) to round out the separable passes
+    if (blur > 0.0) {
+        int radius = min(int(ceil(blur * 0.707)), 35); // scaled by 1/sqrt(2)
+        float sigma = float(radius) * 0.5;
+        vec2 base_px = pass_coord2.xy * iResolution.xy;
+        vec3 accum = vec3(0.0);
+        float total_weight = 0.0;
+        for (int d = -radius; d <= radius; d++) {
+            vec2 sample_uv = (base_px + vec2(float(d), float(d))) / iResolution.xy;
+            vec3 s = handle_edge(pass_tex2, sample_uv, EDGE_MODE_BLANK).rgb;
+            float w = exp(-float(d * d) / (2.0 * sigma * sigma));
+            accum += s * w;
+            total_weight += w;
+        }
+        //preserve alpha from pass 3
+        float alpha = texture(pass_tex3, pass_coord3).a;
+        color = vec4(accum / max(total_weight, 0.001), alpha);
+    } else {
+        color = texture(pass_tex3, pass_coord3);
+    }
+}
+
+void pass5(out vec4 color) {
+    // Pass 4: bloom - add blurred bright areas back to the original
+    vec4 blurred = texture(pass_tex4, pass_coord4);
+    vec4 original = texture(pass_tex0, pass_coord0);
+    if (luma_blur > 0.0) {
+        color = blend_by_mode(original, blurred, BLEND_SCREEN);
+    } else {
+        color = blurred;
+    }
+}
+
+void pass6(out vec4 color) {
     // Scroll as needed
     vec2 base_coord = coord_wrap(vec2(src_coord.x + scrolled_h, src_coord.y + scrolled_v), true, true);
 
@@ -231,5 +192,5 @@ void pass4(out vec4 color) {
         distort_edge
     );
 
-    color = patch_feedback(texture(pass_tex2, pass_coord2), feedback);
+    color = patch_feedback(texture(pass_tex5, pass_coord5), feedback);
 }
