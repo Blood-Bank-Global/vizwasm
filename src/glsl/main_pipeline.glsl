@@ -6,6 +6,14 @@
 //!VAR mat4x2 new_corners 0.0 0.0 1.0 0.0 0.0 1.0 1.0 1.0
 //!VAR float scrolled_h 0.0
 //!VAR float scrolled_v 0.0
+//!VAR float shift_rh 0.0
+//!VAR float shift_gh 0.0
+//!VAR float shift_bh 0.0
+//!VAR float shift_ah 0.0
+//!VAR float shift_rv 0.0
+//!VAR float shift_gv 0.0
+//!VAR float shift_bv 0.0
+//!VAR float shift_av 0.0
 //!VAR float distort_dx 0.0
 //!VAR float distort_dy 0.0
 //!VAR float distort_level 0.2
@@ -22,9 +30,9 @@ void pass0(out vec4 color) {
 
     //skew
     base_coord = skew3(base_coord, new_corners);
-
-    vec4 base = patch_rototrans(
-        base_coord.xy,
+    vec4 base = vec4(0.0);
+    base.r = patch_rototrans(
+        base_coord.xy + vec2(shift_rh, shift_rv),
         src_tex1, // main tex
         src_tex4, // warp tex x
         src_tex5, // warp tex y
@@ -33,7 +41,40 @@ void pass0(out vec4 color) {
         0,
         warp_level,
         EDGE_MODE_BLANK
-    ); 
+    ).r;
+    base.g = patch_rototrans(
+        base_coord.xy + vec2(shift_gh, shift_gv),
+        src_tex1, // main tex
+        src_tex4, // warp tex x
+        src_tex5, // warp tex y
+        0,
+        0,
+        0,
+        warp_level,
+        EDGE_MODE_BLANK
+    ).g;
+    base.b = patch_rototrans(
+        base_coord.xy + vec2(shift_bh, shift_bv),
+        src_tex1, // main tex
+        src_tex4, // warp tex x
+        src_tex5, // warp tex y
+        0,
+        0,
+        0,
+        warp_level,
+        EDGE_MODE_BLANK
+    ).b;
+    base.a = patch_rototrans(
+        base_coord.xy + vec2(shift_ah, shift_av),
+        src_tex1, // main tex
+        src_tex4, // warp tex x
+        src_tex5, // warp tex y
+        0,
+        0,
+        0,
+        warp_level,
+        EDGE_MODE_BLANK
+    ).a;
 
     // color mix, basic transform of main image
     color = patch_mixer(base);
