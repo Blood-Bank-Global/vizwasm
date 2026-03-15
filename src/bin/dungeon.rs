@@ -1,10 +1,7 @@
 use std::{
     collections::HashMap,
     error::Error,
-    sync::{
-        mpsc::{channel, Receiver, Sender},
-        LazyLock, Mutex,
-    },
+    sync::{LazyLock, Mutex},
 };
 
 #[allow(unused_imports)]
@@ -12,7 +9,7 @@ use sdlrig::gfxinfo::{MIDI_CONTROL_CHANGE, MIDI_NOTE_OFF, MIDI_NOTE_ON};
 
 use sdlrig::{
     gfxinfo::{Asset, GfxEvent, GfxInfo, MidiEvent, Vid, VidMixer},
-    renderspec::{Mix, RenderSpec, SendCmd, SendValue},
+    renderspec::{Mix, RenderSpec},
 };
 
 use vizwasm::{beat_time_boilerplate, streamsettings::StreamSettingsField};
@@ -415,15 +412,6 @@ pub fn decode_settings(bytes: &[u8]) {
     }
 }
 
-// setup midi callback
-static MIDI_CALLBACK_CHANNELS: LazyLock<Mutex<(Sender<SendCmd>, Receiver<SendCmd>)>> =
-    LazyLock::new(|| Mutex::new(channel::<SendCmd>()));
-
-static TARGET_SIZE_W: u32 = 640;
-static TARGET_SIZE_H: u32 = 480;
-
-static LAST_FRAME: Mutex<i64> = Mutex::new(0);
-
 #[no_mangle]
 pub fn calculate(
     #[allow(unused)] canvas_w: u32,
@@ -435,125 +423,7 @@ pub fn calculate(
 ) -> Result<Vec<RenderSpec>, Box<dyn Error>> {
     let mut lock = SETTINGS.lock().expect("Settings mutex corrupted");
     let settings = lock.as_mut();
-
-    let mut specs = settings.update_record_and_get_specs(reg_events, frame, Some(mega_cb))?;
-
-    // Drain out any midi commands for glsl
-    {
-        let midi_channels = MIDI_CALLBACK_CHANNELS.lock().unwrap();
-        for cmd in midi_channels.1.try_iter() {
-            specs.push(RenderSpec::SendCmd(cmd));
-        }
-    }
-
-    let mut seen = HashMap::<String, Mix>::new();
-
-    // TOP
-    let mix_name = settings.playback[settings.active_idx].stream.overlay_mix();
-    specs.append(&mut do_display(settings, &mut seen, mix_name, (0, 0)));
-    // BOTTOM
-    let mix_name = settings.playback[settings.display_idx].stream.overlay_mix();
-    specs.append(&mut do_display(
-        settings,
-        &mut seen,
-        mix_name,
-        (0, TARGET_SIZE_H as i32),
-    ));
-    // wireframe_data_mix
-    let mix_name = "wireframe_data_mix";
-    let mut last_frame_lock = LAST_FRAME.lock().unwrap();
-    if *last_frame_lock != 0 {
-        let msg = format!("Dropped: {}", (frame - *last_frame_lock) as i32 - 1);
-        specs.push(
-            SendCmd::builder()
-                .mix(mix_name)
-                .name("dropped")
-                .value(SendValue::UVector(
-                    msg.as_bytes().iter().map(|b| *b as u32).collect(),
-                ))
-                .build()
-                .into(),
-        );
-        specs.push(
-            SendCmd::builder()
-                .mix(mix_name)
-                .name("dropped_length")
-                .value(SendValue::Unsigned(msg.len() as u32))
-                .build()
-                .into(),
-        );
-    }
-    *last_frame_lock = frame;
-
-    drop(last_frame_lock);
-
-    specs.append(&mut do_display(
-        settings,
-        &mut seen,
-        mix_name,
-        (TARGET_SIZE_W as i32, 0),
-    ));
-    // logs panel
-    let mix_name = "logs_mix";
-    specs.append(&mut do_display(
-        settings,
-        &mut seen,
-        mix_name,
-        (TARGET_SIZE_W as i32, TARGET_SIZE_H as i32),
-    ));
-
-    let to_return = specs.clone();
-    settings.clean_up_by_specs(&mut specs);
-    Ok(to_return)
-}
-
-pub fn do_display<T: AsRef<str>>(
-    settings: &mut AllSettings,
-    seen: &mut HashMap<String, Mix>,
-    mix_name: T,
-    offset: (i32, i32),
-) -> Vec<RenderSpec> {
-    let mut specs = vec![];
-    if let Some(mix_config) = settings.mix_configs.get_mut(mix_name.as_ref()) {
-        let iw = mix_config.def.width as i32;
-        let ih = mix_config.def.height as i32;
-        let mut ow = iw;
-        let mut oh = ih;
-        let mut ix = 0;
-        let mut iy = 0;
-
-        let iaspect = iw as f32 / ih as f32;
-        let oaspect = TARGET_SIZE_W as f32 / TARGET_SIZE_H as f32;
-
-        // correct aspect ratio
-        if iaspect > oaspect {
-            let effective_ow = (ih as f32 * oaspect) as i32;
-            ix = (ow - effective_ow) / 2;
-            ow = effective_ow;
-        } else if iaspect < oaspect {
-            let effective_oh = (iw as f32 / oaspect) as i32;
-            iy = (oh - effective_oh) / 2;
-            oh = effective_oh;
-        }
-        let src = (ix, iy, ow as u32, oh as u32);
-        let dst = (offset.0, offset.1, TARGET_SIZE_W, TARGET_SIZE_H);
-
-        let playback_specs = settings.get_playback_specs(&mix_name, src, dst);
-        for spec in playback_specs {
-            if let RenderSpec::Mix(mix) = &spec {
-                let other = seen.get(&mix.name);
-                if let Some(other) = other {
-                    if other.target == mix.target {
-                        // If the mix already exists, skip adding it again.
-                        continue;
-                    }
-                }
-                seen.insert(mix.name.clone(), mix.clone());
-            }
-            specs.push(spec);
-        }
-    }
-    specs
+    Ok(settings.update_record_and_get_specs(reg_events, frame, Some(mega_cb))?)
 }
 
 const IAC: &str = "IAC Driver Bus 1";
