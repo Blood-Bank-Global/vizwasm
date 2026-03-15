@@ -13,6 +13,9 @@
 //!VAR uint[] value_starts
 //!VAR uint[] value_lens
 
+//!VAR uint[] dropped
+//!VAR uint dropped_length 0
+
 #define ACTIVE_NAME_IDX 16
 #define DISPLAY_NAME_IDX 17
 #define SCAN_NAME_IDX 18
@@ -82,29 +85,32 @@ void pass0(out vec4 color) {
     #define DISPLAY_VALUE_POS vec2(OFFSET_X + AREA_W + FONT_W, OFFSET_Y + BUTTON_H * 2.0 + FONT_H)
     #define SCAN_LABEL_POS vec2(FONT_W * 3.0, OFFSET_Y + BUTTON_H + FONT_H * 0.0)
     #define SCAN_VALUE_POS vec2(FONT_W * 3.0, OFFSET_Y + BUTTON_H + FONT_H * 1.0)
+    #define DROPPED_POS (vec2(OFFSET_X + AREA_W - FONT_W * 15, OFFSET_Y + AREA_H))
 
-    if (blank(uv, ACTIVE_LABEL_POS, label_lens[ACTIVE_NAME_IDX]) \
-        || blank(uv, DISPLAY_LABEL_POS, label_lens[DISPLAY_NAME_IDX]) \
-        ||blank(uv, ACTIVE_VALUE_POS, value_lens[ACTIVE_NAME_IDX]) \
-        || blank(uv, DISPLAY_VALUE_POS, value_lens[DISPLAY_NAME_IDX]) \
-        || blank(uv, SCAN_LABEL_POS, min(label_lens[SCAN_NAME_IDX], 10)) \
-        || blank(uv, SCAN_VALUE_POS, min(value_lens[SCAN_NAME_IDX], 10))) {
+    if (blank(uv, ACTIVE_LABEL_POS, label_lens[ACTIVE_NAME_IDX])
+        || blank(uv, DISPLAY_LABEL_POS, label_lens[DISPLAY_NAME_IDX])
+        ||blank(uv, ACTIVE_VALUE_POS, value_lens[ACTIVE_NAME_IDX])
+        || blank(uv, DISPLAY_VALUE_POS, value_lens[DISPLAY_NAME_IDX])
+        || blank(uv, SCAN_LABEL_POS, min(label_lens[SCAN_NAME_IDX], 10))
+        || blank(uv, SCAN_VALUE_POS, min(value_lens[SCAN_NAME_IDX], 10))
+        || blank(uv, DROPPED_POS, dropped_length)) {
         color = vec4(0.0, 0.0, 0.0, 1.0);
     }
 
-    if (font_8x16(uv, ACTIVE_LABEL_POS, label_data, label_starts[ACTIVE_NAME_IDX], label_lens[ACTIVE_NAME_IDX]) \
-        || font_8x16(uv, ACTIVE_VALUE_POS, value_data, value_starts[ACTIVE_NAME_IDX], value_lens[ACTIVE_NAME_IDX]) \
-        || font_8x16(uv, DISPLAY_LABEL_POS, label_data, label_starts[DISPLAY_NAME_IDX], label_lens[DISPLAY_NAME_IDX]) \
-        || font_8x16(uv, DISPLAY_VALUE_POS, value_data, value_starts[DISPLAY_NAME_IDX], value_lens[DISPLAY_NAME_IDX]) \
-        || font_8x16(uv, SCAN_LABEL_POS, label_data, label_starts[SCAN_NAME_IDX], min(label_lens[SCAN_NAME_IDX], 10)) \
-        || font_8x16(uv, SCAN_VALUE_POS, value_data, value_starts[SCAN_NAME_IDX], min(value_lens[SCAN_NAME_IDX], 10))) {
-        color = vec4(1.0, 1.0, 1.0, 1.0);
+    if (font_8x16(uv, ACTIVE_LABEL_POS, label_data, label_starts[ACTIVE_NAME_IDX], label_lens[ACTIVE_NAME_IDX])
+        || font_8x16(uv, ACTIVE_VALUE_POS, value_data, value_starts[ACTIVE_NAME_IDX], value_lens[ACTIVE_NAME_IDX])
+        || font_8x16(uv, DISPLAY_LABEL_POS, label_data, label_starts[DISPLAY_NAME_IDX], label_lens[DISPLAY_NAME_IDX])
+        || font_8x16(uv, DISPLAY_VALUE_POS, value_data, value_starts[DISPLAY_NAME_IDX], value_lens[DISPLAY_NAME_IDX])
+        || font_8x16(uv, SCAN_LABEL_POS, label_data, label_starts[SCAN_NAME_IDX], min(label_lens[SCAN_NAME_IDX], 10))
+        || font_8x16(uv, SCAN_VALUE_POS, value_data, value_starts[SCAN_NAME_IDX], min(value_lens[SCAN_NAME_IDX], 10))
+        || font_8x16(uv, DROPPED_POS, dropped, 0, dropped_length)) {
+        color = vec4(0.7, 0.7, 0.7, 1.0);
     }
 
     if (blank(uv, vec2(OFFSET_X, OFFSET_Y + AREA_H), selected_button_str.length()) ) {
         color = vec4(0.0, 0.0, 0.0, 1.0);
     }
     if (font_8x16(uv, vec2(OFFSET_X, OFFSET_Y + AREA_H), selected_button_str, 0, selected_button_str.length())) {
-        color = vec4(1.0, 1.0, 1.0, 1.0);
+        color = vec4(0.7, 0.7, 0.7, 1.0);
     }
 }

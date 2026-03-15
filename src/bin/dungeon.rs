@@ -12,7 +12,7 @@ use sdlrig::gfxinfo::{MIDI_CONTROL_CHANGE, MIDI_NOTE_OFF, MIDI_NOTE_ON};
 
 use sdlrig::{
     gfxinfo::{Asset, GfxEvent, GfxInfo, MidiEvent, Vid, VidMixer},
-    renderspec::{Mix, RenderSpec, SendCmd},
+    renderspec::{Mix, RenderSpec, SendCmd, SendValue},
 };
 
 use vizwasm::{beat_time_boilerplate, streamsettings::StreamSettingsField};
@@ -422,6 +422,8 @@ static MIDI_CALLBACK_CHANNELS: LazyLock<Mutex<(Sender<SendCmd>, Receiver<SendCmd
 static TARGET_SIZE_W: u32 = 640;
 static TARGET_SIZE_H: u32 = 480;
 
+static LAST_FRAME: Mutex<i64> = Mutex::new(0);
+
 #[no_mangle]
 pub fn calculate(
     #[allow(unused)] canvas_w: u32,
@@ -459,6 +461,32 @@ pub fn calculate(
     ));
     // wireframe_data_mix
     let mix_name = "wireframe_data_mix";
+    let mut last_frame_lock = LAST_FRAME.lock().unwrap();
+    if *last_frame_lock != 0 {
+        let msg = format!("Dropped: {}", (frame - *last_frame_lock) as i32 - 1);
+        specs.push(
+            SendCmd::builder()
+                .mix(mix_name)
+                .name("dropped")
+                .value(SendValue::UVector(
+                    msg.as_bytes().iter().map(|b| *b as u32).collect(),
+                ))
+                .build()
+                .into(),
+        );
+        specs.push(
+            SendCmd::builder()
+                .mix(mix_name)
+                .name("dropped_length")
+                .value(SendValue::Unsigned(msg.len() as u32))
+                .build()
+                .into(),
+        );
+    }
+    *last_frame_lock = frame;
+
+    drop(last_frame_lock);
+
     specs.append(&mut do_display(
         settings,
         &mut seen,

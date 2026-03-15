@@ -142,7 +142,7 @@ void pass0(out vec4 color) {
     #define FG_COORD COL_COORD
     #define FG_TEX COL_TEX
     #endif
-    if (true) {
+    if (false) {
         float scale = FG_RESOLUTION.x / VIEW_RESOLUTION.x;
         vec2 fg_coord = (FG_COORD * VIEW_RESOLUTION / FG_RESOLUTION) 
             *  scale - vec2(0.0, (FG_RESOLUTION.y * scale - VIEW_RESOLUTION.y)/VIEW_RESOLUTION.y);
