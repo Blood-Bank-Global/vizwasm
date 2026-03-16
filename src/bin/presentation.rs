@@ -12,11 +12,11 @@ use sdlrig::{
     renderspec::{Mix, RenderSpec},
 };
 
-use vizwasm::{beat_time_boilerplate, streamsettings::StreamSettingsField};
 use vizwasm::{
     shaderhelper::include_files,
-    vizconfig::{time_code_2_float, AllSettings, MixConfig},
+    vizconfig::{AllSettings, MixConfig},
 };
+
 fn main() {}
 
 static STREAM_PATH: &'static str = "/Users/ttie/Desktop/presentation/streams";
@@ -26,7 +26,7 @@ static ASSET_PATH: &'static str = "/Users/ttie/Desktop/common_data";
 static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
     let mut vids = vec![];
 
-    let vid640x480: &[&str] = &[];
+    let vid640x480: &[&str] = &["blood", "first_algorave", "cats_all"];
     for vid_name in vid640x480.iter() {
         vids.push(
             Vid::builder()
@@ -108,10 +108,17 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
 });
 
 static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
-    let names = ["blank", "demo_fonts", "front cam"]
-        .iter()
-        .map(|s| s.to_string())
-        .collect::<Vec<_>>();
+    let names = [
+        "blank",
+        "demo_fonts",
+        "title",
+        "first_algorave",
+        "cats_all",
+        "front cam",
+    ]
+    .iter()
+    .map(|s| s.to_string())
+    .collect::<Vec<_>>();
     names
 });
 
@@ -133,6 +140,22 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
                 .build(),
         });
     }
+
+    configs.push(MixConfig {
+        def: VidMixer::builder()
+            .name("title_mix")
+            .width(640)
+            .height(480)
+            .shader(include_files(include_str!(
+                "../glsl/presentation/title.glsl"
+            )))
+            .build(),
+        mix: Mix::builder()
+            .name("title_mix")
+            .mixed("blood_mix")
+            .no_display(true)
+            .build(),
+    });
 
     configs.push(MixConfig {
         def: VidMixer::builder()
@@ -241,93 +264,5 @@ pub fn calculate(
     Ok(settings.update_record_and_get_specs(reg_events, frame, Some(mega_cb))?)
 }
 
-const IAC: &str = "IAC Driver Bus 1";
-pub fn mega_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
-    a_sword_in_the_stone_cb(all_settings, event);
-    alien_cb(all_settings, event);
-    city_hunter_cb(all_settings, event);
-}
-
-pub fn a_sword_in_the_stone_cb(_all_settings: &mut AllSettings, event: &MidiEvent) {
-    let time_codes = [
-        "00:00:35:21",
-        "00:00:43:20",
-        "00:00:47:15",
-        "00:00:54:15",
-        "00:01:00:18",
-        "00:01:07:00",
-        "00:01:11:03",
-        "00:01:31:18",
-        "00:01:36:50",
-        "00:01:39:37",
-        "00:01:48:14",
-        "00:01:55:39",
-        "00:02:00:22",
-        "00:02:05:36",
-        "00:02:15:05",
-        "00:02:20:32",
-    ]
-    .iter()
-    .map(|s| time_code_2_float(s))
-    .collect::<Vec<_>>();
-
-    beat_time_boilerplate!(
-        _all_settings,
-        event,
-        "a_sword_in_the_stone",
-        "a_sword_in_the_stone_combo",
-        time_codes
-    );
-}
-
-pub fn alien_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
-    let text_cam = all_settings
-        .playback
-        .iter_mut()
-        .find(|p| p.stream.ident.name == "text cam");
-    if let Some(pb) = text_cam {
-        match (event.kind, event.device.as_str(), event.key, event.velocity) {
-            (MIDI_CONTROL_CHANGE, IAC, 0, value) => {
-                if value > 10 {
-                    pb.stream.set_field(StreamSettingsField::WarpLevel, 0.05);
-                } else {
-                    pb.stream.set_field(StreamSettingsField::WarpLevel, 0.0);
-                }
-            }
-            _ => {}
-        }
-    }
-}
-
-pub fn city_hunter_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
-    beat_time_boilerplate!(
-        all_settings,
-        event,
-        "CityHunter",
-        "CityHunter",
-        vec![
-            time_code_2_float("00:00:01:23"),
-            time_code_2_float("00:00:05:02"),
-            time_code_2_float("00:00:08:13"),
-            time_code_2_float("00:00:16:16"),
-            time_code_2_float("00:00:22:01"),
-            time_code_2_float("00:00:23:19"),
-            time_code_2_float("00:00:35:17"),
-            time_code_2_float("00:00:54:21"),
-            time_code_2_float("00:00:56:14"),
-            time_code_2_float("00:01:05:12"),
-            time_code_2_float("00:01:10:06"),
-            time_code_2_float("00:01:13:15"),
-            time_code_2_float("00:01:16:22"),
-            time_code_2_float("00:01:18:13"),
-            time_code_2_float("00:01:21:04"),
-            time_code_2_float("00:01:23:04"),
-            time_code_2_float("00:01:25:07"),
-            time_code_2_float("00:01:27:06"),
-            time_code_2_float("00:01:43:15"),
-            time_code_2_float("00:01:49:12"),
-            time_code_2_float("00:01:55:03"),
-            time_code_2_float("00:01:59:12"),
-        ]
-    );
-}
+const _IAC: &str = "IAC Driver Bus 1";
+pub fn mega_cb(_all_settings: &mut AllSettings, _event: &MidiEvent) {}
