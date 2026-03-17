@@ -26,7 +26,20 @@ static ASSET_PATH: &'static str = "/Users/ttie/Desktop/common_data";
 static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
     let mut vids = vec![];
 
-    let vid640x480: &[&str] = &["blood", "first_algorave", "cats_all"];
+    let vid640x480: &[&str] = &[
+        "01_blood",
+        "02_tools",
+        "03_first_algorave",
+        "05_no_really",
+        "06_cats_all",
+        "08_demo_wasm",
+        "09_video_inspiration",
+        "11_bionic_six",
+        "13_walking",
+        "15_macro",
+        "17_synthbiosis",
+        "19_dissodance",
+    ];
     for vid_name in vid640x480.iter() {
         vids.push(
             Vid::builder()
@@ -58,7 +71,16 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
         );
     }
 
-    let pngs640x480: &[&str] = &[];
+    let pngs640x480: &[&str] = &[
+        "04_first_process",
+        "07_architecture_with_wasm",
+        "10_arch_ffmpeg",
+        "12_ffmpeg_api",
+        "14_keyboard",
+        "16_realtime_diagram",
+        "18_libplacebo",
+        "20_final_form",
+    ];
     for png_name in pngs640x480.iter() {
         vids.push(
             Vid::builder()
@@ -111,9 +133,27 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
     let names = [
         "blank",
         "demo_fonts",
-        "title",
-        "first_algorave",
-        "cats_all",
+        "title", //"01_blood",
+        "02_tools",
+        "03_first_algorave",
+        "04_first_process",
+        "05_no_really",
+        "06_cats_all",
+        "07_architecture_with_wasm",
+        "08_demo_wasm",
+        "09_video_inspiration",
+        "10_arch_ffmpeg",
+        "11_bionic_six",
+        "12_ffmpeg_api",
+        "13_walking",
+        "14_keyboard",
+        "15_macro",
+        "16_realtime_diagram",
+        "17_synthbiosis",
+        "18_libplacebo",
+        "19_dissodance",
+        "20_final_form",
+        "flex",
         "front cam",
     ]
     .iter()
@@ -152,7 +192,23 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
             .build(),
         mix: Mix::builder()
             .name("title_mix")
-            .mixed("blood_mix")
+            .mixed("01_blood_mix")
+            .no_display(true)
+            .build(),
+    });
+
+    configs.push(MixConfig {
+        def: VidMixer::builder()
+            .name("flex_mix")
+            .width(640)
+            .height(480)
+            .shader(include_files(include_str!(
+                "../glsl/presentation/flex.glsl"
+            )))
+            .build(),
+        mix: Mix::builder()
+            .name("flex_mix")
+            .mixed("blank_mix")
             .no_display(true)
             .build(),
     });
