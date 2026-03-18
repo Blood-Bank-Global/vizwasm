@@ -154,6 +154,7 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "19_dissodance",
         "20_final_form",
         "flex",
+        "decompile",
         "front cam",
     ]
     .iter()
@@ -223,6 +224,20 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
         mix: Mix::builder()
             .name("demo_fonts_mix")
             .mixed("blank_mix")
+            .no_display(true)
+            .build(),
+    });
+
+    configs.push(MixConfig {
+        def: VidMixer::builder()
+            .name("decompile_mix")
+            .width(640)
+            .height(480)
+            .shader(include_files(include_str!("../glsl/decompile.glsl")))
+            .build(),
+        mix: Mix::builder()
+            .name("decompile_mix")
+            .mixed("front cam_mix")
             .no_display(true)
             .build(),
     });
