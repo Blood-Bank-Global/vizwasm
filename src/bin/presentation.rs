@@ -39,6 +39,7 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
         "15_macro",
         "17_synthbiosis",
         "19_dissodance",
+        "nyc",
     ];
     for vid_name in vid640x480.iter() {
         vids.push(
@@ -237,7 +238,7 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
             .build(),
         mix: Mix::builder()
             .name("decompile_mix")
-            .mixed("front cam_mix")
+            .mixed("nyc_mix")
             .no_display(true)
             .build(),
     });

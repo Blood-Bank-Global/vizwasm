@@ -7,6 +7,7 @@
 #include "patch_pixelate.glsl"
 
 //!VAR vec3 iResolution0 0.0 0.0 0.0 
+//!VAR float cc_iac_driver_bus_1_0_0 0.0
 void pass0(out vec4 color) {
     vec2 uv = src_coord.xy * iResolution.xy;
 
@@ -36,7 +37,7 @@ void pass2(out vec4 color) {
             }
         }
     }
-    if (count > 50) {
+    if (count > 120) {
         color = vec4(1.0);
     }
 }
@@ -46,10 +47,12 @@ void pass3(out vec4 color) {
     vec3 orig = color.rgb;
     vec2 uv = pass_coord0.xy * iResolution.xy;
     vec2 pos = floor((uv) / vec2(FONT_W, FONT_H)) * vec2(FONT_W, FONT_H);
-    if (texture(pass_tex2, pos / iResolution.xy).r > 0.0) {
+
+    bool bypass = randf(uint(iTime * 3) ^ uint(pos.x * 117) ^ uint(pos.y * 311)) > (127.0 - float(cc_iac_driver_bus_1_0_0))/127.0;
+    if (bypass || texture(pass_tex2, pos / iResolution.xy).r > 0.0) {
         vec4 flip = patch_textelate_arcade(uv, FONT_SCALE, pass_tex0, iResolution.xy);
-        if (flip.r > 0.2) {
+        if (flip.r > 0.1) {
             color.rgb = vec3(1.0, 1.0, 1.0) - orig.rgb;
         }
-    }
+    } 
 }
