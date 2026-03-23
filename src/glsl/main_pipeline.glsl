@@ -115,12 +115,12 @@ void pass2(out vec4 color) {
 }
 
 void pass3(out vec4 color) {
-    // Pass 2: vertical blur over the horizontal results in pass1
+    // Pass 3: vertical blur over the horizontal results in pass2
     if (blur > 0.0) {
         int radius = min(int(ceil(blur)), 50);
         float sigma = float(radius) * 0.5;
         vec2 base_px = pass_coord1.xy * iResolution.xy;
-        // Pass 2: horizontal blur
+        // Pass 3: horizontal blur
         vec3 accum = vec3(0.0);
         float total_weight = 0.0;
         for (int i = -radius; i <= radius; i++) {
@@ -139,7 +139,7 @@ void pass3(out vec4 color) {
 }
 
 void pass4(out vec4 color) {
-    // Pass 3: diagonal blur (45°) to round out the separable passes
+    // Pass 4: diagonal blur (45°) to round out the separable passes
     if (blur > 0.0) {
         int radius = min(int(ceil(blur * 0.707)), 35); // scaled by 1/sqrt(2)
         float sigma = float(radius) * 0.5;
@@ -162,11 +162,11 @@ void pass4(out vec4 color) {
 }
 
 void pass5(out vec4 color) {
-    // Pass 4: bloom - add blurred bright areas back to the original
+    // Pass 5: bloom - add blurred bright areas back to the original
     vec4 blurred = texture(pass_tex4, pass_coord4);
     vec4 original = texture(pass_tex0, pass_coord0);
     if (luma_blur > 0.0) {
-        color = blend_by_mode(original, blurred, BLEND_SCREEN);
+        color = blend_by_mode(original, blurred*0.7, BLEND_SCREEN);
     } else {
         color = blurred;
     }
