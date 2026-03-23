@@ -12,7 +12,7 @@ use std::collections::{HashMap, HashSet};
 use std::sync::{LazyLock, Mutex};
 use std::{error::Error, i64, io::Write};
 
-use crate::shaderhelper::include_files;
+use crate::shaderlookup::include_files;
 use crate::streamsettings::{self, StreamIdent, StreamSettings, StreamSettingsField};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

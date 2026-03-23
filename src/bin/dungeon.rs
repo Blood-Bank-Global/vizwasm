@@ -14,7 +14,7 @@ use sdlrig::{
 
 use vizwasm::{beat_time_boilerplate, streamsettings::StreamSettingsField};
 use vizwasm::{
-    shaderhelper::include_files,
+    shaderlookup::include_files,
     vizconfig::{time_code_2_float, AllSettings, MixConfig},
 };
 fn main() {}
