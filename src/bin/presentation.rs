@@ -40,6 +40,8 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
         "17_synthbiosis",
         "19_dissodance",
         "nyc",
+        "morning",
+        "coffee",
     ];
     for vid_name in vid640x480.iter() {
         vids.push(
@@ -156,6 +158,8 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "20_final_form",
         "flex",
         "decompile",
+        "glitch_morning",
+        "coffee",
         "front cam",
     ]
     .iter()
@@ -243,6 +247,20 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
             .build(),
     });
 
+    configs.push(MixConfig {
+        def: VidMixer::builder()
+            .name("glitch_morning_mix")
+            .width(640)
+            .height(480)
+            .shader(include_files(include_str!("../glsl/morning.glsl")))
+            .build(),
+        mix: Mix::builder()
+            .name("glitch_morning_mix")
+            .mixed("morning_mix")
+            .mixed("coffee_mix")
+            .no_display(true)
+            .build(),
+    });
     configs
 });
 
