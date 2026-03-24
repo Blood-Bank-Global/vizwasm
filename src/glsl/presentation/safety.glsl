@@ -1,44 +1,45 @@
 #include "utils.glsl"
 #include "font_8x16.glsl"
-#include "patch_blob_px.glsl"
-#include "patch_pixelate.glsl"
 #define FONT_W (font_8x16_width)
 #define FONT_H (font_8x16_height)
+#include "patch_blob_px.glsl"
+//!VAR float cc_iac_driver_bus_1_0_0 0.0
 
 void pass0(out vec4 color) {
     color = texture(src_tex0, src_coord0);
     vec2 uv = src_coord.xy * iResolution.xy;
     vec2 pos = floor((uv) / vec2(FONT_W, FONT_H)) * vec2(FONT_W, FONT_H);
-    uint c[1] = uint[1](uint(mod(pcg(((uint(pos.x) * 11) ^ (uint(pos.y) * 13) ^ (uint(floor(iTime*1000) * 7)))), 255)));
-    vec4 blob_color = vec4(1.0);
-
+    uint c[1] = uint[1](uint(randf(((uint(pos.x) * 11) ^ (uint(pos.y) * 13) ^ (uint(floor(iTime*10) * 7)))) * 255.0));
     
-
+    vec2 corners[] = vec2[](pos, pos + vec2(FONT_W, 0.0), pos + vec2(0.0, FONT_H), pos + vec2(FONT_W, FONT_H));
     int count = 0;
-    for (int i = 0; i < 2; i++) {
-        for (int j = 0; j < 2; j++) {
-            if (patch_blob_px(
-                pos.xy + vec2(i * FONT_W, j * FONT_H), 
-                iResolution.xy,
-                vec4(0.0),
-                blob_color,
-                iResolution.xy * 0.5,
-                300.0, 
-                iTime
-            ).a > 0.99) {
-                count++;
-            }
+    for (int i = 0; i < 4; i++) {
+        vec4 blob = patch_blob_px(
+            corners[i],
+            iResolution.xy,
+            vec4(0.0),
+            vec4(1.0),
+            iResolution.xy * 0.5,
+            iResolution.x * 0.5, //* cc_iac_driver_bus_1_0_0/127.0,
+            iTime
+        );
+        if (blob.r > 0.0) {
+            count++;
         }
     }
-
-    if (count == 4) {
-        color = patch_textelate_arcade(uv, 1.0, src_tex1, iResolution.xy);
+    if (count >= 4) {
+        color = texture(src_tex0, src_coord0);
         return;
     } else if (count > 0) {
-        c[0] = 0x78;
+        c[0] = 0xB0;
     }
 
+    bool white_space = c[0] == 0u || c[0] == 32u || (c[0] >= 9 && c[0] <= 13) || c[0] == 255;
+    
+    if (!white_space && str_bounds(uv, pos, FONT_W, FONT_H,1)) {
+        color.rgb = vec3(1.0) - color.rgb;
+    }
     if (font_8x16(uv, pos, c, 0, 1)) {
         color = vec4(1.0);
-    }
+    }     
 }

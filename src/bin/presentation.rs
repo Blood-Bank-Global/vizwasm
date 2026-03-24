@@ -13,7 +13,7 @@ use sdlrig::{
 };
 
 use vizwasm::{
-    shaderhelper::include_files,
+    shaderlookup::include_files,
     vizconfig::{AllSettings, MixConfig},
 };
 
@@ -38,6 +38,7 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
         "13_walking",
         "15_macro",
         "17_synthbiosis",
+        "17_5_memory",
         "19_dissodance",
         "nyc",
         "morning",
@@ -153,13 +154,14 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "15_macro",
         "16_realtime_diagram",
         "17_synthbiosis",
+        "17_5_memory",
         "18_libplacebo",
         "19_dissodance",
         "20_final_form",
         "flex",
+        "cp437",
         "decompile",
         "glitch_morning",
-        "coffee",
         "front cam",
     ]
     .iter()
@@ -218,7 +220,19 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
             .no_display(true)
             .build(),
     });
-
+    configs.push(MixConfig {
+        def: VidMixer::builder()
+            .name("cp437_mix")
+            .width(640)
+            .height(480)
+            .shader(include_files(include_str!("../glsl/cp437.glsl")))
+            .build(),
+        mix: Mix::builder()
+            .name("cp437_mix")
+            .mixed("blank_mix")
+            .no_display(true)
+            .build(),
+    });
     configs.push(MixConfig {
         def: VidMixer::builder()
             .name("demo_fonts_mix")
