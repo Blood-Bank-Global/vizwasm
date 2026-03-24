@@ -1,3 +1,3 @@
-pub mod shaderhelper;
+pub mod shaderlookup;
 pub mod streamsettings;
 pub mod vizconfig;
