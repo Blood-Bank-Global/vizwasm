@@ -6,15 +6,17 @@
 //!VAR uint[] frame_info
 
 //!VAR uint[] label_data
-//!VAR uint[] label_starts
-//!VAR uint[] label_lens
+//!VAR uint[] label_starts 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+//!VAR uint[] label_lens 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
 
 //!VAR uint[] value_data
-//!VAR uint[] value_starts
-//!VAR uint[] value_lens
+//!VAR uint[] value_starts 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+//!VAR uint[] value_lens 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
 
 //!VAR uint[] dropped
 //!VAR uint dropped_length 0
+
+//!VAR uint[] midi_target
 
 #define ACTIVE_NAME_IDX 16
 #define DISPLAY_NAME_IDX 17
@@ -85,7 +87,8 @@ void pass0(out vec4 color) {
     #define DISPLAY_VALUE_POS vec2(OFFSET_X + AREA_W + FONT_W, OFFSET_Y + BUTTON_H * 2.0 + FONT_H)
     #define SCAN_LABEL_POS vec2(FONT_W * 3.0, OFFSET_Y + BUTTON_H + FONT_H * 0.0)
     #define SCAN_VALUE_POS vec2(FONT_W * 3.0, OFFSET_Y + BUTTON_H + FONT_H * 1.0)
-    #define DROPPED_POS (vec2(OFFSET_X + AREA_W - FONT_W * 15, OFFSET_Y + AREA_H))
+    #define DROPPED_POS (vec2(OFFSET_X + AREA_W - FONT_W * 10, OFFSET_Y + AREA_H))
+    #define MIDI_TARGET_POS vec2(OFFSET_X + (AREA_W / 2.0) - (float(midi_target.length() * FONT_W)/2.0), OFFSET_Y + AREA_H)
 
     if (blank(uv, ACTIVE_LABEL_POS, label_lens[ACTIVE_NAME_IDX])
         || blank(uv, DISPLAY_LABEL_POS, label_lens[DISPLAY_NAME_IDX])
@@ -111,6 +114,9 @@ void pass0(out vec4 color) {
         color = vec4(0.0, 0.0, 0.0, 1.0);
     }
     if (font_8x16(uv, vec2(OFFSET_X, OFFSET_Y + AREA_H), selected_button_str, 0, selected_button_str.length())) {
+        color = vec4(0.7, 0.7, 0.7, 1.0);
+    }
+    if (font_8x16(uv, MIDI_TARGET_POS, midi_target, 0, midi_target.length())) {
         color = vec4(0.7, 0.7, 0.7, 1.0);
     }
 }

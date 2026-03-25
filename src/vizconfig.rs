@@ -159,6 +159,7 @@ pub struct AllSettings {
     pub active_idx: usize,
     pub display_idx: usize,
     pub scan_idx: usize,
+    pub midi_target_locked: Option<usize>,
     pub clipboard: StreamSettings,
     pub selected_knobs: usize,
     pub playback: Vec<PlaybackSettings>,
@@ -627,6 +628,7 @@ impl AllSettings {
             initial_reset_complete: vec![false; playback_len],
             active_idx: 0,
             scan_idx: 0,
+            midi_target_locked: None,
             display_idx: 0,
             logs: vec![String::new(); 100],
             last_line: String::new(),
@@ -978,6 +980,25 @@ impl AllSettings {
                 .into(),
         );
 
+        specs.push(
+            SendCmd::builder()
+                .mix("wireframe_data_mix")
+                .name("midi_target")
+                .value(SendValue::UVector(
+                    if let Some(idx) = self.midi_target_locked {
+                        format!("Midi Tgt:{idx}")
+                    } else {
+                        "Midi Tgt: Unlocked".to_string()
+                    }
+                    .as_bytes()
+                    .iter()
+                    .map(|b| *b as u32)
+                    .collect::<Vec<_>>(),
+                ))
+                .build()
+                .into(),
+        );
+
         // LOGS DATA
         let mut txt = vec![0; 8100];
         let mut starts = vec![0; 100];
@@ -1232,6 +1253,18 @@ impl AllSettings {
                             } else {
                                 self.playback[selected_idx].presets.baseline =
                                     self.playback[selected_idx].stream.clone();
+                            }
+                        }
+                        KeyEvent {
+                            key: KeyCode::SDLK_t,
+                            down: true,
+                            shift,
+                            ..
+                        } => {
+                            if *shift {
+                                self.midi_target_locked.take();
+                            } else {
+                                self.midi_target_locked.replace(self.active_idx);
                             }
                         }
                         // Start/Stop/Set/Paste a preset
@@ -2033,7 +2066,11 @@ impl AllSettings {
                 return;
             };
             if let Some(field) = StreamSettingsField::find(channel, event.key) {
-                let idx = self.active_idx;
+                let idx = if let Some(idx) = self.midi_target_locked {
+                    idx
+                } else {
+                    self.active_idx
+                };
                 let min = field
                     .properties()
                     .unwrap_or_default()
