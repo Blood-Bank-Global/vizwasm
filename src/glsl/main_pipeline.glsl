@@ -21,7 +21,9 @@
 //!VAR uint distort_edge 0
 //!VAR float feedback_rotation 0.0
 //!VAR float luma_blur 0.0
+//!VAR float luma_blur_enable 0.0
 //!VAR float blur 0.0
+//!VAR float blur_enable 0.0
 
 void pass0(out vec4 color) {
     // Scroll as needed
@@ -81,18 +83,23 @@ void pass0(out vec4 color) {
 }
 
 void pass1(out vec4 color) {
+    //only for luma blur
     vec4 c_0 = texture(pass_tex0, pass_coord0);
     vec3 hsv = rgb2hsv(c_0.rgb);
-    if (hsv.z >= luma_blur) {
+    if (luma_blur_enable > 0.0) { //luma blur takes precedence over normal blur
+        if ( hsv.z >= 0.90) {
+            color = c_0;
+        } else {
+            color = vec4(0.0, 0.0, 0.0, c_0.a);
+        } 
+    } else { // normal blur or no blur
         color = c_0;
-    } else {
-        color = vec4(0.0, 0.0, 0.0, c_0.a);
     }
 }
 
 void pass2(out vec4 color) {
-     if (blur > 0.0) {
-        int radius = min(int(ceil(blur)), 50);
+     if (blur_enable > 0.0 || luma_blur_enable > 0.0) {
+        int radius = luma_blur_enable > 0.0 ? min(int(ceil(luma_blur)), 50) : min(int(ceil(blur)), 50);
         float sigma = float(radius) * 0.5;
         vec2 base_px = pass_coord0.xy * iResolution.xy;
         // Pass 1: vertical blur
@@ -108,7 +115,6 @@ void pass2(out vec4 color) {
         //preserve alpha from pass1
         float alpha = texture(pass_tex1, pass_coord1).a;
         color = vec4(accum / max(total_weight, 0.001), alpha);
-    
     } else {
         color = texture(pass_tex1, pass_coord1);
     }
@@ -116,8 +122,8 @@ void pass2(out vec4 color) {
 
 void pass3(out vec4 color) {
     // Pass 3: vertical blur over the horizontal results in pass2
-    if (blur > 0.0) {
-        int radius = min(int(ceil(blur)), 50);
+    if (blur_enable > 0.0 || luma_blur_enable > 0.0) {
+        int radius = luma_blur_enable > 0.0 ? min(int(ceil(luma_blur)), 50) : min(int(ceil(blur)), 50);
         float sigma = float(radius) * 0.5;
         vec2 base_px = pass_coord1.xy * iResolution.xy;
         // Pass 3: horizontal blur
@@ -140,8 +146,9 @@ void pass3(out vec4 color) {
 
 void pass4(out vec4 color) {
     // Pass 4: diagonal blur (45°) to round out the separable passes
-    if (blur > 0.0) {
-        int radius = min(int(ceil(blur * 0.707)), 35); // scaled by 1/sqrt(2)
+    if (blur_enable > 0.0 || luma_blur_enable > 0.0) {
+        int radius = luma_blur_enable > 0.0 ? min(int(ceil(luma_blur * 0.707)), 35) 
+                        : min(int(ceil(blur * 0.707)), 35); // scaled by 1/sqrt(2)
         float sigma = float(radius) * 0.5;
         vec2 base_px = pass_coord2.xy * iResolution.xy;
         vec3 accum = vec3(0.0);
@@ -165,10 +172,19 @@ void pass5(out vec4 color) {
     // Pass 5: bloom - add blurred bright areas back to the original
     vec4 blurred = texture(pass_tex4, pass_coord4);
     vec4 original = texture(pass_tex0, pass_coord0);
-    if (luma_blur > 0.0) {
-        color = blend_by_mode(original, blurred*0.7, BLEND_SCREEN);
+    if (luma_blur_enable > 0.0) {
+        vec3 hsv = rgb2hsv(blurred.rgb);
+        if (hsv.y < 0.1) {
+            hsv.z = min(hsv.z * 1.25, 1.0); // boost brightness of blurred image for low saturation areas to make the bloom more visible
+            blurred.rgb = hsv2rgb(hsv);
+        }
+        color = blend_by_mode(original, blurred, BLEND_SCREEN);
     } else {
+        if (blur > 0.0) {
         color = blurred;
+        } else {
+            color = original;
+        }
     }
 }
 

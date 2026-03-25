@@ -97,7 +97,9 @@ pub enum StreamSettingsField {
     FeedbackModeScan,
     FeedbackModeSelected,
     LumaBlur,
+    LumaBlurEnable,
     Blur,
+    BlurEnable,
 }
 
 pub const ALL_FIELDS: &[StreamSettingsField] = &[
@@ -172,7 +174,9 @@ pub const ALL_FIELDS: &[StreamSettingsField] = &[
     StreamSettingsField::FeedbackModeScan,
     StreamSettingsField::FeedbackModeSelected,
     StreamSettingsField::LumaBlur,
+    StreamSettingsField::LumaBlurEnable,
     StreamSettingsField::Blur,
+    StreamSettingsField::BlurEnable,
 ];
 
 static PROPERTIES: LazyLock<HashMap<StreamSettingsField, StreamSettingsFieldProperties>> =
@@ -503,8 +507,19 @@ static PROPERTIES: LazyLock<HashMap<StreamSettingsField, StreamSettingsFieldProp
         /*
         Luma Blur
         */
-        mk!(LumaBlur, 0, 49, 0.0, 1.0, 1.0 / 256.0, 0.0, "luma_blur");
+        mk!(LumaBlur, 0, 49, 0.0, 100.0, 0.1, 0.0, "luma_blur");
+        mk!(
+            LumaBlurEnable,
+            1,
+            49,
+            0.0,
+            1.0,
+            1.0,
+            0.0,
+            "luma_blur_enable"
+        );
         mk!(Blur, 0, 50, 0.0, 100.0, 0.1, 0.0, "blur");
+        mk!(BlurEnable, 1, 50, 0.0, 1.0, 1.0, 0.0, "blur_enable");
 
         internal!(FlashEnable, 0.0, "flash_enable", false);
         internal!(Tween, 0.0);
@@ -652,7 +667,9 @@ impl StreamSettings {
             | StreamSettingsField::Tween
             | StreamSettingsField::ColorKeyEnable
             | StreamSettingsField::Negate
-            | StreamSettingsField::Pause => {
+            | StreamSettingsField::Pause
+            | StreamSettingsField::BlurEnable
+            | StreamSettingsField::LumaBlurEnable => {
                 if current != 0.0 {
                     self.set_field(field.clone(), 0.0);
                 } else {
