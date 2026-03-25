@@ -22,6 +22,7 @@
 //!VAR float feedback_rotation 0.0
 //!VAR float luma_blur 0.0
 //!VAR float luma_blur_enable 0.0
+//!VAR float luma_point 0.0
 //!VAR float blur 0.0
 //!VAR float blur_enable 0.0
 
@@ -83,12 +84,12 @@ void pass0(out vec4 color) {
 }
 
 void pass1(out vec4 color) {
-    //only for luma blur
     vec4 c_0 = texture(pass_tex0, pass_coord0);
-    vec3 hsv = rgb2hsv(c_0.rgb);
+    //only for luma blur
     if (luma_blur_enable > 0.0) { //luma blur takes precedence over normal blur
-        if ( hsv.z >= 0.90) {
-            color = c_0;
+        float luma = rgb2hsv(texture(pass_tex0, pass_coord0).rgb).z;
+        if (luma >= luma_point) {
+            color = vec4(hsv2rgb(vec3(0, 0, luma)), c_0.a);
         } else {
             color = vec4(0.0, 0.0, 0.0, c_0.a);
         } 
@@ -97,17 +98,18 @@ void pass1(out vec4 color) {
     }
 }
 
+#define SIGMA (float(radius)/2.0)
 void pass2(out vec4 color) {
      if (blur_enable > 0.0 || luma_blur_enable > 0.0) {
         int radius = luma_blur_enable > 0.0 ? min(int(ceil(luma_blur)), 50) : min(int(ceil(blur)), 50);
-        float sigma = float(radius) * 0.5;
+        float sigma = SIGMA;
         vec2 base_px = pass_coord0.xy * iResolution.xy;
         // Pass 1: vertical blur
         vec3 accum = vec3(0.0);
         float total_weight = 0.0;
         for (int j = -radius; j <= radius; j++) {
-            vec2 sample_uv = (base_px + vec2(0.0, float(j))) / iResolution.xy;
-            vec3 s = handle_edge(pass_tex0, sample_uv, EDGE_MODE_BLANK).rgb;
+            vec2 sample_xy = (base_px + vec2(0.0, float(j))) / iResolution.xy;
+            vec3 s = handle_edge(pass_tex1, sample_xy, EDGE_MODE_BLANK).rgb;
             float w = exp(-float(j * j) / (2.0 * sigma * sigma));
             accum += s * w;
             total_weight += w;
@@ -124,7 +126,7 @@ void pass3(out vec4 color) {
     // Pass 3: vertical blur over the horizontal results in pass2
     if (blur_enable > 0.0 || luma_blur_enable > 0.0) {
         int radius = luma_blur_enable > 0.0 ? min(int(ceil(luma_blur)), 50) : min(int(ceil(blur)), 50);
-        float sigma = float(radius) * 0.5;
+        float sigma = SIGMA;
         vec2 base_px = pass_coord1.xy * iResolution.xy;
         // Pass 3: horizontal blur
         vec3 accum = vec3(0.0);
@@ -149,13 +151,13 @@ void pass4(out vec4 color) {
     if (blur_enable > 0.0 || luma_blur_enable > 0.0) {
         int radius = luma_blur_enable > 0.0 ? min(int(ceil(luma_blur * 0.707)), 35) 
                         : min(int(ceil(blur * 0.707)), 35); // scaled by 1/sqrt(2)
-        float sigma = float(radius) * 0.5;
+        float sigma = SIGMA;
         vec2 base_px = pass_coord2.xy * iResolution.xy;
         vec3 accum = vec3(0.0);
         float total_weight = 0.0;
         for (int d = -radius; d <= radius; d++) {
             vec2 sample_uv = (base_px + vec2(float(d), float(d))) / iResolution.xy;
-            vec3 s = handle_edge(pass_tex2, sample_uv, EDGE_MODE_BLANK).rgb;
+            vec3 s = handle_edge(pass_tex3, sample_uv, EDGE_MODE_BLANK).rgb;
             float w = exp(-float(d * d) / (2.0 * sigma * sigma));
             accum += s * w;
             total_weight += w;
@@ -173,12 +175,15 @@ void pass5(out vec4 color) {
     vec4 blurred = texture(pass_tex4, pass_coord4);
     vec4 original = texture(pass_tex0, pass_coord0);
     if (luma_blur_enable > 0.0) {
-        vec3 hsv = rgb2hsv(blurred.rgb);
-        if (hsv.y < 0.1) {
-            hsv.z = min(hsv.z * 1.25, 1.0); // boost brightness of blurred image for low saturation areas to make the bloom more visible
-            blurred.rgb = hsv2rgb(hsv);
-        }
-        color = blend_by_mode(original, blurred, BLEND_SCREEN);
+        // color = blend_by_mode(original, blurred, BLEND_ADDITION);
+        vec3 hsv_blurred = rgb2hsv(blurred.rgb);
+        vec3 hsv_original = rgb2hsv(original.rgb);
+        color = vec4(hsv2rgb(vec3(
+            hsv_original.x,
+            hsv_original.y,
+            min(hsv_original.z + hsv_blurred.z, 1.0))),
+            original.a
+        );
     } else {
         if (blur > 0.0) {
         color = blurred;
