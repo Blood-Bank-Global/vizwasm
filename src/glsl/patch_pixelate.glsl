@@ -8,7 +8,7 @@ vec4 patch_pixelate(vec2 uv, vec2 pixel_size, sampler2D tex, vec2 reso) {
     return texture(tex, pixelated_uv / reso);
 }
 
-//!STR density_characters " -',;:\\*)|/1ftlabkDRPBXS2Z0QM&%#@"
+//!STR density_characters " -',;:\\*)|/1ftlabkDRPBXS2Z0QM&%#@@"
 
 vec4 patch_textelate(vec2 uv, float scale, sampler2D tex, vec2 reso) {
     vec2 pixel_size = vec2(font_8x16_width, font_8x16_height) * scale;
@@ -64,6 +64,22 @@ vec4 patch_textelate_bubbly(vec2 uv, float scale, sampler2D tex, vec2 reso) {
     uint density = uint(luma * uint(density_characters_length));
     uint c[] = uint[](density_characters[density]);
     if (font_bubbly(uv/scale, pixelated_uv/scale, c, 0, 1)) {
+        return color;
+    } else {
+        return vec4(0.0, 0.0, 0.0, color.a);
+    }
+}
+
+//!VAR uint[] boxel_characters 0x20u 0xB0 0xB1 0xB2 0xB2 
+vec4 patch_boxelate(vec2 uv, float scale, sampler2D tex, vec2 reso) {
+    vec2 pixel_size = vec2(font_8x16_width, font_8x16_height) * scale;
+    vec2 pixelated_uv = floor(uv / pixel_size) * pixel_size;
+    vec4 color = texture(tex, pixelated_uv / reso);
+    vec3 hsv = rgb2hsv(color.rgb);
+    float luma = hsv.z;
+    uint density = uint(luma * uint(boxel_characters.length()));
+    uint c[] = uint[](boxel_characters[density]);
+    if (font_8x16(uv/scale, pixelated_uv/scale, c, 0, 1)) {
         return color;
     } else {
         return vec4(0.0, 0.0, 0.0, color.a);

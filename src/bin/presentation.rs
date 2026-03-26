@@ -59,7 +59,7 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
         );
     }
 
-    let tech_vids640x480: &[&str] = &["blank"];
+    let tech_vids640x480: &[&str] = &["blank", "fluffy_clouds"];
     for vid_name in tech_vids640x480.iter() {
         vids.push(
             Vid::builder()
@@ -160,8 +160,10 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "20_final_form",
         "flex",
         "cp437",
+        "boxel",
         "decompile",
         "glitch_morning",
+        "fluffy_clouds",
         "front cam",
     ]
     .iter()
@@ -230,6 +232,19 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
         mix: Mix::builder()
             .name("cp437_mix")
             .mixed("blank_mix")
+            .no_display(true)
+            .build(),
+    });
+    configs.push(MixConfig {
+        def: VidMixer::builder()
+            .name("boxel_mix")
+            .width(640)
+            .height(480)
+            .shader(include_files(include_str!("../glsl/boxel.glsl")))
+            .build(),
+        mix: Mix::builder()
+            .name("boxel_mix")
+            .mixed("fluffy_clouds_mix")
             .no_display(true)
             .build(),
     });
