@@ -2,7 +2,7 @@
 #define PATCH_EDGE_DETECT_GLSL
 #include "utils.glsl"
 
-// Basic edge detection in base_tex using uv
+// Basic edge detection in base_tex using coord
 bool patch_edge_detect(vec2 base_coord, sampler2D base_tex, vec2 resolution, float strength) {     
    vec2 dx = vec2(1/resolution.x, 0.0);
     vec2 dy = vec2(0.0, 1/resolution.y);

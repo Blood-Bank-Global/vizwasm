@@ -161,6 +161,6 @@
 //!ENDLONGVAR
 #define font_arcade_width (10)
 #define font_arcade_height (15)
-#define font_arcade(uv,pos,txt,start,len) (fontstr(uv,pos,txt,start,len,10,15,160,arcade))
-#define multiline_arcade(uv,pos,txt,starts,lens) multiline_font((uv), (pos), (txt), (starts), (lens), 10, 15, 160, arcade)
+#define font_arcade(coord,pos,txt,start,len) (fontstr(coord,pos,txt,start,len,10,15,160,arcade))
+#define multiline_arcade(coord,pos,txt,starts,lens) multiline_font((coord), (pos), (txt), (starts), (lens), 10, 15, 160, arcade)
 #endif

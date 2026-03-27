@@ -476,6 +476,6 @@
 //!ENDLONGVAR
 #define font_bubbly_width (16)
 #define font_bubbly_height (29)
-#define font_bubbly(uv,pos,txt,start,len) (fontstr(uv,pos,txt,start,len,16,29,256,bubbly))
-#define multiline_bubbly(uv,pos,txt,starts,lens) multiline_font((uv), (pos), (txt), (starts), (lens), 16, 29, 256, bubbly)
+#define font_bubbly(coord,pos,txt,start,len) (fontstr(coord,pos,txt,start,len,16,29,256,bubbly))
+#define multiline_bubbly(coord,pos,txt,starts,lens) multiline_font((coord), (pos), (txt), (starts), (lens), 16, 29, 256, bubbly)
 #endif

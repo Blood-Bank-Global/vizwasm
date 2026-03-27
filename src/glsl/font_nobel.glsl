@@ -171,6 +171,6 @@
 //!ENDLONGVAR
 #define font_nobel_width (10)
 #define font_nobel_height (16)
-#define font_nobel(uv,pos,txt,start,len) (fontstr(uv,pos,txt,start,len,10,16,160,nobel))
-#define multiline_nobel(uv,pos,txt,starts,lens) multiline_font((uv), (pos), (txt), (starts), (lens), 10, 16, 160, nobel)
+#define font_nobel(coord,pos,txt,start,len) (fontstr(coord,pos,txt,start,len,10,16,160,nobel))
+#define multiline_nobel(coord,pos,txt,starts,lens) multiline_font((coord), (pos), (txt), (starts), (lens), 10, 16, 160, nobel)
 #endif

@@ -17,13 +17,13 @@
 void pass0(out vec4 color) {
     color = vec4(0.0, 0.0, 0.0, 1.0);
 
-    vec2 uv = src_coord.xy * iResolution.xy;
-    uv.y = uv.y + BOTTOM_MARGIN;
+    vec2 coord = src_uv.xy * iResolution.xy;
+    coord.y = coord.y + BOTTOM_MARGIN;
 
-    int n = int(uv.y / (FONT_H));
+    int n = int(coord.y / (FONT_H));
     if (n < NUM_LINES) {
         int len = line_end[n + LINE_OFFSET] - line_start[n + LINE_OFFSET];
-        if (font_8x16(uv, vec2(0.0, float(n) * FONT_H), txt, line_start[n + LINE_OFFSET], len)) {
+        if (font_8x16(coord, vec2(0.0, float(n) * FONT_H), txt, line_start[n + LINE_OFFSET], len)) {
             color = vec4(0.7, 0.7, 0.7, 1.0);
         }
     }

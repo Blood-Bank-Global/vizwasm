@@ -51,11 +51,11 @@ void pass0(out vec4 color) {
             quest_extents[i].lens[5] = min(QUEST_LINE_LEN, lenghts[i] > 80u ? lenghts[i] - 80u : 0u);
         }
 
-        vec2 uv = (iResolution.xy * src_coord.xy * 0.25 ) + vec2(0.0, -16.0);
+        vec2 coord = (iResolution.xy * src_uv.xy * 0.25 ) + vec2(0.0, -16.0);
 
     #define display_msg(i) \
         multiline_fantasy( \
-            uv, \
+            coord, \
             vec2(0.0, 0.0), \
             quest ## i, \
             quest_extents[(i)].starts, \

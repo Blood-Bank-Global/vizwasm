@@ -161,6 +161,6 @@
 //!ENDLONGVAR
 #define font_high_width (9)
 #define font_high_height (15)
-#define font_high(uv,pos,txt,start,len) (fontstr(uv,pos,txt,start,len,9,15,160,high))
-#define multiline_high(uv,pos,txt,starts,lens) multiline_font((uv), (pos), (txt), (starts), (lens), 9, 15, 160, high)
+#define font_high(coord,pos,txt,start,len) (fontstr(coord,pos,txt,start,len,9,15,160,high))
+#define multiline_high(coord,pos,txt,starts,lens) multiline_font((coord), (pos), (txt), (starts), (lens), 9, 15, 160, high)
 #endif

@@ -771,6 +771,6 @@
 //!ENDLONGVAR
 #define font_logic_width (20)
 #define font_logic_height (38)
-#define font_logic(uv,pos,txt,start,len) (fontstr(uv,pos,txt,start,len,20,38,320,logic))
-#define multiline_logic(uv,pos,txt,starts,lens) multiline_font((uv), (pos), (txt), (starts), (lens), 20, 38, 320, logic)
+#define font_logic(coord,pos,txt,start,len) (fontstr(coord,pos,txt,start,len,20,38,320,logic))
+#define multiline_logic(coord,pos,txt,starts,lens) multiline_font((coord), (pos), (txt), (starts), (lens), 20, 38, 320, logic)
 #endif

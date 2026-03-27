@@ -42,7 +42,7 @@ float patch_blob_px_get_radius(
 }
 
 vec4 patch_blob_px(
-    vec2 uv,
+    vec2 coord,
     vec2 resolution,
     vec4 color_in,
     vec4 blob_color,
@@ -51,7 +51,7 @@ vec4 patch_blob_px(
     float offset
 ) {
 
-    float angle = atan(uv.y - blob_center.y, uv.x - blob_center.x);
+    float angle = atan(coord.y - blob_center.y, coord.x - blob_center.x);
     // convert angle to degrees manually since there is no degrees() function
     float angle_deg = mod(angle * (180.0 / 3.14159265), 360.0);
     float bucket = angle_deg / (360.0 / PATCH_BLOB_PX_ANGLE_BUCKET_COUNT);
@@ -65,7 +65,7 @@ vec4 patch_blob_px(
 
     vec4 return_color = color_in;
     float q = bicubic_mix(d0, d1, d2, d3, f);
-    float m = distance(uv, blob_center);
+    float m = distance(coord, blob_center);
 
     if (m < q) {
         return_color = blob_color;

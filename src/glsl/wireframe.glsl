@@ -23,8 +23,8 @@
 #define SCAN_NAME_IDX 18
 
 void pass0(out vec4 color) {
-    color = texture(src_tex0, src_coord0);
-    vec2 uv = src_coord0 * iResolution.xy;
+    color = texture(src_tex0, src_uv0);
+    vec2 coord = src_uv0 * iResolution.xy;
 
     #define OFFSET_X 114.0
     #define OFFSET_Y 34.0
@@ -35,11 +35,11 @@ void pass0(out vec4 color) {
     #define FONT_W font_8x16_width
     #define FONT_H font_8x16_height
 
-    #define blank(uv,pos,len) (str_bounds((uv),(pos),float(FONT_W),float(FONT_H),(len)))
+    #define blank(coord,pos,len) (str_bounds((coord),(pos),float(FONT_W),float(FONT_H),(len)))
 
-    if (uv.x > OFFSET_X && uv.x < (640.0 - OFFSET_X) && uv.y > OFFSET_Y && uv.y < (480.0 - OFFSET_Y)) {  
-        int i = int((uv.y - OFFSET_Y)/BUTTON_H);
-        int j = int((uv.x - OFFSET_X)/BUTTON_W);
+    if (coord.x > OFFSET_X && coord.x < (640.0 - OFFSET_X) && coord.y > OFFSET_Y && coord.y < (480.0 - OFFSET_Y)) {  
+        int i = int((coord.y - OFFSET_Y)/BUTTON_H);
+        int j = int((coord.x - OFFSET_X)/BUTTON_W);
 
         if (distance(color.rgb, vec3(0.0, 0.0, 0.0)) > 0.1) {
             vec3 hsv = rgb2hsv(color.rgb);
@@ -58,21 +58,21 @@ void pass0(out vec4 color) {
             OFFSET_X + (float(j) * BUTTON_W),
             OFFSET_Y + (float(i) * BUTTON_H)
         );
-        int k = int(uv.y - line1_pos.y) / int(FONT_H);
-        int m = int(uv.x - line1_pos.x) / int(FONT_W);
+        int k = int(coord.y - line1_pos.y) / int(FONT_H);
+        int m = int(coord.x - line1_pos.x) / int(FONT_W);
         bool draw = false;
         //fill in a solid blank area
-        if (blank(uv, line1_pos + vec2(4.0, FONT_H * 2.0), min(12, label_lens[j + i * 4])) 
-            || blank(uv, line1_pos + vec2(4.0, FONT_H * 3.0), min(12, value_lens[j + i * 4]))) {
+        if (blank(coord, line1_pos + vec2(4.0, FONT_H * 2.0), min(12, label_lens[j + i * 4])) 
+            || blank(coord, line1_pos + vec2(4.0, FONT_H * 3.0), min(12, value_lens[j + i * 4]))) {
             color = vec4(0.0, 0.0, 0.0, 1.0);
         }
         //render the font
-        if (font_8x16(uv, line1_pos + vec2(4.0, FONT_H * 2.0), label_data, label_starts[j + i * 4], label_lens[j + i * 4]) 
-            || font_8x16(uv, line1_pos + vec2(4.0, FONT_H * 3.0), value_data, value_starts[j + i * 4], value_lens[j + i * 4])) {
+        if (font_8x16(coord, line1_pos + vec2(4.0, FONT_H * 2.0), label_data, label_starts[j + i * 4], label_lens[j + i * 4]) 
+            || font_8x16(coord, line1_pos + vec2(4.0, FONT_H * 3.0), value_data, value_starts[j + i * 4], value_lens[j + i * 4])) {
             draw = true;
         }
         // add a 4px padding inside the button
-        if (uv.x < line1_pos.x + 4.0 || uv.x > line1_pos.x + BUTTON_W - 4.0 || uv.y < line1_pos.y + 4.0 || uv.y > line1_pos.y + BUTTON_H - 4.0) {
+        if (coord.x < line1_pos.x + 4.0 || coord.x > line1_pos.x + BUTTON_W - 4.0 || coord.y < line1_pos.y + 4.0 || coord.y > line1_pos.y + BUTTON_H - 4.0) {
             draw = false;
         }
         if (draw) {
@@ -90,33 +90,33 @@ void pass0(out vec4 color) {
     #define DROPPED_POS (vec2(OFFSET_X + AREA_W - FONT_W * 10, OFFSET_Y + AREA_H))
     #define MIDI_TARGET_POS vec2(OFFSET_X + (AREA_W / 2.0) - (float(midi_target.length() * FONT_W)/2.0), OFFSET_Y + AREA_H)
 
-    if (blank(uv, ACTIVE_LABEL_POS, label_lens[ACTIVE_NAME_IDX])
-        || blank(uv, DISPLAY_LABEL_POS, label_lens[DISPLAY_NAME_IDX])
-        ||blank(uv, ACTIVE_VALUE_POS, value_lens[ACTIVE_NAME_IDX])
-        || blank(uv, DISPLAY_VALUE_POS, value_lens[DISPLAY_NAME_IDX])
-        || blank(uv, SCAN_LABEL_POS, min(label_lens[SCAN_NAME_IDX], 10))
-        || blank(uv, SCAN_VALUE_POS, min(value_lens[SCAN_NAME_IDX], 10))
-        || blank(uv, DROPPED_POS, dropped_length)) {
+    if (blank(coord, ACTIVE_LABEL_POS, label_lens[ACTIVE_NAME_IDX])
+        || blank(coord, DISPLAY_LABEL_POS, label_lens[DISPLAY_NAME_IDX])
+        ||blank(coord, ACTIVE_VALUE_POS, value_lens[ACTIVE_NAME_IDX])
+        || blank(coord, DISPLAY_VALUE_POS, value_lens[DISPLAY_NAME_IDX])
+        || blank(coord, SCAN_LABEL_POS, min(label_lens[SCAN_NAME_IDX], 10))
+        || blank(coord, SCAN_VALUE_POS, min(value_lens[SCAN_NAME_IDX], 10))
+        || blank(coord, DROPPED_POS, dropped_length)) {
         color = vec4(0.0, 0.0, 0.0, 1.0);
     }
 
-    if (font_8x16(uv, ACTIVE_LABEL_POS, label_data, label_starts[ACTIVE_NAME_IDX], label_lens[ACTIVE_NAME_IDX])
-        || font_8x16(uv, ACTIVE_VALUE_POS, value_data, value_starts[ACTIVE_NAME_IDX], value_lens[ACTIVE_NAME_IDX])
-        || font_8x16(uv, DISPLAY_LABEL_POS, label_data, label_starts[DISPLAY_NAME_IDX], label_lens[DISPLAY_NAME_IDX])
-        || font_8x16(uv, DISPLAY_VALUE_POS, value_data, value_starts[DISPLAY_NAME_IDX], value_lens[DISPLAY_NAME_IDX])
-        || font_8x16(uv, SCAN_LABEL_POS, label_data, label_starts[SCAN_NAME_IDX], min(label_lens[SCAN_NAME_IDX], 10))
-        || font_8x16(uv, SCAN_VALUE_POS, value_data, value_starts[SCAN_NAME_IDX], min(value_lens[SCAN_NAME_IDX], 10))
-        || font_8x16(uv, DROPPED_POS, dropped, 0, dropped_length)) {
+    if (font_8x16(coord, ACTIVE_LABEL_POS, label_data, label_starts[ACTIVE_NAME_IDX], label_lens[ACTIVE_NAME_IDX])
+        || font_8x16(coord, ACTIVE_VALUE_POS, value_data, value_starts[ACTIVE_NAME_IDX], value_lens[ACTIVE_NAME_IDX])
+        || font_8x16(coord, DISPLAY_LABEL_POS, label_data, label_starts[DISPLAY_NAME_IDX], label_lens[DISPLAY_NAME_IDX])
+        || font_8x16(coord, DISPLAY_VALUE_POS, value_data, value_starts[DISPLAY_NAME_IDX], value_lens[DISPLAY_NAME_IDX])
+        || font_8x16(coord, SCAN_LABEL_POS, label_data, label_starts[SCAN_NAME_IDX], min(label_lens[SCAN_NAME_IDX], 10))
+        || font_8x16(coord, SCAN_VALUE_POS, value_data, value_starts[SCAN_NAME_IDX], min(value_lens[SCAN_NAME_IDX], 10))
+        || font_8x16(coord, DROPPED_POS, dropped, 0, dropped_length)) {
         color = vec4(0.7, 0.7, 0.7, 1.0);
     }
 
-    if (blank(uv, vec2(OFFSET_X, OFFSET_Y + AREA_H), selected_button_str.length()) ) {
+    if (blank(coord, vec2(OFFSET_X, OFFSET_Y + AREA_H), selected_button_str.length()) ) {
         color = vec4(0.0, 0.0, 0.0, 1.0);
     }
-    if (font_8x16(uv, vec2(OFFSET_X, OFFSET_Y + AREA_H), selected_button_str, 0, selected_button_str.length())) {
+    if (font_8x16(coord, vec2(OFFSET_X, OFFSET_Y + AREA_H), selected_button_str, 0, selected_button_str.length())) {
         color = vec4(0.7, 0.7, 0.7, 1.0);
     }
-    if (font_8x16(uv, MIDI_TARGET_POS, midi_target, 0, midi_target.length())) {
+    if (font_8x16(coord, MIDI_TARGET_POS, midi_target, 0, midi_target.length())) {
         color = vec4(0.7, 0.7, 0.7, 1.0);
     }
 }

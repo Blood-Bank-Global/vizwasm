@@ -28,7 +28,7 @@
 
 void pass0(out vec4 color) {
     // Scroll as needed
-    vec2 base_coord = coord_wrap(vec2(src_coord.x + scrolled_h, src_coord.y + scrolled_v), true, true);
+    vec2 base_coord = coord_wrap(vec2(src_uv.x + scrolled_h, src_uv.y + scrolled_v), true, true);
 
     //skew
     base_coord = skew3(base_coord, new_corners);
@@ -84,10 +84,10 @@ void pass0(out vec4 color) {
 }
 
 void pass1(out vec4 color) {
-    vec4 c_0 = texture(pass_tex0, pass_coord0);
+    vec4 c_0 = texture(pass_tex0, pass_uv0);
     //only for luma blur
     if (luma_blur_enable > 0.0) { //luma blur takes precedence over normal blur
-        float luma = rgb2hsv(texture(pass_tex0, pass_coord0).rgb).z;
+        float luma = rgb2hsv(texture(pass_tex0, pass_uv0).rgb).z;
         if (luma >= luma_point) {
             color = vec4(hsv2rgb(vec3(0, 0, luma)), c_0.a);
         } else {
@@ -103,7 +103,7 @@ void pass2(out vec4 color) {
      if (blur_enable > 0.0 || luma_blur_enable > 0.0) {
         int radius = luma_blur_enable > 0.0 ? min(int(ceil(luma_blur)), 50) : min(int(ceil(blur)), 50);
         float sigma = SIGMA;
-        vec2 base_px = pass_coord0.xy * iResolution.xy;
+        vec2 base_px = pass_uv0.xy * iResolution.xy;
         // Pass 1: vertical blur
         vec3 accum = vec3(0.0);
         float total_weight = 0.0;
@@ -115,10 +115,10 @@ void pass2(out vec4 color) {
             total_weight += w;
         }
         //preserve alpha from pass1
-        float alpha = texture(pass_tex1, pass_coord1).a;
+        float alpha = texture(pass_tex1, pass_uv1).a;
         color = vec4(accum / max(total_weight, 0.001), alpha);
     } else {
-        color = texture(pass_tex1, pass_coord1);
+        color = texture(pass_tex1, pass_uv1);
     }
 }
 
@@ -127,7 +127,7 @@ void pass3(out vec4 color) {
     if (blur_enable > 0.0 || luma_blur_enable > 0.0) {
         int radius = luma_blur_enable > 0.0 ? min(int(ceil(luma_blur)), 50) : min(int(ceil(blur)), 50);
         float sigma = SIGMA;
-        vec2 base_px = pass_coord1.xy * iResolution.xy;
+        vec2 base_px = pass_uv1.xy * iResolution.xy;
         // Pass 3: horizontal blur
         vec3 accum = vec3(0.0);
         float total_weight = 0.0;
@@ -139,10 +139,10 @@ void pass3(out vec4 color) {
             total_weight += w;
         }
         //preserve alpha from pass 2
-        float alpha = texture(pass_tex2, pass_coord2).a;
+        float alpha = texture(pass_tex2, pass_uv2).a;
         color = vec4(accum / max(total_weight, 0.001), alpha);
     } else {
-        color = texture(pass_tex2, pass_coord2);
+        color = texture(pass_tex2, pass_uv2);
     }
 }
 
@@ -152,7 +152,7 @@ void pass4(out vec4 color) {
         int radius = luma_blur_enable > 0.0 ? min(int(ceil(luma_blur * 0.707)), 35) 
                         : min(int(ceil(blur * 0.707)), 35); // scaled by 1/sqrt(2)
         float sigma = SIGMA;
-        vec2 base_px = pass_coord2.xy * iResolution.xy;
+        vec2 base_px = pass_uv2.xy * iResolution.xy;
         vec3 accum = vec3(0.0);
         float total_weight = 0.0;
         for (int d = -radius; d <= radius; d++) {
@@ -163,17 +163,17 @@ void pass4(out vec4 color) {
             total_weight += w;
         }
         //preserve alpha from pass 3
-        float alpha = texture(pass_tex3, pass_coord3).a;
+        float alpha = texture(pass_tex3, pass_uv3).a;
         color = vec4(accum / max(total_weight, 0.001), alpha);
     } else {
-        color = texture(pass_tex3, pass_coord3);
+        color = texture(pass_tex3, pass_uv3);
     }
 }
 
 void pass5(out vec4 color) {
     // Pass 5: bloom - add blurred bright areas back to the original
-    vec4 blurred = texture(pass_tex4, pass_coord4);
-    vec4 original = texture(pass_tex0, pass_coord0);
+    vec4 blurred = texture(pass_tex4, pass_uv4);
+    vec4 original = texture(pass_tex0, pass_uv0);
     if (luma_blur_enable > 0.0) {
         // color = blend_by_mode(original, blurred, BLEND_ADDITION);
         vec3 hsv_blurred = rgb2hsv(blurred.rgb);
@@ -195,7 +195,7 @@ void pass5(out vec4 color) {
 
 void pass6(out vec4 color) {
     // Scroll as needed
-    vec2 base_coord = coord_wrap(vec2(src_coord.x + scrolled_h, src_coord.y + scrolled_v), true, true);
+    vec2 base_coord = coord_wrap(vec2(src_uv.x + scrolled_h, src_uv.y + scrolled_v), true, true);
 
     //skew
     base_coord = skew3(base_coord, new_corners);
@@ -213,5 +213,5 @@ void pass6(out vec4 color) {
         distort_edge
     );
 
-    color = patch_feedback(texture(pass_tex5, pass_coord5), feedback);
+    color = patch_feedback(texture(pass_tex5, pass_uv5), feedback);
 }

@@ -2,7 +2,7 @@
 #define PATCH_CHECK_SCROLL_PX_GLSL
 #include "utils.glsl"
 vec4 patch_check_scroll_px(
-    vec2 uv,
+    vec2 coord,
     vec2 resolution,
     vec4 color_in,
     vec4 square1,
@@ -11,11 +11,11 @@ vec4 patch_check_scroll_px(
     vec2 offset,
     mat4x2 corners) {
 
-    if (!pointInRhombus(uv, corners)) {
+    if (!pointInRhombus(coord, corners)) {
         return color_in;
     }
 
-    vec2 normalized_uv = uv / resolution;
+    vec2 normalized_uv = coord / resolution;
     mat4x2 normalized_corners = mat4x2(
         corners[0].x / resolution.x, corners[0].y / resolution.y,
         corners[1].x / resolution.x, corners[1].y / resolution.y,

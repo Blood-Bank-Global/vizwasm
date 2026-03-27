@@ -155,7 +155,7 @@ as part of other packs.
 //!ENDLONGVAR
 #define font_fantasy_width (8)
 #define font_fantasy_height (8)
-#define font_fantasy(uv,pos,txt,start,len) (fontstr(uv,pos,txt,start,len,8,8,128,fantasy))
-#define multiline_fantasy(uv,pos,txt,starts,lens) \
-    multiline_font((uv), (pos), (txt), (starts), (lens), 8, 8, 128, fantasy)
+#define font_fantasy(coord,pos,txt,start,len) (fontstr(coord,pos,txt,start,len,8,8,128,fantasy))
+#define multiline_fantasy(coord,pos,txt,starts,lens) \
+    multiline_font((coord), (pos), (txt), (starts), (lens), 8, 8, 128, fantasy)
 #endif

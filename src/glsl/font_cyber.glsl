@@ -476,6 +476,6 @@
 //!ENDLONGVAR
 #define font_cyber_width (15)
 #define font_cyber_height (29)
-#define font_cyber(uv,pos,txt,start,len) (fontstr(uv,pos,txt,start,len,15,29,256,cyber))
-#define multiline_cyber(uv,pos,txt,starts,lens) multiline_font((uv), (pos), (txt), (starts), (lens), 15, 29, 256, cyber)
+#define font_cyber(coord,pos,txt,start,len) (fontstr(coord,pos,txt,start,len,15,29,256,cyber))
+#define multiline_cyber(coord,pos,txt,starts,lens) multiline_font((coord), (pos), (txt), (starts), (lens), 15, 29, 256, cyber)
 #endif

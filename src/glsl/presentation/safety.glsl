@@ -6,9 +6,9 @@
 //!VAR float cc_iac_driver_bus_1_0_0 0.0
 
 void pass0(out vec4 color) {
-    color = texture(src_tex0, src_coord0);
-    vec2 uv = src_coord.xy * iResolution.xy;
-    vec2 pos = floor((uv) / vec2(FONT_W, FONT_H)) * vec2(FONT_W, FONT_H);
+    color = texture(src_tex0, src_uv0);
+    vec2 coord = src_uv.xy * iResolution.xy;
+    vec2 pos = floor((coord) / vec2(FONT_W, FONT_H)) * vec2(FONT_W, FONT_H);
     uint c[1] = uint[1](uint(randf(((uint(pos.x) * 11) ^ (uint(pos.y) * 13) ^ (uint(floor(iTime*10) * 7)))) * 255.0));
     
     vec2 corners[] = vec2[](pos, pos + vec2(FONT_W, 0.0), pos + vec2(0.0, FONT_H), pos + vec2(FONT_W, FONT_H));
@@ -28,7 +28,7 @@ void pass0(out vec4 color) {
         }
     }
     if (count >= 4) {
-        color = texture(src_tex0, src_coord0);
+        color = texture(src_tex0, src_uv0);
         return;
     } else if (count > 0) {
         c[0] = 0xB0;
@@ -36,10 +36,10 @@ void pass0(out vec4 color) {
 
     bool white_space = c[0] == 0u || c[0] == 32u || (c[0] >= 9 && c[0] <= 13) || c[0] == 255;
     
-    if (!white_space && str_bounds(uv, pos, FONT_W, FONT_H,1)) {
+    if (!white_space && str_bounds(coord, pos, FONT_W, FONT_H,1)) {
         color.rgb = vec3(1.0) - color.rgb;
     }
-    if (font_8x16(uv, pos, c, 0, 1)) {
+    if (font_8x16(coord, pos, c, 0, 1)) {
         color = vec4(1.0);
     }     
 }

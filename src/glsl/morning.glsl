@@ -2,7 +2,7 @@
 #include "patch_pixelate.glsl"
 
 void pass0(out vec4 color) {
-    vec4 morning = texture(src_tex0, src_coord.xy);
+    vec4 morning = texture(src_tex0, src_uv.xy);
     vec4 coffee;
 
     float t = fract(iTime/4.0) * M_PI * 2.0;
@@ -11,10 +11,10 @@ void pass0(out vec4 color) {
     float w3 = sin(t*0.2);
     float mean = (w1 + w2 + w3) / 3.0;
     if (mean > 0.4) {
-        vec2 uv = src_coord.xy * iResolution.xy;
-        coffee = patch_textelate(uv, 0.5, src_tex1, iResolution.xy);
+        vec2 coord = src_uv.xy * iResolution.xy;
+        coffee = patch_textelate(coord, 0.5, src_tex1, iResolution.xy);
     } else {
-        coffee = texture(src_tex1, src_coord.xy);
+        coffee = texture(src_tex1, src_uv.xy);
     }
 
     color = blend_by_mode(morning, coffee, BLEND_ADDITION);

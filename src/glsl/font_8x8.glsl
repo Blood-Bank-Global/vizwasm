@@ -135,7 +135,7 @@
 //!ENDLONGVAR
 #define font_8x8_width (8)
 #define font_8x8_height (8)
-#define font_8x8(uv,pos,txt,start,len) (fontstr(uv,pos,txt,start,len,8,8,128,8x8))
-#define multiline_8x8(uv,pos,txt,starts,lens) \
-    multiline_font((uv), (pos), (txt), (starts), (lens), 8, 8, 128, 8x8)
+#define font_8x8(coord,pos,txt,start,len) (fontstr(coord,pos,txt,start,len,8,8,128,8x8))
+#define multiline_8x8(coord,pos,txt,starts,lens) \
+    multiline_font((coord), (pos), (txt), (starts), (lens), 8, 8, 128, 8x8)
 #endif

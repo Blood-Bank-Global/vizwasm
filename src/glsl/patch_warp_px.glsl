@@ -10,10 +10,10 @@ uint patch_warp_px_hash(uint seed) {
     return seed;
 }
 
-vec2 patch_warp_px(vec2 uv, vec2 size, float strength, vec2 resolution, float sequence) {
+vec2 patch_warp_px(vec2 coord, vec2 size, float strength, vec2 resolution, float sequence) {
     vec2 rounded = vec2(
-        floor(uv.x/size.x)*size.x,
-        floor(uv.y/size.y)*size.y
+        floor(coord.x/size.x)*size.x,
+        floor(coord.y/size.y)*size.y
     );
 
     vec2 web[4][4];
@@ -24,8 +24,8 @@ vec2 patch_warp_px(vec2 uv, vec2 size, float strength, vec2 resolution, float se
                 rounded.y + (float(j) - 1.0) * size.y
             );
             
-            int gx = int(floor(uv.x/size.x)) + i - 1;
-            int gy = int(floor(uv.y/size.y)) + j - 1;
+            int gx = int(floor(coord.x/size.x)) + i - 1;
+            int gy = int(floor(coord.y/size.y)) + j - 1;
 
             // Robust spatial hash
             uint h = patch_warp_px_hash(uint(gx) * 73856093u ^ uint(gy) * 19349663u);
@@ -56,14 +56,14 @@ vec2 patch_warp_px(vec2 uv, vec2 size, float strength, vec2 resolution, float se
     // Bicubic interpolation of the web points
     // Pass 1: Interpolate each row along X
     vec2 rows[4];
-    float fx = fract(uv.x / size.x);
+    float fx = fract(coord.x / size.x);
     for (int j = 0; j < 4; j++) {
         rows[j].x = bicubic_mix(web[0][j].x, web[1][j].x, web[2][j].x, web[3][j].x, fx);
         rows[j].y = bicubic_mix(web[0][j].y, web[1][j].y, web[2][j].y, web[3][j].y, fx);
     }
 
     // Pass 2: Interpolate the results along Y
-    float fy = fract(uv.y / size.y);
+    float fy = fract(coord.y / size.y);
     return vec2(
         bicubic_mix(rows[0].x, rows[1].x, rows[2].x, rows[3].x, fy),
         bicubic_mix(rows[0].y, rows[1].y, rows[2].y, rows[3].y, fy)

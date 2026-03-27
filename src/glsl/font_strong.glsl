@@ -139,6 +139,6 @@
 //!ENDLONGVAR
 #define font_strong_width (8)
 #define font_strong_height (16)
-#define font_strong(uv,pos,txt,start,len) (fontstr(uv,pos,txt,start,len,8,16,128,strong))
-#define multiline_strong(uv,pos,txt,starts,lens) multiline_font((uv), (pos), (txt), (starts), (lens), 8, 16, 128, strong)
+#define font_strong(coord,pos,txt,start,len) (fontstr(coord,pos,txt,start,len,8,16,128,strong))
+#define multiline_strong(coord,pos,txt,starts,lens) multiline_font((coord), (pos), (txt), (starts), (lens), 8, 16, 128, strong)
 #endif

@@ -13,7 +13,7 @@
 //!VAR float cc_iac_driver_bus_1_0_7 0.0
 
 void pass0(out vec4 color) {
-    vec2 base_coord = src_coord0;
+    vec2 base_coord = src_uv0;
     if (cc_iac_driver_bus_1_0_7 > 5.0) {
         float angle = sin(dot(base_coord.xy, vec2(2.9898,3.233)) + iTime * 7.0) * 3.14159;
         float radius = length(base_coord - 0.5) * cc_iac_driver_bus_1_0_7 / 16.0;
@@ -31,7 +31,7 @@ void pass0(out vec4 color) {
 
     color = handle_edge(src_tex0, base_coord, EDGE_MODE_MIRROR);
 
-    vec4 arthur = texture(src_tex1, src_coord1);
+    vec4 arthur = texture(src_tex1, src_uv1);
     vec3 upper_hsv = rgb2hsv(arthur.rgb);
     arthur.rgb = hsv2rgb(vec3(mod(upper_hsv.x + cc_iac_driver_bus_1_0_2/127.0, 1.0), 0.5, upper_hsv.z));
     arthur.a = min(upper_hsv.z, cc_iac_driver_bus_1_0_1/127.0);

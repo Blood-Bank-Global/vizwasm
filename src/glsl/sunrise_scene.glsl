@@ -26,10 +26,10 @@ void pass0(out vec4 color) {
 
     color = sky_color;
 
-    if (src_coord0.y <= HORIZON) {
+    if (src_uv0.y <= HORIZON) {
         // Sun sphere
-        float flicker = ((1.0 + sin((fract(iTime / SPEED / 2.0)+src_coord0.y) * 2*M_PI))/2.0) * .05;
-        vec2 px = src_coord0.xy * iResolution.xy;
+        float flicker = ((1.0 + sin((fract(iTime / SPEED / 2.0)+src_uv0.y) * 2*M_PI))/2.0) * .05;
+        vec2 px = src_uv0.xy * iResolution.xy;
         vec2 center = vec2(0.5, HORIZON) * iResolution.xy;
         float radius = distance(px, center);
 
@@ -65,12 +65,12 @@ void pass0(out vec4 color) {
         float curr_h = 0.0;
         float r = 0.0;
         float g = 0.0;
-        if (src_coord0.x <= peak_points[0]) {
+        if (src_uv0.x <= peak_points[0]) {
             curr_h = peak_heights[0];
-        } else if (src_coord0.x >= peak_points[9]) {
+        } else if (src_uv0.x >= peak_points[9]) {
             curr_h = peak_heights[9];
         } else {
-            // find the two peak points src_coord0.x is between
+            // find the two peak points src_uv0.x is between
             
             for (int i = 0; i < 10; i++) {
                 if (mod(i,2) == 0) {
@@ -80,8 +80,8 @@ void pass0(out vec4 color) {
                 }
 
                 r += 0.1;
-                if (src_coord0.x <= peak_points[i]) {
-                    float ss = smoothstep(peak_points[i-1], peak_points[i], src_coord0.x);
+                if (src_uv0.x <= peak_points[i]) {
+                    float ss = smoothstep(peak_points[i-1], peak_points[i], src_uv0.x);
                     curr_h = mix(peak_heights[i-1], peak_heights[i], ss);
                     break;
                 }
@@ -89,7 +89,7 @@ void pass0(out vec4 color) {
         }
         
         float peak = HORIZON - curr_h;
-        if (src_coord0.y >= peak) {
+        if (src_uv0.y >= peak) {
             color = vec4(r, g, r, 1.0);
         }
     } else {
@@ -98,7 +98,7 @@ void pass0(out vec4 color) {
         float block_y = BLOCK_PX / iResolution.y;
 
         vec2 block_coord = skew3(
-            src_coord0, mat4x2(
+            src_uv0, mat4x2(
                 0.0, HORIZON,
                 1.0, HORIZON,
                 (0.0 - STRETCH), 1.0,

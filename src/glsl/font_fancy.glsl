@@ -212,6 +212,6 @@
 //!ENDLONGVAR
 #define font_fancy_width (10)
 #define font_fancy_height (20)
-#define font_fancy(uv,pos,txt,start,len) (fontstr(uv,pos,txt,start,len,10,20,160,fancy))
-#define multiline_fancy(uv,pos,txt,starts,lens) multiline_font((uv), (pos), (txt), (starts), (lens), 10, 20, 160, fancy)
+#define font_fancy(coord,pos,txt,start,len) (fontstr(coord,pos,txt,start,len,10,20,160,fancy))
+#define multiline_fancy(coord,pos,txt,starts,lens) multiline_font((coord), (pos), (txt), (starts), (lens), 10, 20, 160, fancy)
 #endif

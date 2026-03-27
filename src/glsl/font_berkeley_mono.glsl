@@ -790,6 +790,6 @@
 //!ENDLONGVAR
 #define font_berkeley_mono_width (20)
 #define font_berkeley_mono_height (39)
-#define font_berkeley_mono(uv,pos,txt,start,len) (fontstr(uv,pos,txt,start,len,20,39,320,berkeley_mono))
-#define multiline_berkeley_mono(uv,pos,txt,starts,lens) multiline_font((uv), (pos), (txt), (starts), (lens), 20, 39, 320, berkeley_mono)
+#define font_berkeley_mono(coord,pos,txt,start,len) (fontstr(coord,pos,txt,start,len,20,39,320,berkeley_mono))
+#define multiline_berkeley_mono(coord,pos,txt,starts,lens) multiline_font((coord), (pos), (txt), (starts), (lens), 20, 39, 320, berkeley_mono)
 #endif

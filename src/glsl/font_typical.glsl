@@ -131,6 +131,6 @@
 //!ENDLONGVAR
 #define font_typical_width (10)
 #define font_typical_height (12)
-#define font_typical(uv,pos,txt,start,len) (fontstr(uv,pos,txt,start,len,10,12,160,typical))
-#define multiline_typical(uv,pos,txt,starts,lens) multiline_font((uv), (pos), (txt), (starts), (lens), 10, 12, 160, typical)
+#define font_typical(coord,pos,txt,start,len) (fontstr(coord,pos,txt,start,len,10,12,160,typical))
+#define multiline_typical(coord,pos,txt,starts,lens) multiline_font((coord), (pos), (txt), (starts), (lens), 10, 12, 160, typical)
 #endif

@@ -59,6 +59,6 @@
 //!ENDLONGVAR
 #define font_small_width (6)
 #define font_small_height (8)
-#define font_small(uv,pos,txt,start,len) (fontstr(uv,pos,txt,start,len,6,8,96,small))
-#define multiline_small(uv,pos,txt,starts,lens) multiline_font((uv), (pos), (txt), (starts), (lens), 6, 8, 96, small)
+#define font_small(coord,pos,txt,start,len) (fontstr(coord,pos,txt,start,len,6,8,96,small))
+#define multiline_small(coord,pos,txt,starts,lens) multiline_font((coord), (pos), (txt), (starts), (lens), 6, 8, 96, small)
 #endif

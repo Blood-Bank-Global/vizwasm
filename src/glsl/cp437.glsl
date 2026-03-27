@@ -4,8 +4,8 @@
 #define FONT_H (font_8x16_height)
 
 void pass0(out vec4 color) {
-    vec2 uv = src_coord.xy * iResolution.xy;
-    vec2 rc = floor(uv / vec2(FONT_W, FONT_H));
+    vec2 coord = src_uv.xy * iResolution.xy;
+    vec2 rc = floor(coord / vec2(FONT_W, FONT_H));
     float idx = (rc.x - 1) + (rc.y - 1) * 16.0;
     vec2 pos = rc * vec2(FONT_W, FONT_H);
 
@@ -34,7 +34,7 @@ void pass0(out vec4 color) {
         }
     }
     
-    if (font_8x16(uv, pos, c, 0, 1)) {
+    if (font_8x16(coord, pos, c, 0, 1)) {
         color = letter_color;
     }
 }

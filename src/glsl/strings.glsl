@@ -5,14 +5,14 @@
 //referenced by https://vdmx.vidvox.net/tutorials/techniques-for-drawing-text-in-glsl
 
 
-#define str_bounds(uv,pos,font_w,font_h,len) \
-    ((step((pos).x, (uv).x) >= 0.5 \
-    && (step((pos).y, (uv).y)) >= 0.5 \
-    && step((uv).x, (pos).x + float((font_w)) * float((len))) >= 0.5 \
-    && step((uv).y, (pos).y + float((font_h))) >= 0.5))
+#define str_bounds(coord,pos,font_w,font_h,len) \
+    ((step((pos).x, (coord).x) >= 0.5 \
+    && (step((pos).y, (coord).y)) >= 0.5 \
+    && step((coord).x, (pos).x + float((font_w)) * float((len))) >= 0.5 \
+    && step((coord).y, (pos).y + float((font_h))) >= 0.5))
 
-#define str_char(uv,pos, txt, start,len,font_w) \
-    ((txt)[uint((start) + uint(clamp((float((uv).x) - float((pos).x))/float((font_w)), 0, (len)-1)))])
+#define str_char(coord,pos, txt, start,len,font_w) \
+    ((txt)[uint((start) + uint(clamp((float((coord).x) - float((pos).x))/float((font_w)), 0, (len)-1)))])
 
 #define font_sample(char,offset,font_w,font_h,map_w,font_name) \
     (font_data_ ## font_name [ \
@@ -22,29 +22,29 @@
 
 #define font_bitmask(char,offset_x,font_w) (1u << ((((uint(char) % 16) * uint(font_w) + uint(offset_x)) % 32u) ) )
     
-#define fontstr(uv,pos,txt,start,len,font_w,font_h,map_w,font_name) \
-    (str_bounds((uv),(pos),(font_w),(font_h),(len)) \
-    && (font_sample(str_char((uv),(pos),(txt),(start),(len),(font_w)), \
-        ivec2(uint(mod((float((uv).x) - float((pos).x)), float((font_w)))), uint(mod((float((uv).y) - float((pos).y)), float((font_h)))) ), \
+#define fontstr(coord,pos,txt,start,len,font_w,font_h,map_w,font_name) \
+    (str_bounds((coord),(pos),(font_w),(font_h),(len)) \
+    && (font_sample(str_char((coord),(pos),(txt),(start),(len),(font_w)), \
+        ivec2(uint(mod((float((coord).x) - float((pos).x)), float((font_w)))), uint(mod((float((coord).y) - float((pos).y)), float((font_h)))) ), \
         (font_w), (font_h), (map_w), font_name) \
-        & font_bitmask(str_char((uv),(pos),(txt),(start),(len),(font_w)) , uint(mod((float((uv).x) - float((pos).x)), float((font_w)))) , (font_w)) ) != 0u)
+        & font_bitmask(str_char((coord),(pos),(txt),(start),(len),(font_w)) , uint(mod((float((coord).x) - float((pos).x)), float((font_w)))) , (font_w)) ) != 0u)
 
-#define multiline_bounds(uv,pos,font_w,font_h,starts,lens) \
+#define multiline_bounds(coord,pos,font_w,font_h,starts,lens) \
     (lens).length() == (starts).length() \
-    && (step((pos).y, (uv).y) >= 0.5 \
-    && step((uv).y, ((pos).y + float((font_h)) * float((starts.length())))) >= 0.5 \
-    && step((pos).x, (uv).x) >= 0.5 \
-    && (step(uint(((uv).y - (pos).y)/float((font_h))), (lens).length()) >= 0.5) \
-    && step((uv).x, (pos).x + float((font_w)) * float((lens)[uint(((uv).y - (pos).y)/float((font_h)))])) >= 0.5)
+    && (step((pos).y, (coord).y) >= 0.5 \
+    && step((coord).y, ((pos).y + float((font_h)) * float((starts.length())))) >= 0.5 \
+    && step((pos).x, (coord).x) >= 0.5 \
+    && (step(uint(((coord).y - (pos).y)/float((font_h))), (lens).length()) >= 0.5) \
+    && step((coord).x, (pos).x + float((font_w)) * float((lens)[uint(((coord).y - (pos).y)/float((font_h)))])) >= 0.5)
 
-#define multiline_font(uv,pos,txt,starts,lens,font_w,font_h,map_w,font_name) \
-    ((multiline_bounds((uv),(pos),float((font_w)),float((font_h)),(starts),(lens))) \
+#define multiline_font(coord,pos,txt,starts,lens,font_w,font_h,map_w,font_name) \
+    ((multiline_bounds((coord),(pos),float((font_w)),float((font_h)),(starts),(lens))) \
     && (fontstr( \
-        (uv), \
-        vec2((pos).x, (pos).y + floor(((uv).y - (pos.y))/float((font_h)))*float((font_h))), \
+        (coord), \
+        vec2((pos).x, (pos).y + floor(((coord).y - (pos.y))/float((font_h)))*float((font_h))), \
         (txt), \
-        (starts)[uint((((uv).y - (pos.y))/float((font_h))))], \
-        (lens)[uint((((uv).y - (pos.y))/float((font_h))))], \
+        (starts)[uint((((coord).y - (pos.y))/float((font_h))))], \
+        (lens)[uint((((coord).y - (pos.y))/float((font_h))))], \
         (uint((font_w))), \
         (uint((font_h))), \
         (uint((map_w))), \

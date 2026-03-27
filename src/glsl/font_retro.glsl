@@ -948,6 +948,6 @@
 //!ENDLONGVAR
 #define font_retro_width (23)
 #define font_retro_height (39)
-#define font_retro(uv,pos,txt,start,len) (fontstr(uv,pos,txt,start,len,23,39,384,retro))
-#define multiline_retro(uv,pos,txt,starts,lens) multiline_font((uv), (pos), (txt), (starts), (lens), 23, 39, 384, retro)
+#define font_retro(coord,pos,txt,start,len) (fontstr(coord,pos,txt,start,len,23,39,384,retro))
+#define multiline_retro(coord,pos,txt,starts,lens) multiline_font((coord), (pos), (txt), (starts), (lens), 23, 39, 384, retro)
 #endif

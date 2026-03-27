@@ -211,6 +211,6 @@
 //!ENDLONGVAR
 #define font_willow_width (10)
 #define font_willow_height (20)
-#define font_willow(uv,pos,txt,start,len) (fontstr(uv,pos,txt,start,len,10,20,160,willow))
-#define multiline_willow(uv,pos,txt,starts,lens) multiline_font((uv), (pos), (txt), (starts), (lens), 10, 20, 160, willow)
+#define font_willow(coord,pos,txt,start,len) (fontstr(coord,pos,txt,start,len,10,20,160,willow))
+#define multiline_willow(coord,pos,txt,starts,lens) multiline_font((coord), (pos), (txt), (starts), (lens), 10, 20, 160, willow)
 #endif

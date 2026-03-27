@@ -524,7 +524,7 @@
 //!ENDLONGVAR
 #define font_future_width (15)
 #define font_future_height (32)
-#define font_future(uv,pos,txt,start,len) (fontstr(uv,pos,txt,start,len,15,32,256,future))
-#define multiline_future(uv,pos,txt,starts,lens) multiline_font((uv), (pos), (txt), (starts), (lens), 15, 32, 256, future)
+#define font_future(coord,pos,txt,start,len) (fontstr(coord,pos,txt,start,len,15,32,256,future))
+#define multiline_future(coord,pos,txt,starts,lens) multiline_font((coord), (pos), (txt), (starts), (lens), 15, 32, 256, future)
 
 #endif

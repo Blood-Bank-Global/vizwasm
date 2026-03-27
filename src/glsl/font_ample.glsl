@@ -161,6 +161,6 @@
 //!ENDLONGVAR
 #define font_ample_width (10)
 #define font_ample_height (15)
-#define font_ample(uv,pos,txt,start,len) (fontstr(uv,pos,txt,start,len,10,15,160,ample))
-#define multiline_ample(uv,pos,txt,starts,lens) multiline_font((uv), (pos), (txt), (starts), (lens), 10, 15, 160, ample)
+#define font_ample(coord,pos,txt,start,len) (fontstr(coord,pos,txt,start,len,10,15,160,ample))
+#define multiline_ample(coord,pos,txt,starts,lens) multiline_font((coord), (pos), (txt), (starts), (lens), 10, 15, 160, ample)
 #endif

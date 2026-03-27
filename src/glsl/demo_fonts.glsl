@@ -45,11 +45,11 @@ void pass0(out vec4 color) {
     uint starts[1] = uint[1](0);
     uint lengths[1] = uint[1](demo_length);
 
-    vec2 uv = iResolution.xy * src_coord.xy + vec2(0.0, 0.0);
+    vec2 coord = iResolution.xy * src_uv.xy + vec2(0.0, 0.0);
 
     #define demo_a_font(name) \
         if (multiline_##name( \
-            uv, \
+            coord, \
             vec2(0.0, float( font_offset_##name )), \
             demo, \
             starts, \
