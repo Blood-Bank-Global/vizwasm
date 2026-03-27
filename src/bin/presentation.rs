@@ -40,6 +40,7 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
         "17_synthbiosis",
         "17_5_memory",
         "19_dissodance",
+        "spring",
         "nyc",
         "morning",
         "coffee",
@@ -159,6 +160,7 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "19_dissodance",
         "20_final_form",
         "flex",
+        "spring",
         "cp437",
         "boxel",
         "decompile",
@@ -218,7 +220,7 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
             .build(),
         mix: Mix::builder()
             .name("flex_mix")
-            .mixed("blank_mix")
+            .mixed("spring_mix")
             .no_display(true)
             .build(),
     });

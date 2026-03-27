@@ -7,9 +7,16 @@ void pass0(out vec4 color) {
     color = texture(src_tex0, src_coord0);
     vec2 uv = src_coord.xy * iResolution.xy;
     vec2 pos = floor((uv) / vec2(FONT_W, FONT_H)) * vec2(FONT_W, FONT_H);
-    uint c[1] = uint[1](uint(randf(((uint(pos.x) * 11) ^ (uint(pos.y) * 13) ^ (uint(floor(iTime) * 7)))) * 255.0));
-    
-    if (font_8x16(uv, pos, c, 0, 1)) {
-        color = vec4(1.0);
-    }     
+    uint c[1] = uint[1](uint(randf(((uint(pos.x) * 11) ^ (uint(pos.y) * 13) ^ (uint(floor(iTime*2.0) * 7)))) * 255.0));
+    bool white_space = c[0] == 0u ||
+        c[0] == 32u || 
+        (c[0] >= 9 && c[0] <= 13) ||
+         c[0] == 255;
+
+    if (!white_space) {
+        color.rgb = vec3(1.0) - color.rgb;
+        if (font_8x16(uv, pos, c, 0, 1)) {
+            color = vec4(0.0, 0.0,0.0, 1.0);
+        } 
+    }    
 }
