@@ -1,7 +1,8 @@
 #include "utils.glsl"
-#include "font_8x16.glsl"
-#define FONT_W (font_8x16_width)
-#define FONT_H (font_8x16_height)
+#include "font_8x8.glsl"
+#define SCALE 3.0
+#define FONT_W (font_8x8_width) * SCALE
+#define FONT_H (font_8x8_height) * SCALE
 
 void pass0(out vec4 color) {
     vec2 coord = src_uv.xy * iResolution.xy;
@@ -19,7 +20,7 @@ void pass0(out vec4 color) {
     if (uint(rc.x) == 0) {
         letter_color = vec4(0.0, 0.0, 0.0, 1.0);
         color = vec4(1.0);
-         if (uint(rc.y) >= 10u) {
+         if (uint(rc.y) > 10u) {
             c[0] = uint(rc.y) - 11 + 0x41;
         } else {
             c[0] = uint(rc.y) - 1 + 0x30;
@@ -27,14 +28,14 @@ void pass0(out vec4 color) {
     } else if (uint(rc.y) == 0) {
         letter_color = vec4(0.0, 0.0, 0.0, 1.0);
         color = vec4(1.0);
-         if (uint(rc.x) >= 10u) {
+         if (uint(rc.x) > 10u) {
             c[0] = uint(rc.x) - 11 + 0x41;
         } else {
             c[0] = uint(rc.x) - 1 + 0x30;
         }
     }
     
-    if (font_8x16(coord, pos, c, 0, 1)) {
+    if (font_8x8(coord/SCALE, pos/SCALE, c, 0, 1)) {
         color = letter_color;
     }
 }
