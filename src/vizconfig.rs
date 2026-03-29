@@ -8,7 +8,7 @@ use sdlrig::{
 };
 
 use serde::{Deserialize, Serialize};
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::sync::{LazyLock, Mutex};
 use std::{error::Error, i64, io::Write};
 
@@ -573,6 +573,9 @@ impl AllSettings {
                 _ => String::new(),
             };
 
+            let seek_mix = AllSettings::find_seekable_vid(&mix_configs, format!("{name}_mix"))
+                .unwrap_or_default();
+
             let pb = PlaybackSettings {
                 was_reset: true,
                 stream: StreamSettings::new(StreamIdent {
@@ -582,6 +585,7 @@ impl AllSettings {
                     main_mix: mixer_graph.main_mix.def.name.clone(),
                     feedback_mix: mixer_graph.feedback.def.name.clone(),
                     overlay_mix: mixer_graph.overlay.def.name.clone(),
+                    seek_mix: seek_mix.clone(),
                 }),
                 presets: PresetSettings {
                     baseline: StreamSettings::new(StreamIdent {
@@ -591,6 +595,7 @@ impl AllSettings {
                         main_mix: mixer_graph.main_mix.def.name.clone(),
                         feedback_mix: mixer_graph.feedback.def.name.clone(),
                         overlay_mix: mixer_graph.overlay.def.name.clone(),
+                        seek_mix: seek_mix.clone(),
                     }),
                     saved: [const { vec![] }; 10],
                     original: vec![],
@@ -1385,32 +1390,9 @@ impl AllSettings {
                             down: true,
                             ..
                         } => {
-                            let mix = self.playback[self.active_idx].stream.overlay_mix();
-                            let specs = self.get_playback_specs(mix, (0, 0, 1, 1), (0, 0, 1, 1));
-                            let last = specs
-                                .iter()
-                                .filter_map(|s| {
-                                    if let RenderSpec::Mix(mix) = s {
-                                        if let Some(MixInput::Video(v)) = mix.inputs.get(0) {
-                                            Some(v.clone())
-                                        } else {
-                                            None
-                                        }
-                                    } else {
-                                        None
-                                    }
-                                })
-                                .last();
-                            if let Some(last) = last {
-                                for i in 0..self.playback.len() {
-                                    if self.playback[i].stream.first_video() == last {
-                                        self.playback[i]
-                                            .stream
-                                            .set_field(StreamSettingsField::ExactSec, 0.01);
-                                        break;
-                                    }
-                                }
-                            }
+                            self.playback[self.active_idx]
+                                .stream
+                                .set_field(StreamSettingsField::ExactSec, 0.01);
                         }
                         // PLAYBACK MODE
                         KeyEvent {
@@ -1681,6 +1663,34 @@ impl AllSettings {
         Ok(())
     }
 
+    pub fn find_seekable_vid<S: AsRef<str>>(
+        mix_configs: &HashMap<String, MixConfig>,
+        root: S,
+    ) -> Option<String> {
+        let mut seen = HashSet::new();
+        let mut todo = VecDeque::new();
+        if let Some(mix_config) = mix_configs.get(root.as_ref()) {
+            todo.push_back(mix_config);
+        }
+        while let Some(curr) = todo.pop_front() {
+            seen.insert(curr.mix.name.clone());
+            if let Some(MixInput::Video(vid)) = curr.mix.inputs.get(0) {
+                return Some(vid.clone());
+            }
+
+            for input in &curr.mix.inputs {
+                if let MixInput::Mixed(mix_name) = input {
+                    if !seen.contains(mix_name) {
+                        if let Some(mix_config) = mix_configs.get(mix_name) {
+                            todo.push_back(mix_config);
+                        }
+                    }
+                }
+            }
+        }
+        None
+    }
+
     pub fn adjust(&mut self, kn: Knob, shift: bool, inc: f64) {
         let playback = &mut self.playback[self.active_idx];
         let inc = if shift { inc * 10.0 } else { inc };
@@ -1900,11 +1910,11 @@ where
 
 #[macro_export]
 macro_rules! beat_time_boilerplate {
-    ( $all_settings:expr, $midi_event:expr, $bg_name:expr, $combo_name:expr, $time_codes:expr) => {
-        static BG_IDX: std::sync::LazyLock<Option<usize>> = std::sync::LazyLock::new(|| {
+    ( $all_settings:expr, $midi_event:expr, $pb_name:expr, $time_codes:expr) => {
+        static PB_IDX: std::sync::LazyLock<Option<usize>> = std::sync::LazyLock::new(|| {
             let mut idx = None;
             for i in 0..PLAYBACK_NAMES.len() {
-                if PLAYBACK_NAMES[i] == $bg_name {
+                if PLAYBACK_NAMES[i] == $pb_name {
                     idx.replace(i);
                     break;
                 }
@@ -1912,29 +1922,14 @@ macro_rules! beat_time_boilerplate {
             idx
         });
 
-        static COMBO_IDX: std::sync::LazyLock<Option<usize>> = std::sync::LazyLock::new(|| {
-            let mut idx = None;
-            for i in 0..PLAYBACK_NAMES.len() {
-                if PLAYBACK_NAMES[i] == $combo_name {
-                    idx.replace(i);
-                    break;
-                }
-            }
-            idx
-        });
-
-        if BG_IDX.is_none() || COMBO_IDX.is_none() {
+        if PB_IDX.is_none() {
             return;
         }
 
         static TIME_IDX: std::sync::LazyLock<Mutex<std::cell::RefCell<usize>>> =
             std::sync::LazyLock::new(|| Mutex::new(std::cell::RefCell::new(0)));
-        if let (Some(bg_idx), Some(combo_idx)) = (*BG_IDX, *COMBO_IDX) {
-            if $all_settings.active_idx != bg_idx
-                && $all_settings.display_idx != bg_idx
-                && $all_settings.active_idx != combo_idx
-                && $all_settings.display_idx != combo_idx
-            {
+        if let Some(pb_idx) = *PB_IDX {
+            if $all_settings.active_idx != pb_idx && $all_settings.display_idx != pb_idx {
                 return;
             }
 
@@ -1946,7 +1941,7 @@ macro_rules! beat_time_boilerplate {
                 $midi_event.key,
                 $midi_event.velocity,
             ) {
-                (IAC, 0, MIDI_CONTROL_CHANGE, 0, v) => {
+                (vizwasm::vizconfig::IAC, 0, MIDI_CONTROL_CHANGE, 0, v) => {
                     if v > 10 {
                         let lock = TIME_IDX.lock().unwrap();
                         let mut idx = lock.borrow_mut();
@@ -1956,7 +1951,7 @@ macro_rules! beat_time_boilerplate {
                             next_idx = (next_idx + 1) % $time_codes.len() as u32;
                         }
                         *idx = next_idx as usize;
-                        $all_settings.playback[bg_idx].stream.set_field(
+                        $all_settings.playback[pb_idx].stream.set_field(
                             vizwasm::streamsettings::StreamSettingsField::ExactSec,
                             *$time_codes.get(*idx as usize).unwrap_or(&1.0),
                         );
@@ -1968,12 +1963,12 @@ macro_rules! beat_time_boilerplate {
     };
 }
 
-const IAC: &str = "IAC Driver Bus 1";
-const IAC_GLSL: &str = "iac_driver_bus_1";
-const MFT: &str = "Midi Fighter Twister";
-const MFT_GLSL: &str = "midi_fighter_twister";
-const MPK: &str = "MPK mini 3";
-const MPK_GLSL: &str = "mpk_mini_3";
+pub const IAC: &str = "IAC Driver Bus 1";
+pub const IAC_GLSL: &str = "iac_driver_bus_1";
+pub const MFT: &str = "Midi Fighter Twister";
+pub const MFT_GLSL: &str = "midi_fighter_twister";
+pub const MPK: &str = "MPK mini 3";
+pub const MPK_GLSL: &str = "mpk_mini_3";
 
 const MIDI_DEVICE_VARS: LazyLock<HashMap<String, String>> = LazyLock::new(|| {
     let mut m = HashMap::new();
@@ -2168,6 +2163,12 @@ impl AllSettings {
 
     pub fn log<T: AsRef<str>>(&mut self, line: T) {
         let mut s = line.as_ref().to_string();
+
+        // replace all unicode characters with a placeholder to avoid rendering issues in the log
+        s = s
+            .chars()
+            .map(|c| if c.is_ascii() { c } else { '?' })
+            .collect();
 
         if s.starts_with("gfx_ll>") {
             //filter some of the content

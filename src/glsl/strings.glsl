@@ -100,4 +100,27 @@ int float2txt( float val, out int[10] txt ) {
         len += j;
     }
 }
+
+bool is_cp437_space(uint char) {
+    //CP437 whitespace characters
+    return char == 0x00 
+      || char == 0x20
+      || char == 0xFF;
+}
+
+bool is_ascii_space(uint char) {
+    //ASCII whitespace characters
+    return char == 0x00 
+      || char == 0x20
+      || char == 0x09
+      || char == 0x0A
+      || char == 0x0B
+      || char == 0x0C
+      || char == 0x0D;
+}
+
+bool is_ascii_printable(uint char) {
+    //ASCII printable characters
+    return char >= 0x20 && char <= 0x7E;
+}
 #endif

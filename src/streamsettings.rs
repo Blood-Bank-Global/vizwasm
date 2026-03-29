@@ -563,6 +563,7 @@ pub struct StreamIdent {
     pub main_mix: String,
     pub feedback_mix: String,
     pub overlay_mix: String,
+    pub seek_mix: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -727,29 +728,29 @@ impl StreamSettings {
             }
             //Time seek commands
             StreamSettingsField::DeltaSec => {
-                if self.first_video().is_empty() {
+                if self.seek_mix().is_empty() {
                     vec![]
                 } else {
-                    vec![seek!(self.first_video() => self.get_field(field), false)]
+                    vec![seek!(self.seek_mix() => self.get_field(field), false)]
                 }
             }
             StreamSettingsField::Scrub => {
-                if self.first_video().is_empty() {
+                if self.seek_mix().is_empty() {
                     vec![]
                 } else {
                     let value = self.get_field(field);
                     if value >= 0.0 {
-                        vec![seek!(self.first_video() => value, false)]
+                        vec![seek!(self.seek_mix() => value, false)]
                     } else {
-                        vec![seek!(self.first_video() => value - 0.1, false)]
+                        vec![seek!(self.seek_mix() => value - 0.1, false)]
                     }
                 }
             }
             StreamSettingsField::ExactSec => {
-                if self.first_video().is_empty() {
+                if self.seek_mix().is_empty() {
                     vec![]
                 } else {
-                    vec![seek!(self.first_video() => self.get_field(field), true)]
+                    vec![seek!(self.seek_mix() => self.get_field(field), true)]
                 }
             }
             StreamSettingsField::UsrVar => {
@@ -843,6 +844,9 @@ impl StreamSettings {
     pub fn overlay_mix(&self) -> String {
         self.ident.overlay_mix.clone()
     }
+    pub fn seek_mix(&self) -> String {
+        self.ident.seek_mix.clone()
+    }
     pub fn reset(&mut self) {
         *self = Self::new(StreamIdent {
             name: self.ident.name.clone(),
@@ -851,6 +855,7 @@ impl StreamSettings {
             main_mix: self.main_mix(),
             feedback_mix: self.feedback_mix(),
             overlay_mix: self.overlay_mix(),
+            seek_mix: self.ident.seek_mix.clone(),
         });
     }
 
