@@ -2680,7 +2680,6 @@ macro_rules! watch_text_for_display {
         if $settings.is_playback_reset($playback) {
             entry.reset();
         }
-        eprintln!("watch_text_for_display! refreshing {} {:#?}", $path, entry);
 
         if entry.refresh() {
             DisplayText::from(entry.data()).get_specs($target, $text_var, $starts_var, $lens_var)
