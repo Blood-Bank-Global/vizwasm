@@ -8,7 +8,9 @@ use sdlrig::{
 };
 
 use serde::{Deserialize, Serialize};
+use std::cell::RefCell;
 use std::collections::{HashMap, HashSet, VecDeque};
+use std::path::{Path, PathBuf};
 use std::sync::{LazyLock, Mutex};
 use std::{error::Error, i64, io::Write};
 
@@ -1904,6 +1906,15 @@ impl AllSettings {
         }
         specs
     }
+
+    pub fn is_playback_reset<S: AsRef<str>>(&self, name: S) -> bool {
+        self.playback
+            .iter()
+            .enumerate()
+            .find(|(_, p)| p.stream.ident.name == name.as_ref())
+            .map(|(i, _)| self.initial_reset_complete[i])
+            .unwrap_or(false)
+    }
 }
 
 pub fn time_code_2_float<T>(tc: T) -> f64
@@ -2255,39 +2266,24 @@ impl AllSettings {
     }
 }
 
-/*************
-* Example
-*
-*   let reloaded = reg_events
-       .iter()
-       .any(|e| matches!(e, GfxEvent::ReloadEvent {}));
-
-   static LAST_LOAD: Mutex<RefCell<u64>> = Mutex::new(RefCell::new(0));
-   let lock = LAST_LOAD.lock().expect("LAST_LOAD mutex corrupted");
-   let mut last_load = lock.borrow_mut();
-
-   if reloaded {
-       *last_load = 0;
-   }
-
-   if let Some((dino_display_text, next_load)) =
-       read_file_if_newer(format!("/tmp/viz/dino_frame.txt"), *last_load)
-   {
-       specs.extend(dino_display_text.get_specs(
-           "dino_glitch_mix",
-           "dino_frame",
-           "dino_frame_starts",
-           "dino_frame_lens",
-       ));
-       *last_load = next_load;
-   }
-*
-*/
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Hash, Default)]
 pub struct DisplayText {
     pub chars: Vec<u32>,
     pub lens: Vec<u32>,
     pub starts: Vec<u32>,
+}
+
+impl<S: AsRef<str>> From<S> for DisplayText {
+    fn from(s: S) -> Self {
+        let mut text = DisplayText::default();
+        for line in s.as_ref().lines() {
+            let as_ints = unicode_to_cp437(line);
+            text.starts.push(text.chars.len() as u32);
+            text.lens.push(as_ints.len() as u32);
+            text.chars.extend(as_ints);
+        }
+        text
+    }
 }
 
 impl DisplayText {
@@ -2321,35 +2317,55 @@ impl DisplayText {
     }
 }
 
-pub fn read_file_if_newer<S: AsRef<str>>(path: S, cmp: u64) -> Option<(DisplayText, u64)> {
-    if let Some(mtime) = std::fs::metadata(path.as_ref())
-        .and_then(|meta| meta.modified())
-        .map(|mtime| {
-            mtime
-                .duration_since(std::time::UNIX_EPOCH)
-                .ok()
-                .map(|d| d.as_secs())
-        })
-        .ok()
-        .flatten()
-    {
-        if mtime <= cmp {
-            return None;
-        }
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TextFileLoader {
+    path: PathBuf,
+    last_loaded: u64,
+    data: String,
+}
 
-        if let Some(data) = std::fs::read_to_string(path.as_ref()).ok() {
-            let mut text = DisplayText::default();
-            for line in data.lines() {
-                let as_ints = unicode_to_cp437(line);
-                text.starts.push(text.chars.len() as u32);
-                text.lens.push(as_ints.len() as u32);
-                text.chars.extend(as_ints);
-            }
-            return Some((text, mtime));
+impl TextFileLoader {
+    pub fn new<P: AsRef<Path>>(path: P) -> Self {
+        Self {
+            path: path.as_ref().into(),
+            last_loaded: 0,
+            data: String::new(),
         }
     }
 
-    None
+    pub fn reset(&mut self) {
+        self.last_loaded = 0;
+        self.data.clear();
+    }
+
+    pub fn refresh(&mut self) -> bool {
+        if let Some(mtime) = std::fs::metadata(&self.path)
+            .and_then(|meta| meta.modified())
+            .map(|mtime| {
+                mtime
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .ok()
+                    .map(|d| d.as_secs())
+            })
+            .ok()
+            .flatten()
+        {
+            if mtime <= self.last_loaded {
+                return false;
+            }
+
+            if let Some(data) = std::fs::read_to_string(&self.path).ok() {
+                self.data = data;
+                self.last_loaded = mtime;
+                return true;
+            }
+        }
+        false
+    }
+
+    pub fn data(&self) -> &str {
+        &self.data
+    }
 }
 
 pub static CP437: LazyLock<HashMap<char, u32>> = LazyLock::new(|| {
@@ -2631,4 +2647,45 @@ pub fn unicode_to_cp437<S: AsRef<str>>(input: S) -> Vec<u32> {
             }
         })
         .collect()
+}
+
+/*************
+* Example
+    specs.extend(watch_text_for_display!(
+        settings,
+        "/tmp/viz/dino_frame.txt",
+        "dino",
+        "dino_glitch_mix",
+        "dino_frame",
+        "dino_frame_starts",
+        "dino_frame_lens"
+    ));
+*
+*/
+
+pub static WATCHERS: LazyLock<Mutex<RefCell<HashMap<String, TextFileLoader>>>> =
+    LazyLock::new(|| Mutex::new(RefCell::new(HashMap::new())));
+
+#[macro_export]
+macro_rules! watch_text_for_display {
+    ($settings:expr, $path:expr, $playback:expr, $target:expr, $text_var:expr, $starts_var:expr, $lens_var:expr) => {{
+        let lock = vizwasm::vizconfig::WATCHERS
+            .lock()
+            .expect("WATCHERS mutex corrupted");
+        let mut map = lock.borrow_mut();
+        let entry = map
+            .entry($path.to_string())
+            .or_insert_with(|| TextFileLoader::new($path));
+
+        if $settings.is_playback_reset($playback) {
+            entry.reset();
+        }
+        eprintln!("watch_text_for_display! refreshing {} {:#?}", $path, entry);
+
+        if entry.refresh() {
+            DisplayText::from(entry.data()).get_specs($target, $text_var, $starts_var, $lens_var)
+        } else {
+            vec![]
+        }
+    }};
 }

@@ -1,5 +1,4 @@
 use std::{
-    cell::RefCell,
     collections::HashMap,
     error::Error,
     sync::{LazyLock, Mutex},
@@ -16,7 +15,8 @@ use sdlrig::{
 use vizwasm::{
     beat_time_boilerplate,
     shaderlookup::include_files,
-    vizconfig::{read_file_if_newer, time_code_2_float, AllSettings, MixConfig},
+    vizconfig::{time_code_2_float, AllSettings, DisplayText, MixConfig, TextFileLoader},
+    watch_text_for_display,
 };
 
 fn main() {}
@@ -293,32 +293,15 @@ pub fn calculate(
     let settings = lock.as_mut();
     let mut specs = vec![];
 
-    static LAST_LOAD: Mutex<RefCell<u64>> = Mutex::new(RefCell::new(0));
-    let lock = LAST_LOAD.lock().expect("LAST_LOAD mutex corrupted");
-    let mut last_load = lock.borrow_mut();
-
-    if settings
-        .playback
-        .iter()
-        .enumerate()
-        .find(|(_, p)| p.stream.ident.name == "dino")
-        .map(|(i, _)| settings.initial_reset_complete[i])
-        .unwrap_or(false)
-    {
-        *last_load = 0;
-    }
-
-    if let Some((dino_display_text, next_load)) =
-        read_file_if_newer(format!("/tmp/viz/dino_frame.txt"), *last_load)
-    {
-        specs.extend(dino_display_text.get_specs(
-            "dino_glitch_mix",
-            "dino_frame",
-            "dino_frame_starts",
-            "dino_frame_lens",
-        ));
-        *last_load = next_load;
-    }
+    specs.extend(watch_text_for_display!(
+        settings,
+        "/tmp/viz/dino_frame.txt",
+        "dino",
+        "dino_glitch_mix",
+        "dino_frame",
+        "dino_frame_starts",
+        "dino_frame_lens"
+    ));
 
     specs.append(&mut settings.update_record_and_get_specs(reg_events, frame, Some(mega_cb))?);
     Ok(specs)
