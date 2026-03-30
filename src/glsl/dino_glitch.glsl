@@ -1,6 +1,6 @@
 #include "utils.glsl"
 #include "font_8x8.glsl"
-
+#include "patch_rototrans.glsl"
 
 //!VAR uint[] dino_frame
 //!VAR uint[] dino_frame_starts
@@ -36,7 +36,18 @@ void pass0(out vec4 color) {
 
     if (pointInRhombus(coord, pip)) {
             vec2 pip_uv = (coord - PIP_OFF) / PIP_SIZE;
-            color = texture(src_tex1, pip_uv);
+            color = patch_rototrans(
+                pip_uv, 
+                src_tex1, 
+                src_tex2, 
+                src_tex3,
+                0.0, 
+                0.1, 
+                0.1, 
+                0.5, 
+                EDGE_MODE_WRAP
+            );
+
     } else {
         vec2 rc = floor(coord/vec2(FONT_W, FONT_H));
         vec2 pos = rc * vec2(FONT_W, FONT_H);
@@ -47,7 +58,7 @@ void pass0(out vec4 color) {
         }
 
         if (multiline_8x8(coord/SCALE, vec2(0,0), dino_frame, dino_frame_starts, dino_frame_lens)) {
-            color = vec4(vec3(0.75), 1.0);
+            color = vec4(vec3(1.0), 1.0);
         }
     }
 

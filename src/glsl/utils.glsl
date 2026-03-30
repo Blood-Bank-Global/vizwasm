@@ -104,8 +104,8 @@ vec4 blend_by_mode(in vec4 below, in vec4 above, in uint kind) {
     return color;
 }
 
-vec3 distort(in vec2 coord, in sampler2D map, in float level) {
-    vec3 delta = texture(map, coord).rgb - 0.5;
+vec3 distort(in vec2 uv, in sampler2D map, in float level) {
+    vec3 delta = texture(map, uv).rgb - 0.5;
 
     if (abs(delta.r) < EPSILON) {
         delta.r = 0.0;

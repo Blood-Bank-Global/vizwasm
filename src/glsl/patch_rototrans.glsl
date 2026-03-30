@@ -2,7 +2,7 @@
 #define PATCH_ROTOTRANS_GLSL
 #include "utils.glsl"
 vec4 patch_rototrans(
-    vec2 coord, 
+    vec2 uv, 
     sampler2D feedback_tex,
     sampler2D distort_x_tex, 
     sampler2D distort_y_tex,
@@ -12,7 +12,7 @@ vec4 patch_rototrans(
     float distort_level, 
     uint distort_edge) {
 
-    vec2 distort_coord = coord;
+    vec2 distort_uv = uv;
     // rotation
     mat2 rot = mat2(
         cos(rotation), -sin(rotation),
@@ -20,12 +20,12 @@ vec4 patch_rototrans(
     );
 
     vec2 center = vec2(0.5, 0.5);
-    distort_coord -= center;
-    distort_coord *= rot;
-    distort_coord += center;
+    distort_uv -= center;
+    distort_uv *= rot;
+    distort_uv += center;
 
-    vec4 distort_dx_combined = vec4(distort_coord.x - my_distort_x) + vec4(distort(distort_coord, distort_x_tex, distort_level), 0.0);
-    vec4 distort_dy_combined = vec4(distort_coord.y - my_distort_y) + vec4(distort(distort_coord, distort_y_tex, distort_level), 0.0);
+    vec4 distort_dx_combined = vec4(distort_uv.x - my_distort_x) + vec4(distort(distort_uv, distort_x_tex, distort_level), 0.0);
+    vec4 distort_dy_combined = vec4(distort_uv.y - my_distort_y) + vec4(distort(distort_uv, distort_y_tex, distort_level), 0.0);
     mat4x2 distort_matrix = mat4x2(
         distort_dx_combined[0], distort_dy_combined[0],
         distort_dx_combined[1], distort_dy_combined[1],
