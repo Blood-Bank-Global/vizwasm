@@ -76,6 +76,149 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
         );
     }
 
+    let brushes: &[&str] = &[
+        "1",
+        "2",
+        "3",
+        "4",
+        "cell1",
+        "cell2",
+        "cell3",
+        "cell4",
+        "cell5",
+        "dither1",
+        "dither10",
+        "dither2",
+        "dither3",
+        "dither4",
+        "dither5",
+        "dither6",
+        "dither7",
+        "dither8",
+        "dither9",
+        "maze1",
+        "maze2",
+        "maze3",
+        "maze4",
+        "maze5",
+        "maze6",
+        "maze7",
+        "maze8",
+        "pattern1",
+        "pattern10",
+        "pattern11",
+        "pattern12",
+        "pattern13",
+        "pattern14",
+        "pattern15",
+        "pattern16",
+        "pattern17",
+        "pattern18",
+        "pattern19",
+        "pattern2",
+        "pattern20",
+        "pattern21",
+        "pattern22",
+        "pattern23",
+        "pattern24",
+        "pattern25",
+        "pattern26",
+        "pattern27",
+        "pattern28",
+        "pattern29",
+        "pattern3",
+        "pattern30",
+        "pattern31",
+        "pattern32",
+        "pattern33",
+        "pattern34",
+        "pattern35",
+        "pattern36",
+        "pattern37",
+        "pattern38",
+        "pattern39",
+        "pattern4",
+        "pattern40",
+        "pattern41",
+        "pattern42",
+        "pattern43",
+        "pattern44",
+        "pattern45",
+        "pattern46",
+        "pattern47",
+        "pattern48",
+        "pattern49",
+        "pattern5",
+        "pattern50",
+        "pattern51",
+        "pattern52",
+        "pattern53",
+        "pattern54",
+        "pattern55",
+        "pattern56",
+        "pattern57",
+        "pattern58",
+        "pattern59",
+        "pattern6",
+        "pattern60",
+        "pattern61",
+        "pattern62",
+        "pattern63",
+        "pattern64",
+        "pattern65",
+        "pattern66",
+        "pattern67",
+        "pattern68",
+        "pattern69",
+        "pattern7",
+        "pattern70",
+        "pattern71",
+        "pattern72",
+        "pattern73",
+        "pattern74",
+        "pattern75",
+        "pattern76",
+        "pattern77",
+        "pattern78",
+        "pattern79",
+        "pattern8",
+        "pattern80",
+        "pattern81",
+        "pattern82",
+        "pattern83",
+        "pattern84",
+        "pattern85",
+        "pattern86",
+        "pattern87",
+        "pattern88",
+        "pattern89",
+        "pattern9",
+        "text1",
+        "text2",
+        "text3",
+        "text4",
+        "texture1",
+        "texture2",
+        "texture3",
+    ];
+    for brush_name in brushes.iter() {
+        vids.push(
+            Vid::builder()
+                .name(format!("brush_{}", brush_name))
+                .path(format!(
+                    "/Users/ttie/Desktop/common_data/brushes/pngs/{}.png",
+                    brush_name
+                ))
+                .resolution((640, 480))
+                .tbq((1, 12800))
+                .pix_fmt("yuv420p")
+                .repeat(true)
+                .realtime(false)
+                .hardware_decode(true)
+                .build(),
+        );
+    }
+
     //Cameras
     // vids.push(
     //     Vid::builder()
@@ -210,7 +353,14 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
             .height(480)
             .shader(include_files(include_str!("../glsl/virtual.glsl")))
             .build(),
-        mix: Mix::builder().name("virtual_mix").no_display(true).build(),
+        mix: Mix::builder()
+            .name("virtual_mix")
+            .mixed("brush_maze1_mix")
+            .mixed("brush_maze2_mix")
+            .mixed("brush_maze3_mix")
+            .mixed("brush_maze4_mix")
+            .no_display(true)
+            .build(),
     });
 
     configs
@@ -313,6 +463,16 @@ pub fn calculate(
         "dino_frame",
         "dino_frame_starts",
         "dino_frame_lens"
+    ));
+
+    specs.extend(watch_text_for_display!(
+        settings,
+        "/tmp/viz/maze.txt",
+        "virtual",
+        "virtual_mix",
+        "maze_txt",
+        "maze_starts",
+        "maze_lens"
     ));
 
     specs.append(&mut settings.update_record_and_get_specs(reg_events, frame, Some(mega_cb))?);
