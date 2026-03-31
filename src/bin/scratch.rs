@@ -118,6 +118,7 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "boxel",
         "dino",
         "dino_glitch",
+        "virtual",
     ]
     .iter()
     .map(|s| s.to_string())
@@ -201,6 +202,17 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
             .no_display(true)
             .build(),
     });
+
+    configs.push(MixConfig {
+        def: VidMixer::builder()
+            .name("virtual_mix")
+            .width(640)
+            .height(480)
+            .shader(include_files(include_str!("../glsl/virtual.glsl")))
+            .build(),
+        mix: Mix::builder().name("virtual_mix").no_display(true).build(),
+    });
+
     configs
 });
 
