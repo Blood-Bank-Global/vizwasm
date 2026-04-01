@@ -355,10 +355,17 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
             .build(),
         mix: Mix::builder()
             .name("virtual_mix")
-            .mixed("brush_maze1_mix")
-            .mixed("brush_maze2_mix")
-            .mixed("brush_maze3_mix")
-            .mixed("brush_maze4_mix")
+            .video("brush_maze1")
+            .video("brush_maze2")
+            .video("brush_maze3")
+            .video("brush_maze4")
+            .video("brush_cell1")
+            .video("brush_cell2")
+            .video("brush_cell3")
+            .video("brush_text1")
+            .video("brush_text2")
+            .video("brush_text3")
+            .video("brush_text4")
             .no_display(true)
             .build(),
     });
