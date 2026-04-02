@@ -219,6 +219,31 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
         );
     }
 
+    let cyber_tiles: &[&str] = &[
+        "pier8x8",
+        "street8x8",
+        "prison8x8",
+        "testing_room8x8",
+        "warehouse8x8",
+    ];
+    for png_name in cyber_tiles.iter() {
+        vids.push(
+            Vid::builder()
+                .name(png_name)
+                .path(format!(
+                    "/Users/ttie/Desktop/common_data/cyberpunk/{}.png",
+                    png_name
+                ))
+                .resolution((640, 480))
+                .tbq((1, 12800))
+                .pix_fmt("yuv420p")
+                .repeat(true)
+                .realtime(false)
+                .hardware_decode(true)
+                .build(),
+        );
+    }
+
     //Cameras
     // vids.push(
     //     Vid::builder()
@@ -262,6 +287,7 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "dino",
         "dino_glitch",
         "virtual",
+        "cyberpunk",
     ]
     .iter()
     .map(|s| s.to_string())
@@ -368,6 +394,30 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
             .video("brush_text4")
             .no_display(true)
             .build(),
+    });
+
+    configs.push(MixConfig {
+        def: VidMixer::builder()
+            .name("cyberpunk_mix")
+            .width(640)
+            .height(480)
+            .shader(include_files(include_str!("../glsl/cyberpunk.glsl")))
+            .build(),
+        mix: Mix::builder()
+            .name("cyberpunk_mix")
+            .video("warehouse8x8")
+            .no_display(true)
+            .build(),
+    });
+
+    configs.push(MixConfig {
+        def: VidMixer::builder()
+            .name("the_gate_mix")
+            .width(640)
+            .height(480)
+            .shader(include_files(include_str!("../glsl/the_gate.glsl")))
+            .build(),
+        mix: Mix::builder().name("the_gate_mix").no_display(true).build(),
     });
 
     configs
@@ -480,6 +530,16 @@ pub fn calculate(
         "maze_txt",
         "maze_starts",
         "maze_lens"
+    ));
+
+    specs.extend(watch_text_for_display!(
+        settings,
+        "/tmp/viz/cyberpunk.txt",
+        "cyberpunk",
+        "cyberpunk_mix",
+        "cyberpunk_txt",
+        "cyberpunk_starts",
+        "cyberpunk_lens"
     ));
 
     specs.append(&mut settings.update_record_and_get_specs(reg_events, frame, Some(mega_cb))?);
