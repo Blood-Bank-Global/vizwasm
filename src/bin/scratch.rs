@@ -28,7 +28,17 @@ static ASSET_PATH: &'static str = "/Users/ttie/Desktop/common_data";
 static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
     let mut vids = vec![];
 
-    let vid640x480: &[&str] = &["spring", "dino", "park_screen"];
+    let vid640x480: &[&str] = &[
+        "spring",
+        "dino",
+        "park_screen",
+        "arch",
+        "bats_cut",
+        "bats_full",
+        "castle_cut",
+        "castle_full",
+        "doorway",
+    ];
     for vid_name in vid640x480.iter() {
         vids.push(
             Vid::builder()
@@ -288,6 +298,7 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "dino_glitch",
         "virtual",
         "cyberpunk",
+        "vampire",
     ]
     .iter()
     .map(|s| s.to_string())
@@ -412,12 +423,21 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
 
     configs.push(MixConfig {
         def: VidMixer::builder()
-            .name("the_gate_mix")
+            .name("vampire_mix")
             .width(640)
             .height(480)
-            .shader(include_files(include_str!("../glsl/the_gate.glsl")))
+            .shader(include_files(include_str!("../glsl/vampire.glsl")))
             .build(),
-        mix: Mix::builder().name("the_gate_mix").no_display(true).build(),
+        mix: Mix::builder()
+            .name("vampire_mix")
+            .video("arch")
+            .video("bats_cut")
+            .video("bats_full")
+            .video("castle_cut")
+            .video("castle_full")
+            .video("doorway")
+            .no_display(true)
+            .build(),
     });
 
     configs
