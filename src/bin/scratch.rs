@@ -38,6 +38,9 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
         "castle_cut",
         "castle_full",
         "doorway",
+        "60s_reel",
+        "60s_title",
+        "60s_glitch",
     ];
     for vid_name in vid640x480.iter() {
         vids.push(
@@ -299,6 +302,7 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "virtual",
         "cyberpunk",
         "vampire",
+        "sixties",
     ]
     .iter()
     .map(|s| s.to_string())
@@ -440,6 +444,21 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
             .build(),
     });
 
+    configs.push(MixConfig {
+        def: VidMixer::builder()
+            .name("sixties_mix")
+            .width(640)
+            .height(480)
+            .shader(include_files(include_str!("../glsl/sixties.glsl")))
+            .build(),
+        mix: Mix::builder()
+            .name("sixties_mix")
+            .video("60s_reel")
+            .video("60s_title")
+            .video("60s_glitch")
+            .no_display(true)
+            .build(),
+    });
     configs
 });
 
@@ -568,6 +587,7 @@ pub fn calculate(
 
 pub fn mega_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
     dino_cb(all_settings, event);
+    sixties_cb(all_settings, event);
 }
 
 pub fn dino_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
@@ -608,4 +628,72 @@ pub fn dino_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
     ];
 
     beat_time_boilerplate!(all_settings, event, "dino_glitch", timing);
+}
+
+pub fn sixties_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
+    let timing = vec![
+        time_code_2_float("00:00:11:26"),
+        time_code_2_float("00:00:16:11"),
+        time_code_2_float("00:00:23:16"),
+        time_code_2_float("00:00:34:03"),
+        time_code_2_float("00:00:36:02"),
+        time_code_2_float("00:00:38:07"),
+        time_code_2_float("00:00:42:19"),
+        time_code_2_float("00:00:44:05"),
+        time_code_2_float("00:00:45:08"),
+        time_code_2_float("00:00:49:10"),
+        time_code_2_float("00:00:55:08"),
+        time_code_2_float("00:00:57:02"),
+        time_code_2_float("00:00:59:02"),
+        time_code_2_float("00:01:00:06"),
+        time_code_2_float("00:01:03:20"),
+        time_code_2_float("00:01:08:00"),
+        time_code_2_float("00:02:07:13"),
+        time_code_2_float("00:02:10:08"),
+        time_code_2_float("00:02:12:02"),
+        time_code_2_float("00:02:19:24"),
+        time_code_2_float("00:02:24:01"),
+        time_code_2_float("00:02:30:20"),
+        time_code_2_float("00:02:35:24"),
+        time_code_2_float("00:02:39:12"),
+        time_code_2_float("00:02:42:05"),
+        time_code_2_float("00:02:44:25"),
+        time_code_2_float("00:02:49:06"),
+        time_code_2_float("00:02:52:24"),
+        time_code_2_float("00:02:57:01"),
+        time_code_2_float("00:03:05:24"),
+        time_code_2_float("00:03:13:24"),
+        time_code_2_float("00:03:28:09"),
+        time_code_2_float("00:04:21:25"),
+        time_code_2_float("00:04:34:00"),
+        time_code_2_float("00:04:53:29"),
+        time_code_2_float("00:04:57:08"),
+        time_code_2_float("00:05:10:06"),
+        time_code_2_float("00:05:15:14"),
+        time_code_2_float("00:05:46:15"),
+        time_code_2_float("00:06:08:01"),
+        time_code_2_float("00:06:13:26"),
+        time_code_2_float("00:06:19:10"),
+        time_code_2_float("00:06:25:16"),
+        time_code_2_float("00:06:38:25"),
+        time_code_2_float("00:06:46:05"),
+        time_code_2_float("00:06:48:11"),
+        time_code_2_float("00:06:50:22"),
+        time_code_2_float("00:06:52:16"),
+        time_code_2_float("00:06:58:09"),
+        time_code_2_float("00:07:04:09"),
+        time_code_2_float("00:07:10:13"),
+        time_code_2_float("00:07:14:06"),
+        time_code_2_float("00:07:28:07"),
+        time_code_2_float("00:07:34:19"),
+        time_code_2_float("00:07:40:05"),
+        time_code_2_float("00:07:44:21"),
+        time_code_2_float("00:07:53:06"),
+        time_code_2_float("00:07:59:24"),
+        time_code_2_float("00:08:03:28"),
+        time_code_2_float("00:08:10:21"),
+        time_code_2_float("00:08:15:24"),
+    ];
+
+    beat_time_boilerplate!(all_settings, event, "sixties", timing);
 }
