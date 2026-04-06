@@ -11,7 +11,7 @@ void pass0(out vec4 color) {
     src_coord = patch_warp_px(
         src_coord,
         vec2(128.0), 
-        (sin(iTime*2.0) + 1.0)/2.0 * 0.5,//cc_iac_driver_bus_1_1_1/127.0,
+        cc_iac_driver_bus_1_1_1 / 127.0,
         iResolution.xy,
         iTime
     );
