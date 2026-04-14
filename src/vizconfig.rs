@@ -1949,6 +1949,17 @@ macro_rules! beat_time_boilerplate {
 
         static TIME_IDX: std::sync::LazyLock<Mutex<std::cell::RefCell<usize>>> =
             std::sync::LazyLock::new(|| Mutex::new(std::cell::RefCell::new(0)));
+
+        static UNIQ_MAP: std::sync::LazyLock<Vec<usize>> = std::sync::LazyLock::new(|| {
+            let mut m = (0..$time_codes.len()).collect::<Vec<usize>>();
+
+            for i in 0..$time_codes.len() {
+                let swap_idx = rand::random::<u32>() % $time_codes.len() as u32;
+                m.swap(i, swap_idx as usize);
+            }
+            m
+        });
+
         if let Some(pb_idx) = *PB_IDX {
             if $all_settings.active_idx != pb_idx && $all_settings.display_idx != pb_idx {
                 return;
@@ -1967,15 +1978,17 @@ macro_rules! beat_time_boilerplate {
                         let lock = TIME_IDX.lock().unwrap();
                         let mut idx = lock.borrow_mut();
 
-                        let mut next_idx = rand::random::<u32>() % $time_codes.len() as u32;
-                        if next_idx == *idx as u32 {
-                            next_idx = (next_idx + 1) % $time_codes.len() as u32;
-                        }
-                        *idx = next_idx as usize;
+                        // let mut next_idx = //rand::random::<u32>() % $time_codes.len() as u32;
+                        // if next_idx == *idx as u32 {
+                        //     next_idx = (next_idx + 1) % $time_codes.len() as u32;
+                        // }
+                        // *idx = next_idx as usize;
                         $all_settings.playback[pb_idx].stream.set_field(
                             vizwasm::streamsettings::StreamSettingsField::ExactSec,
-                            *$time_codes.get(*idx as usize).unwrap_or(&1.0),
+                            *$time_codes.get(UNIQ_MAP[*idx as usize]).unwrap_or(&1.0),
                         );
+
+                        *idx = (*idx + 1) % $time_codes.len();
                     }
                 }
                 _ => (),
