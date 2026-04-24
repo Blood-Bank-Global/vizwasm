@@ -1942,7 +1942,6 @@ macro_rules! beat_time_boilerplate {
             }
             idx
         });
-
         if PB_IDX.is_none() {
             return;
         }
@@ -1964,7 +1963,6 @@ macro_rules! beat_time_boilerplate {
             if $all_settings.active_idx != pb_idx && $all_settings.display_idx != pb_idx {
                 return;
             }
-
             // INTERNAL MATCHING FOR SETTING MODIFICATION
             match (
                 $midi_event.device.as_str(),
@@ -1975,6 +1973,8 @@ macro_rules! beat_time_boilerplate {
             ) {
                 (vizwasm::vizconfig::IAC, 0, MIDI_CONTROL_CHANGE, 0, v) => {
                     if v > 10 {
+                        eprintln!("here: {}", line!());
+
                         let lock = TIME_IDX.lock().unwrap();
                         let mut idx = lock.borrow_mut();
 
