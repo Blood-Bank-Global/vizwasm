@@ -44,6 +44,7 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
         "70s",
         "70s_title",
         "80s_reel",
+        "90s_reel",
     ];
     for vid_name in vid640x480.iter() {
         vids.push(
@@ -308,6 +309,7 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "sixties",
         "seventies",
         "eighties",
+        "nineties",
     ]
     .iter()
     .map(|s| s.to_string())
@@ -495,6 +497,22 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
             .build(),
     });
 
+    configs.push(MixConfig {
+        def: VidMixer::builder()
+            .name("nineties_mix")
+            .width(640)
+            .height(480)
+            .shader(include_files(include_str!("../glsl/nineties.glsl")))
+            .build(),
+        mix: Mix::builder()
+            .name("nineties_mix")
+            .video("90s_reel")
+            .video("brush_maze1")
+            .video("brush_pattern12")
+            .video("brush_cell4")
+            .no_display(true)
+            .build(),
+    });
     configs
 });
 
@@ -622,10 +640,11 @@ pub fn calculate(
 }
 
 pub fn mega_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
-    // dino_cb(all_settings, event);
-    // sixties_cb(all_settings, event);
-    // seventies_cb(all_settings, event);
+    dino_cb(all_settings, event);
+    sixties_cb(all_settings, event);
+    seventies_cb(all_settings, event);
     eighties_cb(all_settings, event);
+    nineties_cb(all_settings, event);
 }
 
 pub fn dino_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
@@ -872,4 +891,10 @@ pub fn eighties_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
     });
 
     beat_time_boilerplate!(all_settings, event, "eighties", TIMING);
+}
+
+pub fn nineties_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
+    static TIMING: LazyLock<Vec<f64>> = LazyLock::new(|| vec![]);
+
+    beat_time_boilerplate!(all_settings, event, "nineties", TIMING);
 }
