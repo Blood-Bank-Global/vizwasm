@@ -2,10 +2,10 @@
 #include "utils.glsl"
 
 #define REGION_SIZE vec2(30.0, 30.0)
-#define DENSITY1 0.05
-#define DENSITY2 0.10
+#define DENSITY1 0.025
+#define DENSITY2 0.15
 #define DENSITY3 0.15
-#define MAX_RADIUS 40.0
+#define MAX_RADIUS 60.0
 
 //!VAR vec2 iResolution1 0.0 0.0
 //!VAR vec2 iResolution2 0.0 0.0
@@ -58,7 +58,7 @@ void pass1(out vec4 color) {
         randf(uint(region.x) * 73856093u ^ uint(region.y) * 19349663u ^ 0x12345678u)/50.0,
         randf(uint(region.x) * 19349663u ^ uint(region.y) * 73856093u ^ 0x87654321u)/50.0
     );
-    if (test.b > 0.5) {
+    if (test.r > 0.5) {
         vec2 scaled = iResolution.xy / iResolution1.xy;
         vec2 scaled_uv = src_uv * scaled * 0.6;
         color = texture(src_tex1, scaled_uv + (iTime * dir));
@@ -66,7 +66,7 @@ void pass1(out vec4 color) {
         vec2 scaled = iResolution.xy / iResolution2.xy;
         vec2 scaled_uv = src_uv * scaled  * 0.5;
         color = texture(src_tex2, scaled_uv + (iTime * dir));
-    } else if (test.r > 0.5) {
+    } else if (test.b > 0.5) {
         vec2 scaled = iResolution.xy / iResolution3.xy;
         vec2 scaled_uv = src_uv * scaled  * 0.5;
         color = texture(src_tex3, scaled_uv + (iTime * dir));

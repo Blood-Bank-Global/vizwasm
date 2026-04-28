@@ -894,7 +894,45 @@ pub fn eighties_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
 }
 
 pub fn nineties_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
-    static TIMING: LazyLock<Vec<f64>> = LazyLock::new(|| vec![]);
+    static TIMING: LazyLock<Vec<f64>> = LazyLock::new(|| {
+        vec![
+            time_code_2_float("00:00:02:02"),
+            time_code_2_float("00:00:58:25"),
+            time_code_2_float("00:01:54:02"),
+            time_code_2_float("00:02:13:05"),
+            time_code_2_float("00:03:22:12"),
+            time_code_2_float("00:04:36:00"),
+            time_code_2_float("00:04:54:09"),
+            time_code_2_float("00:05:16:20"),
+            time_code_2_float("00:05:53:04"),
+            time_code_2_float("00:06:54:21"),
+            time_code_2_float("00:08:34:28"),
+            time_code_2_float("00:08:39:24"),
+            time_code_2_float("00:08:59:19"),
+            time_code_2_float("00:10:37:21"),
+            time_code_2_float("00:11:09:00"),
+            time_code_2_float("00:11:34:26"),
+            time_code_2_float("00:12:25:14"),
+            time_code_2_float("00:14:09:08"),
+            time_code_2_float("00:15:32:13"),
+            time_code_2_float("00:18:38:27"),
+            time_code_2_float("00:19:38:14"),
+            time_code_2_float("00:20:23:18"),
+            time_code_2_float("00:20:46:14"),
+            time_code_2_float("00:23:50:12"),
+            time_code_2_float("00:25:56:16"),
+            time_code_2_float("00:28:36:06"),
+            time_code_2_float("00:31:18:08"),
+            time_code_2_float("00:33:16:08"),
+            time_code_2_float("00:08:59:06"),
+            time_code_2_float("00:10:03:16"),
+            time_code_2_float("00:11:13:14"),
+            time_code_2_float("00:11:53:22"),
+            time_code_2_float("00:14:12:29"),
+            time_code_2_float("00:26:02:21"),
+            time_code_2_float("00:26:56:13"),
+        ]
+    });
 
     beat_time_boilerplate!(all_settings, event, "nineties", TIMING);
 }

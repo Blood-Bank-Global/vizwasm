@@ -1973,8 +1973,6 @@ macro_rules! beat_time_boilerplate {
             ) {
                 (vizwasm::vizconfig::IAC, 0, MIDI_CONTROL_CHANGE, 0, v) => {
                     if v > 10 {
-                        eprintln!("here: {}", line!());
-
                         let lock = TIME_IDX.lock().unwrap();
                         let mut idx = lock.borrow_mut();
 
