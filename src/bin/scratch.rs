@@ -45,6 +45,8 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
         "70s_title",
         "80s_reel",
         "90s_reel",
+        "test",
+        "future",
     ];
     for vid_name in vid640x480.iter() {
         vids.push(
@@ -310,6 +312,7 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "seventies",
         "eighties",
         "nineties",
+        "future",
     ]
     .iter()
     .map(|s| s.to_string())
@@ -510,6 +513,20 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
             .video("brush_maze1")
             .video("brush_pattern12")
             .video("brush_cell4")
+            .no_display(true)
+            .build(),
+    });
+
+    configs.push(MixConfig {
+        def: VidMixer::builder()
+            .name("future_mix")
+            .width(640)
+            .height(480)
+            .shader(include_files(include_str!("../glsl/future.glsl")))
+            .build(),
+        mix: Mix::builder()
+            .name("future_mix")
+            .video("future")
             .no_display(true)
             .build(),
     });
