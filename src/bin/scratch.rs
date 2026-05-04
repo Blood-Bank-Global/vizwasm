@@ -15,7 +15,8 @@ use sdlrig::{
 use vizwasm::{
     beat_time_boilerplate,
     shaderlookup::include_files,
-    vizconfig::{time_code_2_float, AllSettings, DisplayText, MixConfig, TextFileLoader},
+    streamsettings::StreamSettingsField,
+    vizconfig::{self, time_code_2_float, AllSettings, DisplayText, MixConfig, TextFileLoader},
     watch_text_for_display,
 };
 
@@ -652,6 +653,26 @@ pub fn calculate(
         "cyberpunk_lens"
     ));
 
+    specs.extend(watch_text_for_display!(
+        settings,
+        "/tmp/viz/future_dialog.txt",
+        "future",
+        "future_mix",
+        "dialog",
+        "dialog_starts",
+        "dialog_lens"
+    ));
+
+    specs.extend(watch_text_for_display!(
+        settings,
+        "/tmp/viz/future_msg.txt",
+        "future",
+        "future_mix",
+        "msg",
+        "msg_starts",
+        "msg_lens"
+    ));
+
     specs.append(&mut settings.update_record_and_get_specs(reg_events, frame, Some(mega_cb))?);
     Ok(specs)
 }
@@ -662,6 +683,7 @@ pub fn mega_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
     seventies_cb(all_settings, event);
     eighties_cb(all_settings, event);
     nineties_cb(all_settings, event);
+    future_cb(all_settings, event);
 }
 
 pub fn dino_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
@@ -952,4 +974,32 @@ pub fn nineties_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
     });
 
     beat_time_boilerplate!(all_settings, event, "nineties", TIMING);
+}
+
+pub fn future_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
+    let pb_idx = all_settings
+        .playback_names
+        .iter()
+        .position(|s| s == "future");
+
+    if pb_idx.is_none() {
+        return;
+    }
+    let pb_idx = pb_idx.unwrap();
+
+    if all_settings.display_idx != pb_idx && all_settings.active_idx != pb_idx {
+        return;
+    }
+
+    let duration = 11.0 * 60.0; // 11 minutes
+    if matches!(
+        (event.device.as_str(), event.channel, event.kind, event.key),
+        (vizconfig::IAC, 0, MIDI_CONTROL_CHANGE, 0)
+    ) && event.velocity > 10
+    {
+        let seek_target = rand::random::<f64>() * duration;
+        all_settings.playback[pb_idx]
+            .stream
+            .set_field(StreamSettingsField::ExactSec, seek_target);
+    }
 }
