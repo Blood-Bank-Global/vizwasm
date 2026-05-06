@@ -314,6 +314,7 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "eighties",
         "nineties",
         "future",
+        "astral",
     ]
     .iter()
     .map(|s| s.to_string())
@@ -528,6 +529,20 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
         mix: Mix::builder()
             .name("future_mix")
             .video("future")
+            .no_display(true)
+            .build(),
+    });
+
+    configs.push(MixConfig {
+        def: VidMixer::builder()
+            .name("astral_mix")
+            .width(640)
+            .height(480)
+            .shader(include_files(include_str!("../glsl/astral.glsl")))
+            .build(),
+        mix: Mix::builder()
+            .name("astral_mix")
+            .video("brush_pattern66")
             .no_display(true)
             .build(),
     });
