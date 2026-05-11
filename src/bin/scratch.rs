@@ -48,6 +48,7 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
         "90s_reel",
         "test",
         "future",
+        "frog",
     ];
     for vid_name in vid640x480.iter() {
         vids.push(
@@ -316,6 +317,7 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "future",
         "astral",
         "the_hall",
+        "frog_freak",
     ]
     .iter()
     .map(|s| s.to_string())
@@ -559,6 +561,21 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
             .name("the_hall_mix")
             .video("brush_dither2")
             .video("brush_maze2")
+            .no_display(true)
+            .build(),
+    });
+
+    configs.push(MixConfig {
+        def: VidMixer::builder()
+            .name("frog_freak_mix")
+            .width(640)
+            .height(480)
+            .shader(include_files(include_str!("../glsl/frog.glsl")))
+            .build(),
+        mix: Mix::builder()
+            .name("frog_freak_mix")
+            .video("frog")
+            .video("brush_maze1")
             .no_display(true)
             .build(),
     });
