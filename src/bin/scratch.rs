@@ -265,36 +265,36 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
         );
     }
 
-    //Cameras
-    // vids.push(
-    //     Vid::builder()
-    //         .name("front cam")
-    //         .path("MacBook Pro Camera")
-    //         // .path("Logitech BRIO")
-    //         .format("avfoundation")
-    //         .opts(&vec![
-    //             ("pixel_format", "bgr0"),
-    //             ("framerate", "30.0"),
-    //             ("video_size", "1280x720"),
-    //             // ("video_size", "640x360"),
-    //             // ("video_size", "1920x1080"),
-    //             ("fflags", "+nobuffer+flush_packets"),
-    //             ("probesize", "32"),
-    //             ("flags", "low_delay"),
-    //             ("analyzeduration", "0"),
-    //             ("rtbufsize", "5000000"),
-    //         ])
-    //         .resolution((1280, 720))
-    //         // .resolution((640, 360))
-    //         // .resolution((1920, 1080))
-    //         .tbq((1, 1000000))
-    //         .pix_fmt("bgr0")
-    //         .repeat(false)
-    //         .realtime(true)
-    //         .hardware_decode(false)
-    //         .build()
-    //         .into(),
-    // );
+    // Cameras
+    vids.push(
+        Vid::builder()
+            .name("front cam")
+            .path("MacBook Pro Camera")
+            // .path("Logitech BRIO")
+            .format("avfoundation")
+            .opts(&vec![
+                ("pixel_format", "bgr0"),
+                ("framerate", "30.0"),
+                ("video_size", "1280x720"),
+                // ("video_size", "640x360"),
+                // ("video_size", "1920x1080"),
+                ("fflags", "+nobuffer+flush_packets"),
+                ("probesize", "32"),
+                ("flags", "low_delay"),
+                ("analyzeduration", "0"),
+                ("rtbufsize", "5000000"),
+            ])
+            .resolution((1280, 720))
+            // .resolution((640, 360))
+            // .resolution((1920, 1080))
+            .tbq((1, 1000000))
+            .pix_fmt("bgr0")
+            .repeat(false)
+            .realtime(true)
+            .hardware_decode(false)
+            .build()
+            .into(),
+    );
     vids
 });
 
@@ -318,6 +318,7 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "astral",
         "the_hall",
         "frog_freak",
+        "cam_freak",
     ]
     .iter()
     .map(|s| s.to_string())
@@ -576,6 +577,21 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
             .name("frog_freak_mix")
             .video("frog")
             .video("brush_maze1")
+            .no_display(true)
+            .build(),
+    });
+
+    configs.push(MixConfig {
+        def: VidMixer::builder()
+            .name("cam_freak_mix")
+            .width(640)
+            .height(480)
+            .shader(include_files(include_str!("../glsl/frog.glsl")))
+            .build(),
+        mix: Mix::builder()
+            .name("cam_freak_mix")
+            .video("front cam")
+            .video("brush_pattern18")
             .no_display(true)
             .build(),
     });
