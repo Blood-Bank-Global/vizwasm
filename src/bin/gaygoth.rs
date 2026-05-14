@@ -22,34 +22,14 @@ use vizwasm::{
 
 fn main() {}
 
-static STREAM_PATH: &'static str = "/Users/ttie/Desktop/scratch/streams";
+static STREAM_PATH: &'static str = "/Users/ttie/Desktop/GayGoth/streams";
 static TECH_PATH: &'static str = "/Users/ttie/Desktop/tech_streams";
 static ASSET_PATH: &'static str = "/Users/ttie/Desktop/common_data";
 
 static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
     let mut vids = vec![];
 
-    let vid640x480: &[&str] = &[
-        "spring",
-        "dino",
-        "park_screen",
-        "arch",
-        "bats_cut",
-        "bats_full",
-        "castle_cut",
-        "castle_full",
-        "doorway",
-        "60s_reel",
-        "60s_title",
-        "60s_glitch",
-        "70s",
-        "70s_title",
-        "80s_reel",
-        "90s_reel",
-        "test",
-        "future",
-        "frog",
-    ];
+    let vid640x480: &[&str] = &["bats_full", "60s_glitch", "60s_glitch"];
     for vid_name in vid640x480.iter() {
         vids.push(
             Vid::builder()
@@ -81,7 +61,7 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
         );
     }
 
-    let pngs640x480: &[&str] = &["80s_achtung"];
+    let pngs640x480: &[&str] = &[];
     for png_name in pngs640x480.iter() {
         vids.push(
             Vid::builder()
@@ -240,41 +220,18 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
         );
     }
 
-    let cyber_tiles: &[&str] = &[
-        "pier8x8",
-        "street8x8",
-        "prison8x8",
-        "testing_room8x8",
-        "warehouse8x8",
-    ];
-    for png_name in cyber_tiles.iter() {
-        vids.push(
-            Vid::builder()
-                .name(png_name)
-                .path(format!(
-                    "/Users/ttie/Desktop/common_data/cyberpunk/{}.png",
-                    png_name
-                ))
-                .resolution((640, 480))
-                .tbq((1, 12800))
-                .pix_fmt("yuv420p")
-                .repeat(true)
-                .realtime(false)
-                .hardware_decode(true)
-                .build(),
-        );
-    }
-
     // Cameras
     vids.push(
         Vid::builder()
             .name("front cam")
             .path("MacBook Pro Camera")
             // .path("Logitech BRIO")
+            // .path("Logitech StreamCam")
             .format("avfoundation")
             .opts(&vec![
                 ("pixel_format", "bgr0"),
                 ("framerate", "30.0"),
+                // ("video_size", "640x480"),
                 ("video_size", "1280x720"),
                 // ("video_size", "640x360"),
                 // ("video_size", "1920x1080"),
@@ -302,22 +259,9 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
     let names = [
         "blank",
         "demo_fonts",
-        "spring",
         "cp437",
-        "boxel",
-        "dino",
-        "dino_glitch",
-        "virtual",
-        "cyberpunk",
-        "vampire",
-        "sixties",
-        "seventies",
-        "eighties",
-        "nineties",
-        "future",
         "astral",
         "the_hall",
-        "frog_freak",
         "cam_freak",
     ]
     .iter()
@@ -344,19 +288,6 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
                 .build(),
         });
     }
-    configs.push(MixConfig {
-        def: VidMixer::builder()
-            .name("boxel_mix")
-            .width(640)
-            .height(480)
-            .shader(include_files(include_str!("../glsl/boxel.glsl")))
-            .build(),
-        mix: Mix::builder()
-            .name("boxel_mix")
-            .mixed("fluffy_clouds_mix")
-            .no_display(true)
-            .build(),
-    });
 
     configs.push(MixConfig {
         def: VidMixer::builder()
@@ -381,158 +312,6 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
         mix: Mix::builder()
             .name("demo_fonts_mix")
             .mixed("blank_mix")
-            .no_display(true)
-            .build(),
-    });
-
-    configs.push(MixConfig {
-        def: VidMixer::builder()
-            .name("dino_glitch_mix")
-            .width(640)
-            .height(480)
-            .shader(include_files(include_str!("../glsl/dino_glitch.glsl")))
-            .build(),
-        mix: Mix::builder()
-            .name("dino_glitch_mix")
-            .mixed("dino_overlay")
-            .mixed("park_screen_mix")
-            .mixed("distort_digital_white_dx_mix")
-            .mixed("distort_digital_white_dy_mix")
-            .seek_target_hint("dino")
-            .no_display(true)
-            .build(),
-    });
-
-    configs.push(MixConfig {
-        def: VidMixer::builder()
-            .name("virtual_mix")
-            .width(640)
-            .height(480)
-            .shader(include_files(include_str!("../glsl/virtual.glsl")))
-            .build(),
-        mix: Mix::builder()
-            .name("virtual_mix")
-            .video("brush_maze1")
-            .video("brush_maze2")
-            .video("brush_maze3")
-            .video("brush_maze4")
-            .video("brush_cell1")
-            .video("brush_cell2")
-            .video("brush_cell3")
-            .video("brush_text1")
-            .video("brush_text2")
-            .video("brush_text3")
-            .video("brush_text4")
-            .no_display(true)
-            .build(),
-    });
-
-    configs.push(MixConfig {
-        def: VidMixer::builder()
-            .name("cyberpunk_mix")
-            .width(640)
-            .height(480)
-            .shader(include_files(include_str!("../glsl/cyberpunk.glsl")))
-            .build(),
-        mix: Mix::builder()
-            .name("cyberpunk_mix")
-            .video("warehouse8x8")
-            .no_display(true)
-            .build(),
-    });
-
-    configs.push(MixConfig {
-        def: VidMixer::builder()
-            .name("vampire_mix")
-            .width(640)
-            .height(480)
-            .shader(include_files(include_str!("../glsl/vampire.glsl")))
-            .build(),
-        mix: Mix::builder()
-            .name("vampire_mix")
-            .video("arch")
-            .video("bats_cut")
-            .video("bats_full")
-            .video("castle_cut")
-            .video("castle_full")
-            .video("doorway")
-            .no_display(true)
-            .build(),
-    });
-
-    configs.push(MixConfig {
-        def: VidMixer::builder()
-            .name("sixties_mix")
-            .width(640)
-            .height(480)
-            .shader(include_files(include_str!("../glsl/sixties.glsl")))
-            .build(),
-        mix: Mix::builder()
-            .name("sixties_mix")
-            .video("60s_reel")
-            .video("60s_title")
-            .video("60s_glitch")
-            .no_display(true)
-            .build(),
-    });
-
-    configs.push(MixConfig {
-        def: VidMixer::builder()
-            .name("seventies_mix")
-            .width(640)
-            .height(480)
-            .shader(include_files(include_str!("../glsl/seventies.glsl")))
-            .build(),
-        mix: Mix::builder()
-            .name("seventies_mix")
-            .video("70s")
-            .video("70s_title")
-            .no_display(true)
-            .build(),
-    });
-
-    configs.push(MixConfig {
-        def: VidMixer::builder()
-            .name("eighties_mix")
-            .width(640)
-            .height(480)
-            .shader(include_files(include_str!("../glsl/eighties.glsl")))
-            .build(),
-        mix: Mix::builder()
-            .name("eighties_mix")
-            .video("80s_reel")
-            .video("80s_achtung")
-            .no_display(true)
-            .build(),
-    });
-
-    configs.push(MixConfig {
-        def: VidMixer::builder()
-            .name("nineties_mix")
-            .width(640)
-            .height(480)
-            .shader(include_files(include_str!("../glsl/nineties.glsl")))
-            .build(),
-        mix: Mix::builder()
-            .name("nineties_mix")
-            .video("90s_reel")
-            .video("brush_maze1")
-            .video("brush_pattern12")
-            .video("brush_cell4")
-            .no_display(true)
-            .build(),
-    });
-
-    configs.push(MixConfig {
-        def: VidMixer::builder()
-            .name("future_mix")
-            .width(640)
-            .height(480)
-            .shader(include_files(include_str!("../glsl/future.glsl")))
-            .build(),
-        mix: Mix::builder()
-            .name("future_mix")
-            .video("future")
             .no_display(true)
             .build(),
     });
@@ -568,21 +347,6 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
 
     configs.push(MixConfig {
         def: VidMixer::builder()
-            .name("frog_freak_mix")
-            .width(640)
-            .height(480)
-            .shader(include_files(include_str!("../glsl/frog.glsl")))
-            .build(),
-        mix: Mix::builder()
-            .name("frog_freak_mix")
-            .video("frog")
-            .video("brush_maze1")
-            .no_display(true)
-            .build(),
-    });
-
-    configs.push(MixConfig {
-        def: VidMixer::builder()
             .name("cam_freak_mix")
             .width(640)
             .height(480)
@@ -590,7 +354,7 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
             .build(),
         mix: Mix::builder()
             .name("cam_freak_mix")
-            .video("front cam")
+            .video("fluffy_clouds")
             .video("brush_pattern18")
             .no_display(true)
             .build(),

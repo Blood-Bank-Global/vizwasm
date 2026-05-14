@@ -101,6 +101,14 @@ pub enum StreamSettingsField {
     LumaPoint,
     Blur,
     BlurEnable,
+    User0,
+    User1,
+    User2,
+    User3,
+    User4,
+    User5,
+    User6,
+    User7,
 }
 
 pub const ALL_FIELDS: &[StreamSettingsField] = &[
@@ -179,6 +187,14 @@ pub const ALL_FIELDS: &[StreamSettingsField] = &[
     StreamSettingsField::LumaPoint,
     StreamSettingsField::Blur,
     StreamSettingsField::BlurEnable,
+    StreamSettingsField::User0,
+    StreamSettingsField::User1,
+    StreamSettingsField::User2,
+    StreamSettingsField::User3,
+    StreamSettingsField::User4,
+    StreamSettingsField::User5,
+    StreamSettingsField::User6,
+    StreamSettingsField::User7,
 ];
 
 static PROPERTIES: LazyLock<HashMap<StreamSettingsField, StreamSettingsFieldProperties>> =
@@ -524,6 +540,15 @@ static PROPERTIES: LazyLock<HashMap<StreamSettingsField, StreamSettingsFieldProp
         mk!(Blur, 0, 51, 0.0, 100.0, 0.1, 0.0, "blur");
         mk!(BlurEnable, 1, 51, 0.0, 1.0, 1.0, 0.0, "blur_enable");
 
+        mk!(User0, 0, 56, 0.0, 1.0, 0.01, 0.0, "user0");
+        mk!(User1, 0, 57, 0.0, 1.0, 0.01, 0.0, "user1");
+        mk!(User2, 0, 58, 0.0, 1.0, 0.01, 0.0, "user2");
+        mk!(User3, 0, 59, 0.0, 1.0, 0.01, 0.0, "user3");
+        mk!(User4, 0, 60, 0.0, 1.0, 0.01, 0.0, "user4");
+        mk!(User5, 0, 61, 0.0, 1.0, 0.01, 0.0, "user5");
+        mk!(User6, 0, 62, 0.0, 1.0, 0.01, 0.0, "user6");
+        mk!(User7, 0, 63, 0.0, 1.0, 0.01, 0.0, "user7");
+
         internal!(FlashEnable, 0.0, "flash_enable", false);
         internal!(Tween, 0.0);
         internal!(UsrVar, 0.0, "usr_var", false);
@@ -808,6 +833,32 @@ impl StreamSettings {
             | StreamSettingsField::OverlayScan
             | StreamSettingsField::ScanlinesScan
             | StreamSettingsField::FeedbackModeScan => vec![],
+
+            StreamSettingsField::User0
+            | StreamSettingsField::User1
+            | StreamSettingsField::User2
+            | StreamSettingsField::User3
+            | StreamSettingsField::User4
+            | StreamSettingsField::User5
+            | StreamSettingsField::User6
+            | StreamSettingsField::User7 => {
+                if let Some(props) = PROPERTIES.get(field) {
+                    if let Some(name) = &props.label {
+                        let value = self.get_field(field);
+                        vec![SendCmd::builder()
+                            .mix(self.input_mix())
+                            .name(name)
+                            .value(SendValue::Float(value as f32))
+                            .build()
+                            .into()]
+                    } else {
+                        vec![]
+                    }
+                } else {
+                    vec![]
+                }
+            }
+
             // Fall down to send float
             _ => {
                 if let Some(props) = PROPERTIES.get(field) {
