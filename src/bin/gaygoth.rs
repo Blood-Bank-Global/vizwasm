@@ -13,11 +13,8 @@ use sdlrig::{
 };
 
 use vizwasm::{
-    beat_time_boilerplate,
     shaderlookup::include_files,
-    streamsettings::StreamSettingsField,
-    vizconfig::{self, time_code_2_float, AllSettings, DisplayText, MixConfig, TextFileLoader},
-    watch_text_for_display,
+    vizconfig::{AllSettings, MixConfig, IAC},
 };
 
 fn main() {}
@@ -29,7 +26,7 @@ static ASSET_PATH: &'static str = "/Users/ttie/Desktop/common_data";
 static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
     let mut vids = vec![];
 
-    let vid640x480: &[&str] = &["bats_full", "60s_glitch", "60s_glitch"];
+    let vid640x480: &[&str] = &["all_gay", "bats_full", "60s_glitch", "60s_glitch"];
     for vid_name in vid640x480.iter() {
         vids.push(
             Vid::builder()
@@ -262,7 +259,10 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "cp437",
         "astral",
         "the_hall",
+        "freak",
         "cam_freak",
+        "fluffy_clouds",
+        "all_gay",
     ]
     .iter()
     .map(|s| s.to_string())
@@ -347,6 +347,21 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
 
     configs.push(MixConfig {
         def: VidMixer::builder()
+            .name("freak_mix")
+            .width(640)
+            .height(480)
+            .shader(include_files(include_str!("../glsl/frog.glsl")))
+            .build(),
+        mix: Mix::builder()
+            .name("freak_mix")
+            .video("fluffy_clouds")
+            .video("brush_dither5")
+            .no_display(true)
+            .build(),
+    });
+
+    configs.push(MixConfig {
+        def: VidMixer::builder()
             .name("cam_freak_mix")
             .width(640)
             .height(480)
@@ -354,8 +369,8 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
             .build(),
         mix: Mix::builder()
             .name("cam_freak_mix")
-            .video("fluffy_clouds")
-            .video("brush_pattern18")
+            .video("front cam")
+            .video("brush_dither5")
             .no_display(true)
             .build(),
     });
@@ -451,383 +466,34 @@ pub fn calculate(
     let settings = lock.as_mut();
     let mut specs = vec![];
 
-    specs.extend(watch_text_for_display!(
-        settings,
-        "/tmp/viz/dino_frame.txt",
-        "dino",
-        "dino_glitch_mix",
-        "dino_frame",
-        "dino_frame_starts",
-        "dino_frame_lens"
-    ));
-
-    specs.extend(watch_text_for_display!(
-        settings,
-        "/tmp/viz/maze.txt",
-        "virtual",
-        "virtual_mix",
-        "maze_txt",
-        "maze_starts",
-        "maze_lens"
-    ));
-
-    specs.extend(watch_text_for_display!(
-        settings,
-        "/tmp/viz/cyberpunk.txt",
-        "cyberpunk",
-        "cyberpunk_mix",
-        "cyberpunk_txt",
-        "cyberpunk_starts",
-        "cyberpunk_lens"
-    ));
-
-    specs.extend(watch_text_for_display!(
-        settings,
-        "/tmp/viz/future_dialog.txt",
-        "future",
-        "future_mix",
-        "dialog",
-        "dialog_starts",
-        "dialog_lens"
-    ));
-
-    specs.extend(watch_text_for_display!(
-        settings,
-        "/tmp/viz/future_msg.txt",
-        "future",
-        "future_mix",
-        "msg",
-        "msg_starts",
-        "msg_lens"
-    ));
-
     specs.append(&mut settings.update_record_and_get_specs(reg_events, frame, Some(mega_cb))?);
     Ok(specs)
 }
 
-pub fn mega_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
-    dino_cb(all_settings, event);
-    sixties_cb(all_settings, event);
-    seventies_cb(all_settings, event);
-    eighties_cb(all_settings, event);
-    nineties_cb(all_settings, event);
-    future_cb(all_settings, event);
+pub fn mega_cb(
+    #[allow(unused)] all_settings: &mut AllSettings,
+    #[allow(unused)] event: &MidiEvent,
+) {
+    all_gay(all_settings, event);
 }
 
-pub fn dino_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
-    static TIMING: LazyLock<Vec<f64>> = LazyLock::new(|| {
-        vec![
-            time_code_2_float("00:00:00:01"),
-            time_code_2_float("00:00:05:16"),
-            time_code_2_float("00:00:12:13"),
-            time_code_2_float("00:00:16:04"),
-            time_code_2_float("00:00:22:00"),
-            time_code_2_float("00:00:25:13"),
-            time_code_2_float("00:00:38:01"),
-            time_code_2_float("00:00:47:00"),
-            time_code_2_float("00:00:51:18"),
-            time_code_2_float("00:00:56:16"),
-            time_code_2_float("00:01:04:02"),
-            time_code_2_float("00:01:07:00"),
-            time_code_2_float("00:01:13:24"),
-            time_code_2_float("00:01:16:00"),
-            time_code_2_float("00:01:20:24"),
-            time_code_2_float("00:01:23:04"),
-            time_code_2_float("00:01:26:21"),
-            time_code_2_float("00:01:32:22"),
-            time_code_2_float("00:01:36:09"),
-            time_code_2_float("00:01:38:18"),
-            time_code_2_float("00:01:41:02"),
-            time_code_2_float("00:01:43:04"),
-            time_code_2_float("00:01:44:29"),
-            time_code_2_float("00:01:51:06"),
-            time_code_2_float("00:01:54:26"),
-            time_code_2_float("00:01:57:22"),
-            time_code_2_float("00:02:02:26"),
-            time_code_2_float("00:02:03:28"),
-            time_code_2_float("00:02:07:16"),
-            time_code_2_float("00:02:09:05"),
-            time_code_2_float("00:02:12:05"),
-            time_code_2_float("00:02:18:11"),
-            time_code_2_float("00:02:35:14"),
-        ]
-    });
-
-    beat_time_boilerplate!(all_settings, event, "dino_glitch", TIMING);
-}
-
-pub fn sixties_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
-    static TIMING: LazyLock<Vec<f64>> = LazyLock::new(|| {
-        vec![
-            time_code_2_float("00:00:11:26"),
-            time_code_2_float("00:00:16:11"),
-            time_code_2_float("00:00:23:16"),
-            time_code_2_float("00:00:34:03"),
-            time_code_2_float("00:00:36:02"),
-            time_code_2_float("00:00:38:07"),
-            time_code_2_float("00:00:42:19"),
-            time_code_2_float("00:00:44:05"),
-            time_code_2_float("00:00:45:08"),
-            time_code_2_float("00:00:49:10"),
-            time_code_2_float("00:00:55:08"),
-            time_code_2_float("00:00:57:02"),
-            time_code_2_float("00:00:59:02"),
-            time_code_2_float("00:01:00:06"),
-            time_code_2_float("00:01:03:20"),
-            time_code_2_float("00:01:08:00"),
-            time_code_2_float("00:02:07:13"),
-            time_code_2_float("00:02:10:08"),
-            time_code_2_float("00:02:12:02"),
-            time_code_2_float("00:02:19:24"),
-            time_code_2_float("00:02:24:01"),
-            time_code_2_float("00:02:30:20"),
-            time_code_2_float("00:02:35:24"),
-            time_code_2_float("00:02:39:12"),
-            time_code_2_float("00:02:42:05"),
-            time_code_2_float("00:02:44:25"),
-            time_code_2_float("00:02:49:06"),
-            time_code_2_float("00:02:52:24"),
-            time_code_2_float("00:02:57:01"),
-            time_code_2_float("00:03:05:24"),
-            time_code_2_float("00:03:13:24"),
-            time_code_2_float("00:03:28:09"),
-            time_code_2_float("00:04:21:25"),
-            time_code_2_float("00:04:34:00"),
-            time_code_2_float("00:04:53:29"),
-            time_code_2_float("00:04:57:08"),
-            time_code_2_float("00:05:10:06"),
-            time_code_2_float("00:05:15:14"),
-            time_code_2_float("00:05:46:15"),
-            time_code_2_float("00:06:08:01"),
-            time_code_2_float("00:06:13:26"),
-            time_code_2_float("00:06:19:10"),
-            time_code_2_float("00:06:25:16"),
-            time_code_2_float("00:06:38:25"),
-            time_code_2_float("00:06:46:05"),
-            time_code_2_float("00:06:48:11"),
-            time_code_2_float("00:06:50:22"),
-            time_code_2_float("00:06:52:16"),
-            time_code_2_float("00:06:58:09"),
-            time_code_2_float("00:07:04:09"),
-            time_code_2_float("00:07:10:13"),
-            time_code_2_float("00:07:14:06"),
-            time_code_2_float("00:07:28:07"),
-            time_code_2_float("00:07:34:19"),
-            time_code_2_float("00:07:40:05"),
-            time_code_2_float("00:07:44:21"),
-            time_code_2_float("00:07:53:06"),
-            time_code_2_float("00:07:59:24"),
-            time_code_2_float("00:08:03:28"),
-            time_code_2_float("00:08:10:21"),
-            time_code_2_float("00:08:15:24"),
-        ]
-    });
-
-    beat_time_boilerplate!(all_settings, event, "sixties", TIMING);
-}
-
-pub fn seventies_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
-    static TIMING: LazyLock<Vec<f64>> = LazyLock::new(|| {
-        vec![
-            time_code_2_float("00:00:04:08"),
-            time_code_2_float("00:04:20:08"),
-            time_code_2_float("00:04:45:26"),
-            time_code_2_float("00:05:28:16"),
-            time_code_2_float("00:09:14:20"),
-            time_code_2_float("00:10:01:18"),
-            time_code_2_float("00:10:27:06"),
-            time_code_2_float("00:12:13:26"),
-            time_code_2_float("00:14:04:24"),
-            time_code_2_float("00:17:40:22"),
-            time_code_2_float("00:18:46:12"),
-            time_code_2_float("00:19:41:26"),
-            time_code_2_float("00:20:37:10"),
-            time_code_2_float("00:24:32:00"),
-            time_code_2_float("00:31:08:24"),
-            time_code_2_float("00:31:38:20"),
-            time_code_2_float("00:33:16:24"),
-            time_code_2_float("00:34:50:20"),
-            time_code_2_float("00:36:07:14"),
-            time_code_2_float("00:39:44:15"),
-            time_code_2_float("00:42:26:28"),
-            time_code_2_float("00:42:38:01"),
-            time_code_2_float("00:43:09:26"),
-            time_code_2_float("00:44:01:02"),
-            time_code_2_float("00:44:25:07"),
-            time_code_2_float("00:47:04:16"),
-            time_code_2_float("00:50:42:18"),
-            time_code_2_float("00:50:46:02"),
-            time_code_2_float("00:50:50:20"),
-            time_code_2_float("00:55:26:20"),
-            time_code_2_float("00:55:33:21"),
-            time_code_2_float("00:56:00:04"),
-            time_code_2_float("00:03:00:08"),
-            time_code_2_float("00:03:52:26"),
-            time_code_2_float("00:04:05:27"),
-            time_code_2_float("00:04:48:09"),
-            time_code_2_float("00:05:05:18"),
-            time_code_2_float("00:05:08:12"),
-            time_code_2_float("00:06:19:21"),
-            time_code_2_float("00:06:31:21"),
-            time_code_2_float("00:06:34:16"),
-            time_code_2_float("00:07:11:04"),
-            time_code_2_float("00:07:45:26"),
-            time_code_2_float("00:08:17:06"),
-        ]
-    });
-
-    beat_time_boilerplate!(all_settings, event, "seventies", TIMING);
-}
-
-pub fn eighties_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
-    static TIMING: LazyLock<Vec<f64>> = LazyLock::new(|| {
-        vec![
-            time_code_2_float("00:00:00:05"),
-            time_code_2_float("00:00:09:12"),
-            time_code_2_float("00:00:15:02"),
-            time_code_2_float("00:00:18:20"),
-            time_code_2_float("00:00:23:21"),
-            time_code_2_float("00:00:30:16"),
-            time_code_2_float("00:00:41:13"),
-            time_code_2_float("00:01:02:04"),
-            time_code_2_float("00:01:10:14"),
-            time_code_2_float("00:01:19:03"),
-            time_code_2_float("00:01:24:13"),
-            time_code_2_float("00:01:31:23"),
-            time_code_2_float("00:01:38:11"),
-            time_code_2_float("00:01:44:06"),
-            time_code_2_float("00:01:48:12"),
-            time_code_2_float("00:01:50:15"),
-            time_code_2_float("00:01:52:19"),
-            time_code_2_float("00:01:55:03"),
-            time_code_2_float("00:02:00:01"),
-            time_code_2_float("00:02:10:20"),
-            time_code_2_float("00:02:17:04"),
-            time_code_2_float("00:02:21:08"),
-            time_code_2_float("00:02:23:22"),
-            time_code_2_float("00:02:26:23"),
-            time_code_2_float("00:02:31:23"),
-            time_code_2_float("00:02:37:23"),
-            time_code_2_float("00:02:55:23"),
-            time_code_2_float("00:03:03:03"),
-            time_code_2_float("00:03:09:04"),
-            time_code_2_float("00:03:33:11"),
-            time_code_2_float("00:03:45:13"),
-            time_code_2_float("00:04:02:08"),
-            time_code_2_float("00:04:10:09"),
-            time_code_2_float("00:04:21:21"),
-            time_code_2_float("00:04:36:20"),
-            time_code_2_float("00:04:51:01"),
-            time_code_2_float("00:04:53:06"),
-            time_code_2_float("00:05:03:22"),
-            time_code_2_float("00:05:15:12"),
-            time_code_2_float("00:05:21:21"),
-            time_code_2_float("00:05:28:01"),
-            time_code_2_float("00:05:46:13"),
-            time_code_2_float("00:05:54:05"),
-            time_code_2_float("00:06:01:06"),
-            time_code_2_float("00:06:14:06"),
-            time_code_2_float("00:06:22:06"),
-            time_code_2_float("00:06:26:06"),
-            time_code_2_float("00:06:28:09"),
-            time_code_2_float("00:06:34:11"),
-            time_code_2_float("00:06:52:10"),
-            time_code_2_float("00:07:01:20"),
-            time_code_2_float("00:07:07:11"),
-            time_code_2_float("00:07:15:05"),
-            time_code_2_float("00:07:17:20"),
-            time_code_2_float("00:07:24:20"),
-            time_code_2_float("00:07:27:12"),
-            time_code_2_float("00:07:32:16"),
-            time_code_2_float("00:07:35:09"),
-            time_code_2_float("00:07:40:16"),
-            time_code_2_float("00:07:41:21"),
-            time_code_2_float("00:07:43:10"),
-            time_code_2_float("00:07:44:19"),
-            time_code_2_float("00:07:45:23"),
-            time_code_2_float("00:07:50:16"),
-            time_code_2_float("00:07:52:05"),
-            time_code_2_float("00:07:57:22"),
-            time_code_2_float("00:08:01:22"),
-            time_code_2_float("00:08:08:15"),
-            time_code_2_float("00:08:11:18"),
-            time_code_2_float("00:08:42:16"),
-            time_code_2_float("00:08:44:04"),
-            time_code_2_float("00:08:48:15"),
-        ]
-    });
-
-    beat_time_boilerplate!(all_settings, event, "eighties", TIMING);
-}
-
-pub fn nineties_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
-    static TIMING: LazyLock<Vec<f64>> = LazyLock::new(|| {
-        vec![
-            time_code_2_float("00:00:02:02"),
-            time_code_2_float("00:00:58:25"),
-            time_code_2_float("00:01:54:02"),
-            time_code_2_float("00:02:13:05"),
-            time_code_2_float("00:03:22:12"),
-            time_code_2_float("00:04:36:00"),
-            time_code_2_float("00:04:54:09"),
-            time_code_2_float("00:05:16:20"),
-            time_code_2_float("00:05:53:04"),
-            time_code_2_float("00:06:54:21"),
-            time_code_2_float("00:08:34:28"),
-            time_code_2_float("00:08:39:24"),
-            time_code_2_float("00:08:59:19"),
-            time_code_2_float("00:10:37:21"),
-            time_code_2_float("00:11:09:00"),
-            time_code_2_float("00:11:34:26"),
-            time_code_2_float("00:12:25:14"),
-            time_code_2_float("00:14:09:08"),
-            time_code_2_float("00:15:32:13"),
-            time_code_2_float("00:18:38:27"),
-            time_code_2_float("00:19:38:14"),
-            time_code_2_float("00:20:23:18"),
-            time_code_2_float("00:20:46:14"),
-            time_code_2_float("00:23:50:12"),
-            time_code_2_float("00:25:56:16"),
-            time_code_2_float("00:28:36:06"),
-            time_code_2_float("00:31:18:08"),
-            time_code_2_float("00:33:16:08"),
-            time_code_2_float("00:08:59:06"),
-            time_code_2_float("00:10:03:16"),
-            time_code_2_float("00:11:13:14"),
-            time_code_2_float("00:11:53:22"),
-            time_code_2_float("00:14:12:29"),
-            time_code_2_float("00:26:02:21"),
-            time_code_2_float("00:26:56:13"),
-        ]
-    });
-
-    beat_time_boilerplate!(all_settings, event, "nineties", TIMING);
-}
-
-pub fn future_cb(all_settings: &mut AllSettings, event: &MidiEvent) {
-    let pb_idx = all_settings
-        .playback_names
-        .iter()
-        .position(|s| s == "future");
-
-    if pb_idx.is_none() {
-        return;
-    }
-    let pb_idx = pb_idx.unwrap();
-
-    if all_settings.display_idx != pb_idx && all_settings.active_idx != pb_idx {
-        return;
-    }
-
-    let duration = 11.0 * 60.0; // 11 minutes
-    if matches!(
-        (event.device.as_str(), event.channel, event.kind, event.key),
-        (vizconfig::IAC, 0, MIDI_CONTROL_CHANGE, 0)
-    ) && event.velocity > 10
-    {
-        let seek_target = rand::random::<f64>() * duration;
-        all_settings.playback[pb_idx]
-            .stream
-            .set_field(StreamSettingsField::ExactSec, seek_target);
+pub fn all_gay(
+    #[allow(unused)] all_settings: &mut AllSettings,
+    #[allow(unused)] event: &MidiEvent,
+) {
+    if event.channel == 0 && event.device == IAC && event.key == 0 && event.velocity >= 10 {
+        if let Some((idx, _)) = all_settings
+            .playback_names
+            .iter()
+            .enumerate()
+            .find(|(_, name)| *name == "all_gay")
+        {
+            if idx == all_settings.active_idx || idx == all_settings.display_idx {
+                let t = rand::random::<f64>() * 2720.0;
+                all_settings.playback[idx]
+                    .stream
+                    .set_field(vizwasm::streamsettings::StreamSettingsField::ExactSec, t);
+            }
+        }
     }
 }
