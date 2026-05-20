@@ -18,14 +18,14 @@ void pass0(out vec4 color) {
 
 void pass1(out vec4 color) {
     color = vec4(0.0, 0.0, 0.0, 1.0);
-    if (patch_edge_detect(pass_uv0, pass_tex0, iResolution.xy, 50)) {
+    if (patch_edge_detect(src_uv, pass_tex0, iResolution.xy, 50)) {
         color = vec4(1.0);
     }
 }
 
 void pass2(out vec4 color) {
-    color = texture(pass_tex1, pass_uv1);
-    vec2 coord = pass_uv1.xy * iResolution.xy;
+    color = texture(pass_tex1, src_uv);
+    vec2 coord = src_uv.xy * iResolution.xy;
     vec2 pos = floor((coord) / vec2(FONT_W, FONT_H)) * vec2(FONT_W, FONT_H);
     color = vec4(0.0, 0.0, 0.0, 1.0);
     uint count = 0;
@@ -43,9 +43,9 @@ void pass2(out vec4 color) {
 }
 
 void pass3(out vec4 color) {
-    color = texture(pass_tex0, pass_uv0);
+    color = texture(pass_tex0, src_uv);
     vec3 orig = color.rgb;
-    vec2 coord = pass_uv0.xy * iResolution.xy;
+    vec2 coord = src_uv.xy * iResolution.xy;
     vec2 pos = floor((coord) / vec2(FONT_W, FONT_H)) * vec2(FONT_W, FONT_H);
 
     bool bypass = randf(uint(iTime * 3) ^ uint(pos.x * 117) ^ uint(pos.y * 311)) > (127.0 - float(cc_iac_driver_bus_1_0_0))/127.0;

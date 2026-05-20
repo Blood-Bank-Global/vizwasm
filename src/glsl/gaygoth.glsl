@@ -29,6 +29,15 @@ bool beat4x4(uint pattern, float bpm, float t) {
     return (pattern & (1 << step)) != 0;
 }
 
+void pass0(out vec4 color) {
+    color = texture(src_tex0, src_uv);
+}
+
+void pass1(out vec4 color) {
+    color = texture(src_tex0, src_uv);
+}
+
+/***
 // ZOOM
 //!STR foo "hello world"
 void pass0(out vec4 color) {
@@ -126,3 +135,4 @@ void pass6(out vec4 color) {
         iTime
     );    
 }
+***/

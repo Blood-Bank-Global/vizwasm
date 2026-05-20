@@ -26,7 +26,38 @@ static ASSET_PATH: &'static str = "/Users/ttie/Desktop/common_data";
 static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
     let mut vids = vec![];
 
-    let vid640x480: &[&str] = &["all_gay", "bats_full", "60s_glitch", "60s_glitch"];
+    let vid640x480: &[&str] = &[
+        "60s_glitch",
+        "90s_glitch",
+        "bit_blood",
+        "bit_dance",
+        "bit_disco_ball",
+        "hunger_club",
+        "hunger_sizzle",
+        "hunger_texture",
+        "interview_armond",
+        "interview_fire",
+        "interview_lestat",
+        "nadja_kiss",
+        "nadja_texture",
+        "nadja_walking",
+        "own_blood",
+        "own_kissing",
+        "own_party",
+        "queen_bite",
+        "queen_city",
+        "queen_crypt",
+        "rocky_hot",
+        "rocky_mouth",
+        "rocky_warp",
+        "shadows_parade",
+        "so_vam_bite",
+        "so_vam_dance",
+        "so_vam_texture",
+        "stoker_shave",
+        "stoker_sutra",
+        "stoker_texture",
+    ];
     for vid_name in vid640x480.iter() {
         vids.push(
             Vid::builder()
@@ -257,12 +288,10 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "blank",
         "demo_fonts",
         "cp437",
-        "astral",
-        "the_hall",
         "freak",
         "cam_freak",
         "fluffy_clouds",
-        "all_gay",
+        "gaygoth_all",
     ]
     .iter()
     .map(|s| s.to_string())
@@ -318,35 +347,6 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
 
     configs.push(MixConfig {
         def: VidMixer::builder()
-            .name("astral_mix")
-            .width(640)
-            .height(480)
-            .shader(include_files(include_str!("../glsl/astral.glsl")))
-            .build(),
-        mix: Mix::builder()
-            .name("astral_mix")
-            .video("brush_pattern66")
-            .no_display(true)
-            .build(),
-    });
-
-    configs.push(MixConfig {
-        def: VidMixer::builder()
-            .name("the_hall_mix")
-            .width(640)
-            .height(480)
-            .shader(include_files(include_str!("../glsl/the_hall.glsl")))
-            .build(),
-        mix: Mix::builder()
-            .name("the_hall_mix")
-            .video("brush_dither2")
-            .video("brush_maze2")
-            .no_display(true)
-            .build(),
-    });
-
-    configs.push(MixConfig {
-        def: VidMixer::builder()
             .name("freak_mix")
             .width(640)
             .height(480)
@@ -356,6 +356,47 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
             .name("freak_mix")
             .video("fluffy_clouds")
             .video("brush_dither5")
+            .no_display(true)
+            .build(),
+    });
+
+    configs.push(MixConfig {
+        def: VidMixer::builder()
+            .name("gaygoth_all_mix")
+            .width(640)
+            .height(480)
+            .shader(include_files(include_str!("../glsl/gaygoth.glsl")))
+            .build(),
+        mix: Mix::builder()
+            .name("gaygoth_all_mix")
+            .video("bit_blood")
+            .video("bit_dance")
+            .video("bit_disco_ball")
+            .video("hunger_club")
+            .video("hunger_sizzle")
+            .video("hunger_texture")
+            .video("interview_armond")
+            .video("interview_fire")
+            .video("interview_lestat")
+            .video("nadja_kiss")
+            .video("nadja_texture")
+            .video("nadja_walking")
+            .video("own_blood")
+            .video("own_kissing")
+            // .video("own_party")
+            // .video("queen_bite")
+            // .video("queen_city")
+            // .video("queen_crypt")
+            // .video("rocky_hot")
+            // .video("rocky_mouth")
+            // .video("rocky_warp")
+            // .video("shadows_parade")
+            // .video("so_vam_bite")
+            // .video("so_vam_dance")
+            // .video("so_vam_texture")
+            // .video("stoker_shave")
+            // .video("stoker_sutra")
+            // .video("stoker_texture")
             .no_display(true)
             .build(),
     });

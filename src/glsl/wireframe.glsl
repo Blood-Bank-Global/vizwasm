@@ -23,8 +23,8 @@
 #define SCAN_NAME_IDX 18
 
 void pass0(out vec4 color) {
-    color = texture(src_tex0, src_uv0);
-    vec2 coord = src_uv0 * iResolution.xy;
+    color = texture(src_tex0, src_uv);
+    vec2 coord = src_uv * iResolution.xy;
 
     #define OFFSET_X 114.0
     #define OFFSET_Y 34.0
