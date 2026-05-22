@@ -62,6 +62,8 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
         "hellraiser_new",
         "hellraiser_old",
         "logo",
+        "ahs_coven",
+        "woodcut",
     ];
     for vid_name in vid640x480.iter() {
         vids.push(
@@ -297,6 +299,7 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "cam_freak",
         "fluffy_clouds",
         "gaygoth_all",
+        "coven",
     ]
     .iter()
     .map(|s| s.to_string())
@@ -394,6 +397,21 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
             .name("cam_freak_mix")
             .video("front cam")
             .video("brush_dither5")
+            .no_display(true)
+            .build(),
+    });
+
+    configs.push(MixConfig {
+        def: VidMixer::builder()
+            .name("coven_mix")
+            .width(640)
+            .height(480)
+            .shader(include_files(include_str!("../glsl/coven.glsl")))
+            .build(),
+        mix: Mix::builder()
+            .name("coven_mix")
+            .video("ahs_coven")
+            .video("woodcut")
             .no_display(true)
             .build(),
     });

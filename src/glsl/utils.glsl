@@ -585,4 +585,11 @@ bool beat4x4(uint pattern, float bpm, float t) {
     return (pattern & (1 << step)) != 0;
 }
 
+vec2 scale_uv(in vec2 uv, in vec2 src, in vec2 dst) {
+    float h_ratio = (dst.x / dst.y) / (src.x / src.y);
+    float u = uv.x;
+    float v = (uv.y - (1.0 - h_ratio) * 0.5) / h_ratio;
+    return vec2(u, v);
+}
+
 #endif
