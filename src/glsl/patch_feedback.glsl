@@ -8,6 +8,7 @@
 #define FEEDBACK_XOR 3
 #define FEEDBACK_SEA 4
 #define FEEDBACK_ALIEN 5
+#define FEEDBACK_SWITCH 6
 
 vec4 patch_feedback_basic(in vec4 base, in vec4 feedback) {
     // underlay feedback
@@ -49,6 +50,17 @@ vec4 patch_feedback_xor(in vec4 base, in vec4 feedback) {
     return blend_by_mode(feedback, base, BLEND_ALPHA);
 }
 
+vec4 pathch_feedback_switch(in vec4 base, in vec4 feedback) {
+    vec3 hsv_base = rgb2hsv(base.rgb);
+    hsv_base.y = 1.0;
+    hsv_base.z = 0.5;
+    if (fract(iTime*8) > 0.5) {
+         hsv_base.x = 1.0 - hsv_base.x;
+    }
+    vec4 next_base = vec4(hsv2rgb(hsv_base), base.a);
+    return blend_by_mode(feedback, next_base, BLEND_ALPHA);
+}
+
 vec4 patch_feedback_sea(in vec4 base, in vec4 feedback) {
     vec3 yuv = rgb2yuv_bt709(feedback.rgb);
     yuv.y = max(0.25, mod(yuv.y + 0.015, 0.75));
@@ -68,9 +80,9 @@ vec4 patch_feedback_alien(in vec4 base, in vec4 feedback) {
 }
 
 vec4 patch_feedback(in vec4 base, in vec4 feedback) {
-    if (base.a >= 1.0) {
-        return base;
-    } 
+    // if (base.a >= 1.0) {
+    //     return base;
+    // } 
 
     switch (feedback_mode_selected) {
         case FEEDBACK_BASIC:
@@ -91,6 +103,9 @@ vec4 patch_feedback(in vec4 base, in vec4 feedback) {
         case FEEDBACK_ALIEN:
             // alien feedback
             return patch_feedback_alien(base, feedback);
+        case FEEDBACK_SWITCH:
+            // switch feedback
+            return pathch_feedback_switch(base, feedback);
         default:
             return vec4(0, 0.5, 0, 1.0);
     }

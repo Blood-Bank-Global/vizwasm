@@ -21,118 +21,116 @@
 
 #define NEIGHBORHOOD_SIZE 8.0
 
-
-// patten is a 16-bit integer, where each bit represents a 16th note in a 4/4 measure (16 steps total).
-bool beat4x4(uint pattern, float bpm, float t) {
-    float beat_duration = 60.0 / bpm;
-    int step = 0;
-    return (pattern & (1 << step)) != 0;
-}
-
+#define BPM 155.0
 void pass0(out vec4 color) {
-    color = texture(src_tex0, src_uv);
+    if (beat4x4(0x8888, BPM*2, iTime)) {
+        color = texture(src_tex2, src_uv);
+    } else if (beat4x4(0xCCCC, BPM, iTime)) {
+        color = texture(src_tex0, src_uv);
+    } else {
+        color = texture(src_tex1, src_uv);
+    }
+
+    if (beat4x4(0x8000, BPM/2.0, iTime)) {
+        color = blend_by_mode(
+            color,
+            texture(src_tex3, src_uv),
+            BLEND_SCREEN
+        );
+    }
 }
 
-void pass1(out vec4 color) {
-    color = texture(src_tex0, src_uv);
-}
 
-/***
-// ZOOM
-//!STR foo "hello world"
-void pass0(out vec4 color) {
-    float scale = iResolution.y / iResolution0.y;
-    float x_offset = (iResolution.x - iResolution0.x * scale) * 0.5;
-    vec2 coord0 = src_uv.xy * iResolution.xy - vec2(x_offset, 0.0);
-    vec2 uv0 = coord0 / (scale * iResolution0.xy);
-    color = texture(
-        src_tex0,
-        src_uv * mix(0.1, 1.0, 1.0 - user7)
-        + vec2(0.5) * (1.0 - mix(0.1, 1.0, 1.0 - user7)));
-}
 // quad / mirror layer
-void pass1(out vec4 color) {
-    if (false) {
-        color = texture(pass_tex0, src_uv);
-        return;
-    }
+// void zzpass1(out vec4 color) {
+    
+//     if (beat4x4(0x4040, BPM, iTime)) {
+//         // quad
+//         color = texture(pass_tex0, coord_mirror(src_uv + vec2(0.5), true, true));
+//         return;
+//     }
 
-    if (true) {
-        // quad
-        color = texture(pass_tex0, coord_mirror(src_uv + vec2(0.5), true, true));
-        return;
-    }
+//     if (beat4x4(0x0404, BPM, iTime)) {
+//         // mirror
+//         color = texture(pass_tex0, coord_mirror(src_uv + vec2(0.5, 0.0), true, false));
+//         return;
+//     }
 
-    // mirror
-    color = texture(pass_tex0, coord_mirror(src_uv + vec2(0.5, 0.0), true, false));
-}
+//     color = texture(pass_tex0, src_uv);
+// }
 
 // monochrome layer
-void pass2(out vec4 color) {
-    color = vec4(vec3(rgb2hsv(texture(pass_tex1, src_uv).rgb).z), 1.0);
-}
-
+// void zzpass1(out vec4 color) {
+//     // color = vec4(vec3(rgb2hsv(texture(pass_tex0, src_uv).rgb).z), 1.0);
+//     color = texture(pass_tex0, src_uv);
+//     vec3 hsv = rgb2hsv(color.rgb);
+//     if ((hsv.x <= 0.1 || hsv.x >= 0.9) && hsv.s > 0.75) {
+//         color.gb = vec2(0.0);
+//     } else {
+//         color.rgb = vec3(0.0);
+//     }
+// }
 
 // halftone layer
-void pass3(out vec4 color) {
-    if (true) {
-        color = texture(pass_tex1, src_uv);
-        return;
-    }
-    patch_halftone45(color, src_uv, iResolution.xy, pass_tex2, 8.0, 8.0);
-}
-
-
+// void pass1(out vec4 color) {
+//     if (beat4x4(0x4444, BPM, iTime)) {
+//         patch_halftone45(color, src_uv, iResolution.xy, pass_tex0, 8.0, 8.0);
+//         return;
+//     }
+//     color = texture(pass_tex0, src_uv);
+// }
 
 // WARP
-void pass4(out vec4 color) {
-    if (user4 > 0.5) {
-        color = texture(pass_tex3, src_uv);
-        return;
-    }
-    vec2 coord = src_uv * iResolution.xy;
-    float warp_strength = 2.0;
-    coord = patch_warp_px(coord, vec2(10.0), warp_strength, iResolution.xy, iTime);
-    color = texture(pass_tex3, coord/iResolution.xy);
-}
+// void pass1(out vec4 color) {
+//     if (beat4x4(0xf0f0, BPM * floor(8.0 * user0), iTime)) {
+//         vec2 coord = src_uv * iResolution.xy;
+//         float warp_strength = 4.0;
+//         coord = patch_warp_px(coord, vec2(40.0), warp_strength, iResolution.xy, iTime);
+//         color = texture(pass_tex0, coord/iResolution.xy);
+//         return;
+//     }
+//     color = texture(pass_tex0, src_uv);
+// }
 
 // BLOB
-void pass5(out vec4 color) {
-    if (true) {
-        color = texture(pass_tex4, src_uv);
-        return;
-    }
-    vec4 color_blob = texture(pass_tex4, src_uv);
-    float radius = 300 + 180 * sin(iTime*2.0);
-    color = patch_blob_px(
-        src_uv * iResolution.xy,
-        iResolution.xy,
-        vec4(0.0, 0.0, 0.0, 0.0),
-        color_blob,
-        vec2(320,240),
-        radius,
-        iTime
-    );
+// void pass1(out vec4 color) {
     
-}
+//     vec4 color_blob = texture(pass_tex0, src_uv);
+//     color_blob.rgb = floor(color_blob.rgb * vec3(8.0)) / 8.0; // posterize to reduce number of blobs and create sharper edges 
+//     vec4 color_bg = color_blob;
+//     color_bg.rgb = vec3(1.0) - color_bg.rgb;
+//     float radius = 400 + 180 * sin(iTime*2.0);
+//     color = patch_blob_px(
+//         src_uv * iResolution.xy,
+//         iResolution.xy,
+//         color_bg,
+//         color_blob,
+//         vec2(320,240),
+//         radius,
+//         iTime*10.0
+//     );
+// }
+
+// void pass2(out vec4 color) {
+//    patch_ordered_dither4x4(color, src_uv, iResolution.xy, pass_tex1);
+// }
 
 // DRIP
-void pass6(out vec4 color) {
-    if (true) {
-        color = texture(pass_tex5, src_uv);
-        return;
-    }
-    float drip_strength = 32.0;
-    float drip_cutoff = 200.0 + 400.0 * user3;
-    patch_drippy_px(
-        color, 
-        pass_tex5, 
-        src_uv, 
-        iResolution.xy, 
-        vec2(drip_strength), 
-        vec2(8.0), 
-        drip_cutoff,
-        iTime
-    );    
-}
-***/
+// void zzpass6(out vec4 color) {
+//     if (true) {
+//         color = texture(pass_tex5, src_uv);
+//         return;
+//     }
+//     float drip_strength = 32.0;
+//     float drip_cutoff = 200.0 + 400.0 * user3;
+//     patch_drippy_px(
+//         color, 
+//         pass_tex5, 
+//         src_uv, 
+//         iResolution.xy, 
+//         vec2(drip_strength), 
+//         vec2(8.0), 
+//         drip_cutoff,
+//         iTime
+//     );    
+// }

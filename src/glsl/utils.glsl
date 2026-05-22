@@ -577,4 +577,12 @@ float bicubic_mix(float v0, float v1, float v2, float v3, float f) {
 
     return P * f * f * f + Q * f * f + R * f + S;
 }
+
+// patten is a 16-bit integer, where each bit represents a 16th note in a 4/4 measure (16 steps total).
+bool beat4x4(uint pattern, float bpm, float t) {
+    float beat_duration = 60.0 / bpm;
+    int step = int(mod(t / beat_duration, 16.0));
+    return (pattern & (1 << step)) != 0;
+}
+
 #endif

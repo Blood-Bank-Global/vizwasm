@@ -9,11 +9,12 @@ use sdlrig::gfxinfo::{MIDI_CONTROL_CHANGE, MIDI_NOTE_OFF, MIDI_NOTE_ON};
 
 use sdlrig::{
     gfxinfo::{Asset, GfxEvent, GfxInfo, MidiEvent, Vid, VidMixer},
-    renderspec::{Mix, RenderSpec},
+    renderspec::{Mix, MixInput, RenderSpec},
 };
 
 use vizwasm::{
     shaderlookup::include_files,
+    streamsettings::StreamSettingsField,
     vizconfig::{AllSettings, MixConfig, IAC},
 };
 
@@ -55,8 +56,12 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
         "so_vam_dance",
         "so_vam_texture",
         "stoker_shave",
-        "stoker_sutra",
+        "stoker_rain",
         "stoker_texture",
+        "hellraiser_texture",
+        "hellraiser_new",
+        "hellraiser_old",
+        "logo",
     ];
     for vid_name in vid640x480.iter() {
         vids.push(
@@ -372,31 +377,8 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
             .video("bit_blood")
             .video("bit_dance")
             .video("bit_disco_ball")
-            .video("hunger_club")
-            .video("hunger_sizzle")
-            .video("hunger_texture")
-            .video("interview_armond")
-            .video("interview_fire")
-            .video("interview_lestat")
-            .video("nadja_kiss")
-            .video("nadja_texture")
-            .video("nadja_walking")
-            .video("own_blood")
-            .video("own_kissing")
-            // .video("own_party")
-            // .video("queen_bite")
-            // .video("queen_city")
-            // .video("queen_crypt")
-            // .video("rocky_hot")
-            // .video("rocky_mouth")
-            // .video("rocky_warp")
-            // .video("shadows_parade")
-            // .video("so_vam_bite")
-            // .video("so_vam_dance")
-            // .video("so_vam_texture")
-            // .video("stoker_shave")
-            // .video("stoker_sutra")
-            // .video("stoker_texture")
+            .video("logo")
+            .video("90s_glitch")
             .no_display(true)
             .build(),
     });
@@ -506,6 +488,34 @@ pub fn calculate(
     let mut lock = SETTINGS.lock().expect("Settings mutex corrupted");
     let settings = lock.as_mut();
     let mut specs = vec![];
+
+    // select the current set of input videos to the mix
+    let names = vec![
+        vec!["bit_dance", "bit_blood", "bit_disco_ball"],
+        vec!["hunger_club", "hunger_sizzle", "hunger_texture"],
+        vec!["interview_fire", "interview_armond", "interview_lestat"],
+        vec!["nadja_walking", "nadja_kiss", "nadja_texture"],
+        vec!["own_party", "own_kissing", "own_blood"],
+        vec!["queen_crypt", "queen_bite", "queen_city"],
+        vec!["rocky_warp", "rocky_hot", "rocky_mouth"],
+        vec!["so_vam_dance", "so_vam_bite", "so_vam_texture"],
+        vec!["stoker_rain", "stoker_shave", "stoker_texture"],
+        vec!["shadows_parade", "logo", "90s_glitch"],
+    ];
+
+    if let Some(gay_goth_mix) = settings
+        .playback
+        .iter()
+        .find(|p| p.stream.ident.name == "gaygoth_all")
+    {
+        let idx = (8.0 * gay_goth_mix.stream.get_field(&StreamSettingsField::User6)) as usize;
+        let mix_name = gay_goth_mix.stream.ident.input_mix.clone();
+        if let Some(cfg) = settings.mix_configs.get_mut(&mix_name) {
+            cfg.mix.inputs[0] = MixInput::Video(names[idx][0].to_string());
+            cfg.mix.inputs[1] = MixInput::Video(names[idx][1].to_string());
+            cfg.mix.inputs[2] = MixInput::Video(names[idx][2].to_string());
+        }
+    }
 
     specs.append(&mut settings.update_record_and_get_specs(reg_events, frame, Some(mega_cb))?);
     Ok(specs)

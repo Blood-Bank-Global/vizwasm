@@ -21,14 +21,6 @@
 
 #define NEIGHBORHOOD_SIZE 8.0
 
-
-// patten is a 16-bit integer, where each bit represents a 16th note in a 4/4 measure (16 steps total).
-bool beat4x4(uint pattern, float bpm, float t) {
-    float beat_duration = 60.0 / bpm;
-    int step = 0;
-    return (pattern & (1 << step)) != 0;
-}
-
 // ZOOM
 //!STR foo "hello world"
 void pass0(out vec4 color) {

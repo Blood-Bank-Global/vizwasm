@@ -343,7 +343,7 @@ impl AllSettings {
     }
 
     pub fn feedback_modes() -> &'static [&'static str] {
-        &["basic", "jam", "math", "xor", "sea", "alien"]
+        &["basic", "jam", "math", "xor", "sea", "alien", "switch"]
     }
 
     pub fn new<

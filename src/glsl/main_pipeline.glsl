@@ -193,17 +193,18 @@ void pass5(out vec4 color) {
     }
 }
 
-void pass6(out vec4 color) {
-    // Scroll as needed
-    vec2 base_coord = coord_wrap(vec2(src_uv.x + scrolled_h, src_uv.y + scrolled_v), true, true);
+void pass6(out vec4 color) { 
+    color = patch_feedback(
+        texture(pass_tex5, src_uv), // base
+        texture(src_tex0, src_uv)// feedback
+    );
+}
 
-    //skew
-    base_coord = skew3(base_coord, new_corners);
-
+void pass7(out vec4 color) {
     // distort feedback
     vec4 feedback = patch_rototrans(
-        base_coord.xy,
-        src_tex0, // feedback
+        src_uv,
+        pass_tex6, // feedback
         src_tex2, // distort tex x
         src_tex3, // distort tex y
         feedback_rotation,
@@ -213,5 +214,5 @@ void pass6(out vec4 color) {
         distort_edge
     );
 
-    color = patch_feedback(texture(pass_tex5, src_uv), feedback);
+    color = blend_by_mode(feedback, texture(pass_tex5, src_uv), BLEND_ALPHA);
 }
