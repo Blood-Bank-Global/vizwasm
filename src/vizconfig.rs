@@ -168,6 +168,7 @@ pub struct AllSettings {
     pub initial_reset_complete: Vec<bool>,
     pub logs: Vec<String>,
     pub last_line: String,
+    pub show_frame: bool,
 }
 
 static LAST_FRAME: Mutex<i64> = Mutex::new(0);
@@ -637,6 +638,7 @@ impl AllSettings {
             display_idx: 0,
             logs: vec![String::new(); 100],
             last_line: String::new(),
+            show_frame: true,
         }
     }
 
@@ -674,9 +676,20 @@ impl AllSettings {
         }
 
         // Always capture live events even while recording is playing
-
+        let showing_frame = self.show_frame;
         let current_selected_knob = self.selected_knobs as u8;
         self.update(reg_events, frame, midi_callback)?;
+
+        if showing_frame != self.show_frame {
+            specs.push(
+                SendCmd::builder()
+                    .name("wireframe_show_frame")
+                    .value(SendValue::Unsigned(self.show_frame as u32))
+                    .mix("wireframe_data_mix")
+                    .build()
+                    .into(),
+            )
+        }
 
         let active_diff = self.playback[self.active_idx]
             .stream
@@ -974,7 +987,7 @@ impl AllSettings {
                 .mix("wireframe_data_mix")
                 .name("selected_button_str")
                 .value(SendValue::UVector(
-                    format!("{:03}", self.selected_knobs as i32 - (16 * page as i32))
+                    format!("{:03}", self.selected_knobs)
                         .into_bytes()
                         .iter()
                         .map(|b| *b as u32)
@@ -1472,9 +1485,9 @@ impl AllSettings {
                             ..
                         } => {
                             if *shift {
-                                self.selected_knobs = (self.selected_knobs + 40).clamp(0, 127);
+                                self.selected_knobs = (self.selected_knobs + 40).clamp(0, 63);
                             } else {
-                                self.selected_knobs = (self.selected_knobs + 4).clamp(0, 127);
+                                self.selected_knobs = (self.selected_knobs + 4).clamp(0, 63);
                             }
                         }
                         KeyEvent {
@@ -1485,10 +1498,10 @@ impl AllSettings {
                         } => {
                             if *shift {
                                 self.selected_knobs =
-                                    (self.selected_knobs as i32 - 40 as i32).clamp(0, 127) as usize;
+                                    (self.selected_knobs as i32 - 40 as i32).clamp(0, 63) as usize;
                             } else {
                                 self.selected_knobs =
-                                    (self.selected_knobs as i32 - 4 as i32).clamp(0, 127) as usize;
+                                    (self.selected_knobs as i32 - 4 as i32).clamp(0, 63) as usize;
                             }
                         }
                         KeyEvent {
@@ -1499,10 +1512,10 @@ impl AllSettings {
                         } => {
                             if *shift {
                                 self.selected_knobs =
-                                    (self.selected_knobs as i32 - 10 as i32).clamp(0, 127) as usize;
+                                    (self.selected_knobs as i32 - 10 as i32).clamp(0, 63) as usize;
                             } else {
                                 self.selected_knobs =
-                                    (self.selected_knobs as i32 - 1 as i32).clamp(0, 127) as usize;
+                                    (self.selected_knobs as i32 - 1 as i32).clamp(0, 63) as usize;
                             }
 
                             if false {
@@ -1544,10 +1557,10 @@ impl AllSettings {
                         } => {
                             if *shift {
                                 self.selected_knobs =
-                                    (self.selected_knobs as i32 + 10 as i32).clamp(0, 127) as usize;
+                                    (self.selected_knobs as i32 + 10 as i32).clamp(0, 63) as usize;
                             } else {
                                 self.selected_knobs =
-                                    (self.selected_knobs as i32 + 1 as i32).clamp(0, 127) as usize;
+                                    (self.selected_knobs as i32 + 1 as i32).clamp(0, 63) as usize;
                             }
 
                             if false {
@@ -1638,6 +1651,13 @@ impl AllSettings {
                             } else {
                                 self.active_idx = self.scan_idx;
                             }
+                        }
+                        KeyEvent {
+                            key: KeyCode::SDLK_f,
+                            down: true,
+                            ..
+                        } => {
+                            self.show_frame = !self.show_frame;
                         }
                         _ => (),
                     }

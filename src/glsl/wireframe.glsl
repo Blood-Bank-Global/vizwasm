@@ -17,13 +17,19 @@
 //!VAR uint dropped_length 0
 
 //!VAR uint[] midi_target
+//!VAR uint wireframe_show_frame 1
 
 #define ACTIVE_NAME_IDX 16
 #define DISPLAY_NAME_IDX 17
 #define SCAN_NAME_IDX 18
 
 void pass0(out vec4 color) {
-    color = texture(src_tex0, src_uv);
+    if (wireframe_show_frame == 1) {
+        color = texture(src_tex0, src_uv);
+    } else {
+        color = vec4(0.0, 0.0, 0.0, 1.0);
+    }
+
     vec2 coord = src_uv * iResolution.xy;
 
     #define OFFSET_X 114.0
@@ -76,7 +82,11 @@ void pass0(out vec4 color) {
             draw = false;
         }
         if (draw) {
-            color = vec4(0.7, 0.7, 0.7, 1.0);
+            if (selected_button == i * 4 + j) {
+                color = vec4(1.0, 1.0, 1.0, 1.0);
+            }  else {
+                color = vec4(0.5, 0.5, 0.5, 1.0);
+            }
         }
 
     }
