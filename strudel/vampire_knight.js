@@ -22,7 +22,7 @@ XFX: "<g4 -!7>".note().s("gm_flute:0").gain(2).adsr("0:2:.5:1")
 
 BREAK: s("more_breaks:0").splice("8", "<[0 2 2 0] [2 3 2 0] [3 0 3 2] [3 3 3 2]>").hpf(4000).lpf(5000).adsr("0.5:1:.8:.2")
 
-DRONE: "g2".note().s("saw").gain(2).lpf("<2500 4000>").lfo({ sh: "isaw", s: "2", dc: -1, dr: 1 })._scope()
+DRONE: "g2".note().s("saw").gain(1).lpf("<2500 4000>").lfo({ sh: "isaw", s: "2", dc: -1, dr: 1 })._scope()
 KICK: silence
 XNARE: silence
 CHORD: silence
