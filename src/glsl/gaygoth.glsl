@@ -22,45 +22,71 @@
 #define NEIGHBORHOOD_SIZE 8.0
 
 #define BPM 155.0
+/*******************************/
+// #define BUT_BLEND false
+// void pass0(out vec4 color) {
+//     color = texture(src_tex0, src_uv);
+
+//     if (beat4x4(0x8888, BPM*2, iTime)) {
+//         vec4 layer = texture(src_tex2, src_uv);
+//         if (BUT_BLEND) {
+//             color = blend_by_mode(color, layer, BLEND_SCREEN);
+//         } else {
+//             color = layer;
+//         }
+//     }
+
+//     if (beat4x4(0xCCCC, BPM, iTime)) {
+//         vec4 layer = texture(src_tex1, src_uv);
+//         if (BUT_BLEND) {
+//             color = blend_by_mode(color, layer, BLEND_SCREEN);
+//         } else {
+//             color = layer;
+//         }
+//     }
+
+//     //LOGO
+//     if (beat4x4(0x8000, BPM/2.0, iTime)) {
+//         color = blend_by_mode(
+//             color,
+//             texture(src_tex3, src_uv),
+//             BLEND_SCREEN
+//         );
+//     }
+// }
+
+/*******************************/
+// quad / mirror layer
 void pass0(out vec4 color) {
-    if (beat4x4(0x8888, BPM*2, iTime)) {
-        color = texture(src_tex2, src_uv);
-    } else if (beat4x4(0xCCCC, BPM, iTime)) {
-        color = texture(src_tex0, src_uv);
-    } else {
-        color = texture(src_tex1, src_uv);
+    vec2 uv = src_uv;
+
+    if (beat4x4(0x4040, BPM, iTime)) {
+        // quad
+        uv = coord_mirror(uv + vec2(1.5),true, true);
     }
 
-    if (beat4x4(0x8000, BPM/2.0, iTime)) {
-        color = blend_by_mode(
-            color,
-            texture(src_tex3, src_uv),
-            BLEND_SCREEN
-        );
+    if (beat4x4(0x0404, BPM, iTime)) {
+        // mirror
+        uv = coord_mirror(uv + vec2(0.5, 0.0), true, false);
+    }
+
+    color = texture(src_tex0, uv);
+    if (beat4x4(0xFF00, BPM, iTime)) {
+        color = texture(src_tex1, uv);
+    }
+
+    if (beat4x4(0x8080, BPM*2, iTime)) {
+        color = blend_by_mode(color, texture(src_tex2, uv), BLEND_ADDITION);
+    }
+
+    if (beat4x4(0x0808, BPM*2, iTime)) {
+        color = blend_by_mode(color, texture(src_tex3, uv), BLEND_ADDITION);
     }
 }
 
-
-// quad / mirror layer
-// void zzpass1(out vec4 color) {
-    
-//     if (beat4x4(0x4040, BPM, iTime)) {
-//         // quad
-//         color = texture(pass_tex0, coord_mirror(src_uv + vec2(0.5), true, true));
-//         return;
-//     }
-
-//     if (beat4x4(0x0404, BPM, iTime)) {
-//         // mirror
-//         color = texture(pass_tex0, coord_mirror(src_uv + vec2(0.5, 0.0), true, false));
-//         return;
-//     }
-
-//     color = texture(pass_tex0, src_uv);
-// }
-
+/**********************************/
 // monochrome layer
-// void zzpass1(out vec4 color) {
+// void pass0(out vec4 color) {
 //     // color = vec4(vec3(rgb2hsv(texture(pass_tex0, src_uv).rgb).z), 1.0);
 //     color = texture(pass_tex0, src_uv);
 //     vec3 hsv = rgb2hsv(color.rgb);
@@ -116,21 +142,45 @@ void pass0(out vec4 color) {
 // }
 
 // DRIP
-// void zzpass6(out vec4 color) {
-//     if (true) {
-//         color = texture(pass_tex5, src_uv);
-//         return;
+/*******************************/
+// void pass0(out vec4 color) {
+//     float period = 60.0 / BPM * 4.0 * 2.0;
+//     float c_time = mod(iTime, period);
+//     uint phase = 0;
+//     if (c_time >= period * 0.5) {
+//         phase = 1;
 //     }
-//     float drip_strength = 32.0;
-//     float drip_cutoff = 200.0 + 400.0 * user3;
-//     patch_drippy_px(
-//         color, 
-//         pass_tex5, 
-//         src_uv, 
-//         iResolution.xy, 
-//         vec2(drip_strength), 
-//         vec2(8.0), 
-//         drip_cutoff,
-//         iTime
-//     );    
+//     float drip_strength = 100.0;
+//     float drip_cutoff = iResolution.y * (1.0 - mod(c_time, period * 0.5) / (period * 0.5));
+
+//     if (phase == 0) {
+//         patch_drippy_px(
+//             color, 
+//             src_tex0, 
+//             src_uv, 
+//             iResolution.xy, 
+//             vec2(32.0, drip_strength), 
+//             vec2(8.0), 
+//             drip_cutoff,
+//             iTime * 4.0
+//         );
+//         if (src_uv.y * iResolution.y >(drip_cutoff - drip_strength * 2.0) && vec3(0.0) == color.rgb) {
+//             color = texture(src_tex2, src_uv);
+//         }
+//     } else {
+//         patch_drippy_px(
+//             color, 
+//             src_tex2, 
+//             src_uv, 
+//             iResolution.xy, 
+//             vec2(32.0, drip_strength), 
+//             vec2(8.0), 
+//             drip_cutoff,
+//             iTime * 4.0 + 100.0
+//         );
+//         if (src_uv.y * iResolution.y > (drip_cutoff - drip_strength * 2.0) && vec3(0.0) == color.rgb) {
+//             color = texture(src_tex0, src_uv);
+//         }
+//     }
+  
 // }

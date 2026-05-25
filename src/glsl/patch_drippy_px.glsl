@@ -34,7 +34,11 @@ void patch_drippy_px(out vec4 color, in sampler2D tex, in vec2 uv, in vec2 resol
             color = vec4(0.0, 0.0, 0.0, 1.0);
         } else {
             //vec2 pixel_uv = vec2(floor(coord.x / pixel_sz.x) * pixel_sz.x, (floor(coord.y / pixel_sz.y) * pixel_sz.y)) / resolution;
-            color   = texture(tex, critical_coord / resolution);
+            if (critical_coord.y / resolution.y > 0.0) { 
+                color   = texture(tex, critical_coord / resolution);
+            } else {
+                color = vec4(0.0, 0.0, 0.0, 1.0);
+            }
         }
     } else {
         color = texture(tex, uv);

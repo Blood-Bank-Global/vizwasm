@@ -28,8 +28,6 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
     let mut vids = vec![];
 
     let vid640x480: &[&str] = &[
-        "60s_glitch",
-        "90s_glitch",
         "bit_blood",
         "bit_dance",
         "bit_disco_ball",
@@ -298,8 +296,9 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "freak",
         "cam_freak",
         "fluffy_clouds",
-        "gaygoth_all",
         "coven",
+        "shadows_parade",
+        "gaygoth_all",
     ]
     .iter()
     .map(|s| s.to_string())
@@ -381,7 +380,6 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
             .video("bit_dance")
             .video("bit_disco_ball")
             .video("logo")
-            .video("90s_glitch")
             .no_display(true)
             .build(),
     });
@@ -516,17 +514,20 @@ pub fn calculate(
         vec!["own_party", "own_kissing", "own_blood"],
         vec!["queen_crypt", "queen_bite", "queen_city"],
         vec!["rocky_warp", "rocky_hot", "rocky_mouth"],
-        vec!["so_vam_dance", "so_vam_bite", "so_vam_texture"],
         vec!["stoker_rain", "stoker_shave", "stoker_texture"],
-        vec!["shadows_parade", "logo", "90s_glitch"],
+        vec!["so_vam_dance", "so_vam_bite", "so_vam_texture"],
+        vec!["shadows_parade", "brush_pattern1", "brush_dither2"],
+        vec!["hellraiser_old", "hellraiser_new", "hellraiser_texture"],
     ];
 
     if let Some(gay_goth_mix) = settings
         .playback
-        .iter()
+        .iter_mut()
         .find(|p| p.stream.ident.name == "gaygoth_all")
     {
-        let idx = (8.0 * gay_goth_mix.stream.get_field(&StreamSettingsField::User6)) as usize;
+        let idx = (100.0 * gay_goth_mix.stream.get_field(&StreamSettingsField::User6))
+            .clamp(0.0, (names.len() - 1) as f64) as usize as usize;
+        gay_goth_mix.stream.ident.seek_target = names[idx][0].to_string();
         let mix_name = gay_goth_mix.stream.ident.input_mix.clone();
         if let Some(cfg) = settings.mix_configs.get_mut(&mix_name) {
             cfg.mix.inputs[0] = MixInput::Video(names[idx][0].to_string());
