@@ -298,6 +298,7 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "fluffy_clouds",
         "coven",
         "shadows_parade",
+        "fbtest",
         "gaygoth_all",
     ]
     .iter()
@@ -410,6 +411,21 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
             .name("coven_mix")
             .video("ahs_coven")
             .video("woodcut")
+            .no_display(true)
+            .build(),
+    });
+    configs.push(MixConfig {
+        def: VidMixer::builder()
+            .name("fbtest_mix")
+            .width(640)
+            .height(480)
+            .shader(include_files(include_str!("../glsl/fbtest.glsl")))
+            .build(),
+        mix: Mix::builder()
+            .name("fbtest_mix")
+            .video("blank")
+            .video("brush_pattern1")
+            .video("brush_dither2")
             .no_display(true)
             .build(),
     });
