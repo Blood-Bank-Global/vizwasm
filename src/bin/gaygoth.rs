@@ -62,6 +62,9 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
         "logo",
         "ahs_coven",
         "woodcut",
+        "drac1",
+        "drac2",
+        "drac3",
     ];
     for vid_name in vid640x480.iter() {
         vids.push(
@@ -94,7 +97,7 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
         );
     }
 
-    let pngs640x480: &[&str] = &[];
+    let pngs640x480: &[&str] = &["arc", "another_kind_of_knight"];
     for png_name in pngs640x480.iter() {
         vids.push(
             Vid::builder()
@@ -300,6 +303,7 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "shadows_parade",
         "fbtest",
         "gaygoth_all",
+        "drac",
     ]
     .iter()
     .map(|s| s.to_string())
@@ -423,9 +427,27 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
             .build(),
         mix: Mix::builder()
             .name("fbtest_mix")
-            .video("blank")
+            .video("arc")
+            .video("another_kind_of_knight")
             .video("brush_pattern1")
             .video("brush_dither2")
+            .no_display(true)
+            .build(),
+    });
+
+    configs.push(MixConfig {
+        def: VidMixer::builder()
+            .name("drac_mix")
+            .width(640)
+            .height(480)
+            .shader(include_files(include_str!("../glsl/drac.glsl")))
+            .build(),
+        mix: Mix::builder()
+            .name("drac_mix")
+            .video("drac1")
+            .video("drac2")
+            .video("drac3")
+            .video("stoker_texture")
             .no_display(true)
             .build(),
     });
