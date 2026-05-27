@@ -526,7 +526,7 @@ pub fn decode_settings(bytes: &[u8]) {
         if i >= settings.playback.len() {
             break;
         }
-        if settings.playback[i].stream.ident == decoded.playback[i].stream.ident {
+        if settings.playback[i].stream.ident.name == decoded.playback[i].stream.ident.name {
             settings.playback[i] = decoded.playback[i].clone();
         }
     }
@@ -547,6 +547,7 @@ pub fn calculate(
 
     // select the current set of input videos to the mix
     let names = vec![
+        vec!["fluffy_clouds", "brush_text1", "brush_maze1"],
         vec!["bit_dance", "bit_blood", "bit_disco_ball"],
         vec!["hunger_club", "hunger_sizzle", "hunger_texture"],
         vec!["interview_fire", "interview_armond", "interview_lestat"],
