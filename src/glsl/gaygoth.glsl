@@ -7,6 +7,13 @@
 
 #include "font_8x16.glsl"
 //!VAR vec2 iResolution0 0.0 0.0
+//!VAR vec2 iResolution1 0.0 0.0
+//!VAR vec2 iResolution2 0.0 0.0
+//!VAR vec2 iResolution3 0.0 0.0
+//!VAR vec2 iResolution4 0.0 0.0
+//!VAR vec2 iResolution5 0.0 0.0
+//!VAR vec2 iResolution6 0.0 0.0
+//!VAR vec2 iResolution7 0.0 0.0
 
 //!VAR float user0 0.0
 //!VAR float user1 0.0
@@ -17,11 +24,13 @@
 //!VAR float user6 0.0
 //!VAR float user7 0.0
 
-#define user_p(i, seq) (user##i > abs(randf(uint((seq))^0xDEADBEEF ^ (0xCAFE * uint((i))))))
-
 #define NEIGHBORHOOD_SIZE 8.0
+#define PATTERN_TEX (src_tex4)
+#define PATTERN_RES (iResolution4)
+#define TEXT_TEX (src_tex5)
+#define TEXT_RES (iResolution5)
 
-#define BPM 155.0
+#define BPM 150.0
 /*******************************/
 // #define BUT_BLEND false
 // void pass0(out vec4 color) {
@@ -57,32 +66,32 @@
 
 /*******************************/
 // quad / mirror layer
-void pass0(out vec4 color) {
-    vec2 uv = src_uv;
+// void pass0(out vec4 color) {
+//     vec2 uv = src_uv;
 
-    if (beat4x4(0x4040, BPM, iTime)) {
-        // quad
-        uv = coord_mirror(uv + vec2(1.5),true, true);
-    }
+//     if (beat4x4(0x4040, BPM, iTime)) {
+//         // quad
+//         uv = coord_mirror(uv + vec2(1.5),true, true);
+//     }
 
-    if (beat4x4(0x0404, BPM, iTime)) {
-        // mirror
-        uv = coord_mirror(uv + vec2(0.5, 0.0), true, false);
-    }
+//     if (beat4x4(0x0404, BPM, iTime)) {
+//         // mirror
+//         uv = coord_mirror(uv + vec2(0.5, 0.0), true, false);
+//     }
 
-    color = texture(src_tex0, uv);
-    if (beat4x4(0xFF00, BPM, iTime)) {
-        color = texture(src_tex1, uv);
-    }
+//     color = texture(src_tex0, uv);
+//     if (beat4x4(0xFF00, BPM, iTime)) {
+//         color = texture(src_tex1, uv);
+//     }
 
-    if (beat4x4(0x8080, BPM*2, iTime)) {
-        color = blend_by_mode(color, texture(src_tex2, uv), BLEND_ADDITION);
-    }
+//     if (beat4x4(0x8080, BPM*2, iTime)) {
+//         color = blend_by_mode(color, texture(src_tex2, uv), BLEND_ADDITION);
+//     }
 
-    if (beat4x4(0x0808, BPM*2, iTime)) {
-        color = blend_by_mode(color, texture(src_tex3, uv), BLEND_ADDITION);
-    }
-}
+//     if (beat4x4(0x0808, BPM*2, iTime)) {
+//         color = blend_by_mode(color, texture(src_tex3, uv), BLEND_ADDITION);
+//     }
+// }
 
 /**********************************/
 // monochrome layer
@@ -143,44 +152,106 @@ void pass0(out vec4 color) {
 
 // DRIP
 /*******************************/
-// void pass0(out vec4 color) {
-//     float period = 60.0 / BPM * 4.0 * 2.0;
-//     float c_time = mod(iTime, period);
-//     uint phase = 0;
-//     if (c_time >= period * 0.5) {
-//         phase = 1;
-//     }
-//     float drip_strength = 100.0;
-//     float drip_cutoff = iResolution.y * (1.0 - mod(c_time, period * 0.5) / (period * 0.5));
+void pass0(out vec4 color) {
+    float period = 60.0 / BPM * 3.0 * 2.0;
+    float c_time = mod(iTime, period);
+    uint phase = 0;
+    if (c_time >= period * 2.0 / 3.0) {
+        phase = 2;
+    } else if (c_time >= period * 1.0 / 3.0) {
+        phase = 1;
+    }
+    float drip_strength = 100.0;
+    float drip_cutoff = iResolution.y * (1.0 - mod(c_time, period / 3.0) / (period / 3.0));
 
-//     if (phase == 0) {
-//         patch_drippy_px(
-//             color, 
-//             src_tex0, 
-//             src_uv, 
-//             iResolution.xy, 
-//             vec2(32.0, drip_strength), 
-//             vec2(8.0), 
-//             drip_cutoff,
-//             iTime * 4.0
-//         );
-//         if (src_uv.y * iResolution.y >(drip_cutoff - drip_strength * 2.0) && vec3(0.0) == color.rgb) {
-//             color = texture(src_tex2, src_uv);
-//         }
+    if (phase == 0) {
+        patch_drippy_px(
+            color, 
+            src_tex0, 
+            src_uv, 
+            iResolution.xy, 
+            vec2(32.0, drip_strength), 
+            vec2(8.0), 
+            drip_cutoff,
+            iTime * 4.0
+        );
+        if (src_uv.y * iResolution.y >(drip_cutoff - drip_strength * 2.0) && vec3(0.0) == color.rgb) {
+            color = texture(src_tex1, src_uv);
+        }
+    } else if (phase == 1) {
+        patch_drippy_px(
+            color, 
+            src_tex1, 
+            src_uv, 
+            iResolution.xy, 
+            vec2(32.0, drip_strength), 
+            vec2(8.0), 
+            drip_cutoff,
+            iTime * 4.0 + 100.0
+        );
+        if (src_uv.y * iResolution.y > (drip_cutoff - drip_strength * 2.0) && vec3(0.0) == color.rgb) {
+            color = texture(src_tex2, src_uv);
+        }
+    } else {
+        patch_drippy_px(
+            color, 
+            src_tex2, 
+            src_uv, 
+            iResolution.xy, 
+            vec2(32.0, drip_strength), 
+            vec2(8.0), 
+            drip_cutoff,
+            iTime * 4.0 + 200.0
+        );
+        if (src_uv.y * iResolution.y > (drip_cutoff - drip_strength * 2.0) && vec3(0.0) == color.rgb) {
+            color = texture(src_tex0, src_uv);
+        }
+    }
+  
+}
+
+/*************/
+//pattern smash
+// void pass0(out vec4 color) {
+//     if (beat4x4(0xC8C8, BPM, iTime)) {
+//         color = texture(src_tex1, src_uv);
 //     } else {
-//         patch_drippy_px(
-//             color, 
-//             src_tex2, 
-//             src_uv, 
-//             iResolution.xy, 
-//             vec2(32.0, drip_strength), 
-//             vec2(8.0), 
-//             drip_cutoff,
-//             iTime * 4.0 + 100.0
-//         );
-//         if (src_uv.y * iResolution.y > (drip_cutoff - drip_strength * 2.0) && vec3(0.0) == color.rgb) {
-//             color = texture(src_tex0, src_uv);
+//         color = texture(src_tex0, src_uv);
+//     }
+
+//     float freq = 60.0/BPM;
+//     uint beat = uint(iTime / freq);
+//     if (randf(beat) < -0.250) {
+//         vec4 over = texture(src_tex2, src_uv);
+//         vec2 pattern_scale = iResolution.xy / PATTERN_RES.xy / 2.0;
+//         vec2 pattern_uv = (src_uv - vec2(0.5, 0.5)) * pattern_scale + vec2(0.5, 0.5);
+//         pattern_uv += vec2(0.0, fract(float(beat) * 0.31337));
+//         vec4 mask = texture(PATTERN_TEX, pattern_uv);
+//         if (distance(mask.rgb, vec3(0.0)) > 0.01) {
+//             color = over;
 //         }
 //     }
-  
+// }
+
+/*************/
+//text smash
+// void pass0(out vec4 color) {
+//     if (beat4x4(0xC8C8, BPM, iTime)) {
+//         color = texture(src_tex1, src_uv);
+//     } else {
+//         color = texture(src_tex0, src_uv);
+//     }
+
+//     float freq = 60.0/BPM;
+//     uint beat = uint(iTime / freq);
+//     if (randf(beat) < -0.250) {
+//         vec4 over = texture(src_tex2, src_uv);
+//         vec2 pattern_scale = iResolution.xy / TEXT_RES.xy;
+//         vec2 pattern_uv = (src_uv - vec2(0.5, 0.5)) * pattern_scale + vec2(0.5, 0.5);
+//         pattern_uv += vec2(0.0, fract(float(beat) * 0.31337));
+//         vec4 mask = texture(TEXT_TEX, pattern_uv);
+//         if (distance(mask.rgb, vec3(0.0)) > 0.01) {
+//             color = over;
+//         }
+//     }
 // }

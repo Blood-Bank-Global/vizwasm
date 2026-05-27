@@ -385,6 +385,8 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
             .video("bit_dance")
             .video("bit_disco_ball")
             .video("logo")
+            .video("brush_pattern79") //18 26 79
+            .video("brush_text2")
             .no_display(true)
             .build(),
     });
