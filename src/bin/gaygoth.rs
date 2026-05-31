@@ -97,7 +97,14 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
         );
     }
 
-    let pngs640x480: &[&str] = &["arc", "another_kind_of_knight"];
+    let pngs640x480: &[&str] = &[
+        "arc",
+        "another_kind_of_knight",
+        "seb_eyes",
+        "seb_eyes_sharp",
+        "seb_eyes_sharp_only",
+        "seb_eyes_sharp_only_invert",
+    ];
     for png_name in pngs640x480.iter() {
         vids.push(
             Vid::builder()
@@ -304,6 +311,7 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "fbtest",
         "gaygoth_all",
         "drac",
+        "oils",
     ]
     .iter()
     .map(|s| s.to_string())
@@ -453,6 +461,23 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
             .no_display(true)
             .build(),
     });
+
+    configs.push(MixConfig {
+        def: VidMixer::builder()
+            .name("oils_mix")
+            .width(640)
+            .height(480)
+            .shader(include_files(include_str!("../glsl/oils.glsl")))
+            .build(),
+        mix: Mix::builder()
+            .name("oils_mix")
+            .video("brush_text2")
+            .video("brush_pattern79")
+            .video("seb_eyes_sharp_only_invert")
+            .no_display(true)
+            .build(),
+    });
+
     configs
 });
 
