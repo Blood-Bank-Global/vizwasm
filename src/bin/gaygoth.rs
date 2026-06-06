@@ -579,7 +579,7 @@ pub fn calculate(
 
     // select the current set of input videos to the mix
     let names = vec![
-        vec!["fluffy_clouds", "brush_text1", "brush_maze1"],
+        // vec!["fluffy_clouds", "brush_text1", "brush_maze1"],
         vec!["bit_dance", "bit_blood", "bit_disco_ball"],
         vec!["hunger_club", "hunger_sizzle", "hunger_texture"],
         vec!["interview_fire", "interview_armond", "interview_lestat"],
