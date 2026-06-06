@@ -1210,8 +1210,26 @@ impl AllSettings {
                             down: true,
                             ..
                         } => {
+                            // save user variables
+                            let mut vars = vec![];
+                            let fs = [
+                                StreamSettingsField::User0,
+                                StreamSettingsField::User1,
+                                StreamSettingsField::User2,
+                                StreamSettingsField::User3,
+                                StreamSettingsField::User4,
+                                StreamSettingsField::User5,
+                                StreamSettingsField::User6,
+                                StreamSettingsField::User7,
+                            ];
+                            for f in &fs {
+                                vars.push(self.playback[selected_idx].stream.get_field(f));
+                            }
                             self.playback[selected_idx].stream.reset();
                             self.playback[selected_idx].was_reset = true;
+                            for i in 0..fs.len() {
+                                self.playback[selected_idx].stream.set_field(fs[i], vars[i]);
+                            }
                         }
                         //COPY
                         KeyEvent {
