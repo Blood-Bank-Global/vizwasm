@@ -263,48 +263,49 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
         );
     }
 
-    // Cameras
-    vids.push(
-        Vid::builder()
-            .name("front cam")
-            .path("MacBook Pro Camera")
-            // .path("Logitech BRIO")
-            // .path("Logitech StreamCam")
-            .format("avfoundation")
-            .opts(&vec![
-                ("pixel_format", "bgr0"),
-                ("framerate", "30.0"),
-                // ("video_size", "640x480"),
-                ("video_size", "1280x720"),
-                // ("video_size", "640x360"),
-                // ("video_size", "1920x1080"),
-                ("fflags", "+nobuffer+flush_packets"),
-                ("probesize", "32"),
-                ("flags", "low_delay"),
-                ("analyzeduration", "0"),
-                ("rtbufsize", "5000000"),
-            ])
-            .resolution((1280, 720))
-            // .resolution((640, 360))
-            // .resolution((1920, 1080))
-            .tbq((1, 1000000))
-            .pix_fmt("bgr0")
-            .repeat(false)
-            .realtime(true)
-            .hardware_decode(false)
-            .build()
-            .into(),
-    );
+    if false {
+        // Cameras
+        vids.push(
+            Vid::builder()
+                .name("front cam")
+                .path("MacBook Pro Camera")
+                // .path("Logitech BRIO")
+                // .path("Logitech StreamCam")
+                .format("avfoundation")
+                .opts(&vec![
+                    ("pixel_format", "bgr0"),
+                    ("framerate", "30.0"),
+                    // ("video_size", "640x480"),
+                    ("video_size", "1280x720"),
+                    // ("video_size", "640x360"),
+                    // ("video_size", "1920x1080"),
+                    ("fflags", "+nobuffer+flush_packets"),
+                    ("probesize", "32"),
+                    ("flags", "low_delay"),
+                    ("analyzeduration", "0"),
+                    ("rtbufsize", "5000000"),
+                ])
+                .resolution((1280, 720))
+                // .resolution((640, 360))
+                // .resolution((1920, 1080))
+                .tbq((1, 1000000))
+                .pix_fmt("bgr0")
+                .repeat(false)
+                .realtime(true)
+                .hardware_decode(false)
+                .build()
+                .into(),
+        );
+    }
     vids
 });
 
 static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
-    let names = [
+    let mut names = [
         "blank",
         "demo_fonts",
         "cp437",
         "freak",
-        "cam_freak",
         "fluffy_clouds",
         "coven",
         "shadows_parade",
@@ -316,6 +317,11 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
     .iter()
     .map(|s| s.to_string())
     .collect::<Vec<_>>();
+
+    if false {
+        names.push("cam_freak".to_string());
+    }
+
     names
 });
 
@@ -399,21 +405,22 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
             .build(),
     });
 
-    configs.push(MixConfig {
-        def: VidMixer::builder()
-            .name("cam_freak_mix")
-            .width(640)
-            .height(480)
-            .shader(include_files(include_str!("../glsl/frog.glsl")))
-            .build(),
-        mix: Mix::builder()
-            .name("cam_freak_mix")
-            .video("front cam")
-            .video("brush_dither5")
-            .no_display(true)
-            .build(),
-    });
-
+    if false {
+        configs.push(MixConfig {
+            def: VidMixer::builder()
+                .name("cam_freak_mix")
+                .width(640)
+                .height(480)
+                .shader(include_files(include_str!("../glsl/frog.glsl")))
+                .build(),
+            mix: Mix::builder()
+                .name("cam_freak_mix")
+                .video("front cam")
+                .video("brush_dither5")
+                .no_display(true)
+                .build(),
+        });
+    }
     configs.push(MixConfig {
         def: VidMixer::builder()
             .name("coven_mix")

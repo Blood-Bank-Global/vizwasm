@@ -45,3 +45,33 @@ void patch_halftone45(out vec4 color, in vec2 uv, in vec2 resolution, in sampler
     vec4 c = texture(tex, uv);
     color.rgba = step(vec4(radius), c.rgba);
 }
+
+void patch_dither_vertical(out vec4 color, in vec2 uv, in vec2 resolution, in sampler2D tex, uint line_width) {
+    // Simple vertical lines halftone
+    uint x = uint(resolution.x / float(line_width));
+    // average color for each channel
+    vec4 avg = vec4(0.0);
+    for (uint i = 0u; i < line_width; i++) {
+        avg += texture(tex, (uv * resolution + vec2(float(i), 0.0)) / resolution)/vec4(float(line_width));
+    }
+    vec4 fill = avg * vec4(float(line_width));
+
+    int dx = int(line_width/2) - int(mod(uv.x * resolution.x, float(line_width)));
+    int pos = dx < 0 ? abs(dx) * 2 + 1 : dx * 2;
+    color.rgba = step(vec4(float(pos)), floor(fill) - 1.0);
+}
+
+void patch_dither_horizontal(out vec4 color, in vec2 uv, in vec2 resolution, in sampler2D tex, uint line_width) {
+    // Simple horizontal lines halftone
+    uint y = uint(resolution.y / float(line_width));
+    // average color for each channel
+    vec4 avg = vec4(0.0);
+    for (uint i = 0u; i < line_width; i++) {
+        avg += texture(tex, (uv * resolution + vec2(0.0, float(i))) / resolution)/vec4(float(line_width));
+    }
+    vec4 fill = avg * vec4(float(line_width));
+
+    int dy = int(line_width/2) - int(mod(uv.y * resolution.y, float(line_width)));
+    int pos = dy < 0 ? abs(dy) * 2 + 1 : dy * 2;
+    color.rgba = step(vec4(float(pos)), floor(fill) - 1.0);
+}
