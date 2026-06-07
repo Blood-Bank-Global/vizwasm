@@ -32,13 +32,25 @@
 
 
 
-/*******************/
-void pass0(out vec4 color) {
-    color = texture(src_tex0, src_uv);
-}
-
 
 #define BPM 150.0
+/*******************/
+void pass0(out vec4 color) {
+    float t = BPM / 60.0;
+    float p = randf(uint(iTime * t));
+
+    if (p < 0.0) {
+        color = texture(src_tex0, src_uv);
+    } else {
+        color = texture(src_tex1, src_uv);
+    }
+
+    p = randf(uint(iTime * t * 4));
+    if (p < -0.5) {
+        color = texture(src_tex2, src_uv);
+    }
+}
+
 /*******************************/
 // #define BUT_BLEND false
 // void pass0(out vec4 color) {
