@@ -53,52 +53,73 @@
 
 
 // this is mostly for debugging
-int float2txt( float val, out int[10] txt ) {
+int float2txt( float val, out uint txt[10] ) {
     if (val > 9999.9999 || val < -9999.9999) {
-        txt[0] = 0x4F; // no character type so this is the asci for OOPS
-        txt[1] = 0x4F;
-        txt[2] = 0x50;
-        txt[3] = 0x53;
+        txt[0] = 79u;  // 'O'
+        txt[1] = 79u;  // 'O'
+        txt[2] = 80u;  // 'P'
+        txt[3] = 83u;  // 'S'
         return 4;
     }
 
     int len = 0;
-    int whole[4] = { 0, 0, 0, 0 };
-    int whole_val = int( val );
+    float aval = val;
 
-    int i;
-    for ( i = 0; i < 4; i++ ) {
-        if (whole_val <= int(pow(10.0, float(i))))  break;
-        whole[i] = (int( whole_val / int(pow(10.0, float(i))) ) % 10) + 48;
+    // Handle negative sign
+    if (aval < 0.0) {
+        txt[len] = 45u; // '-'
+        len++;
+        aval = -aval;
     }
 
-    if (i == 0) {
-        txt[0] = 48; // '0'
-        len = 1;
+    int whole_val = int(aval);
+    float frac_val = aval - float(whole_val);
+
+    // Write whole number digits MSB first
+    if (whole_val == 0) {
+        txt[len] = 48u; // '0'
+        len++;
     } else {
-        len = i;
-        for ( ; i >= 4; i-- ) {
-            txt[4 - i] = whole[i - 1];
+        // Count digits
+        int wdigits = 0;
+        int tmp = whole_val;
+        for (int d = 0; d < 4; d++) {
+            if (tmp == 0) break;
+            wdigits++;
+            tmp /= 10;
+        }
+        // Compute starting divisor (10^(wdigits-1))
+        int wdiv = 1;
+        for (int d = 0; d < wdigits - 1; d++) wdiv *= 10;
+        for (int d = 0; d < wdigits; d++) {
+            txt[len] = uint(whole_val / wdiv % 10) + 48u;
+            len++;
+            wdiv /= 10;
         }
     }
 
-    int decimal[4] = { 0, 0, 0, 0 };
-    int decimal_val = int( fract( val ) * 10000.0 );
-    int j;
-    for (j = 0; j < 4; j++ ) {
-        if (decimal_val <= int(pow(10.0, float(j))))  break;
-        decimal[j] = (int( decimal_val / int(pow(10.0, float(3 - j))) ) % 10) + 48;
-    }
-    if (j == 0) {
-        return len;
-    } else {
-        txt[len] = 46; // '.'
-        len += 1;
-        for ( int k = 0; k < j; k++ ) {
-            txt[len + k] = decimal[k];
+    // Write decimal digits (up to 4 places, trailing zeros trimmed)
+    int dval = clamp(int(round(frac_val * 10000.0)), 0, 9999);
+    if (dval > 0) {
+        int ddigits = 4;
+        // Trim trailing zeros by dividing dval in place
+        for (int d = 0; d < 3; d++) {
+            if (dval % 10 != 0) break;
+            dval /= 10;
+            ddigits--;
         }
-        len += j;
+        txt[len] = 46u; // '.'
+        len++;
+        int ddiv = 1;
+        for (int d = 0; d < ddigits - 1; d++) ddiv *= 10;
+        for (int d = 0; d < ddigits; d++) {
+            txt[len] = uint(dval / ddiv % 10) + 48u;
+            len++;
+            ddiv /= 10;
+        }
     }
+
+    return len;
 }
 
 bool is_cp437_space(uint char) {
