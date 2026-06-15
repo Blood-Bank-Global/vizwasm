@@ -326,6 +326,7 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
             .video("brush_text2")
             .video("brush_pattern79")
             .video("brush_dither2")
+            .video("brush_maze2")
             .no_display(true)
             .build(),
     });
