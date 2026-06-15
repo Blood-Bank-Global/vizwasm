@@ -75,3 +75,58 @@ void patch_dither_horizontal(out vec4 color, in vec2 uv, in vec2 resolution, in 
     int pos = dy < 0 ? abs(dy) * 2 + 1 : dy * 2;
     color.rgba = step(vec4(float(pos)), floor(fill) - 1.0);
 }
+
+void patch_wave_dither(
+    out vec4 color,
+    sampler2D t0,
+    vec2 uv,
+    vec2 res,
+    float time,
+    bool clip_black,
+    float baseFrequency,
+    float modulationIntensity,
+    float warpStrength,
+    float bias,
+    bool vertical
+) {
+    
+    // 2. Sample local color to find the directional gradient
+    // We sample slightly offset pixels to see how the image's brightness changes
+    // vec2 offsetStep = vec2(0.003, 0.003); 
+    vec2 offsetStep = vec2(1.0/res.x, 1.0/res.y); // Scale offset by resolution and user control
+    
+    float lumCenter = dot(texture(t0, uv).rgb, vec3(0.299, 0.587, 0.114));
+    float lumRight  = dot(texture(t0, uv + vec2(offsetStep.x, 0.0)).rgb, vec3(0.299, 0.587, 0.114));
+    float lumUp     = dot(texture(t0, uv + vec2(0.0, offsetStep.y)).rgb, vec3(0.299, 0.587, 0.114));
+    
+    // 3. Compute the 2D gradient vectors (direction of brightness change)
+    float gradX = lumRight - lumCenter;
+    float gradY = lumUp - lumCenter;
+    vec2 imageGradient = vec2(gradX, gradY);
+
+    // 4. THE 2D OFFSET STEP
+    // Displace the coordinate reading path along the contours of the image.
+    // Adding time here makes the warp jitter like fluctuating voltage.
+    vec2 warpedCoords = uv + (imageGradient * warpStrength);
+    
+    // 5. Re-sample the definitive luminance using the warped coordinate grid
+    vec4 finalTexColor = texture(t0, warpedCoords);
+    float finalLuminance = dot(finalTexColor.rgb, vec3(0.299, 0.587, 0.114));
+
+    if (clip_black && finalLuminance < 0.01) {
+        color = vec4(vec3(finalLuminance), 1.0);
+        return;
+    }
+
+    // 6. Generate the frequency calculation using the distorted coordinates
+    // Adding the u_time uniform here creates a rolling analog tracking line effect
+    float screenPattern = (vertical ? warpedCoords.x : warpedCoords.y) * baseFrequency + time;
+    float modifiedFrequency = screenPattern * (1.0 + (finalLuminance * modulationIntensity));
+    
+    // 7. Output the crisp black and white vector lines
+    // bias shifts the threshold: 0.0 = 50/50, positive = more black, negative = more white
+    float waveOutput = sin(modifiedFrequency);
+    float finalBinaryColor = step(bias, waveOutput);
+    
+    color = vec4(vec3(finalBinaryColor), 1.0);
+}

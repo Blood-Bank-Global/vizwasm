@@ -222,7 +222,7 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
         // Cameras
         vids.push(
             Vid::builder()
-                .name("front cam")
+                .name("front_cam")
                 .path("MacBook Pro Camera")
                 // .path("Logitech BRIO")
                 // .path("Logitech StreamCam")
@@ -256,15 +256,10 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
 });
 
 static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
-    let mut names = ["blank", "demo_fonts", "cp437", "fluffy_clouds", "abstracts"]
+    let names = ["blank", "demo_fonts", "cp437", "fluffy_clouds", "abstracts"]
         .iter()
         .map(|s| s.to_string())
         .collect::<Vec<_>>();
-
-    if false {
-        names.push("cam_freak".to_string());
-    }
-
     names
 });
 
@@ -327,6 +322,7 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
             .video("brush_pattern79")
             .video("brush_dither2")
             .video("brush_maze2")
+            .mixed("fluffy_clouds_overlay")
             .no_display(true)
             .build(),
     });

@@ -1,7 +1,7 @@
 #include "utils.glsl"
 #include "patch_blob_px.glsl"
 #include "font_8x16.glsl"
-
+#include "patch_halftone.glsl"
 #define BPM 150.0
 
 void strobe_text_move_tex(out vec4 color, sampler2D t0, sampler2D t1, vec2 uv, vec2 res, float time) {
@@ -91,9 +91,30 @@ void stars(out vec4 color, sampler2D t0, vec2 uv, vec2 res, float time) {
     }
 }
 
-void wave_dither() {
-
+//!VAR float user0 0.0
+//!VAR float user1 0.0
+//!VAR float user2 0.0
+//!VAR float user3 0.0
+//!VAR float user4 0.0
+void wave(out vec4 color) {
+    float baseFrequency = 400.0;
+    float modulationIntensity = 0.5;
+    float warpStrength = 0.5; // Controls how aggressively the lines bend
+    float bias = 0.9; // -1.0 = more white, 0.0 = 50/50, 1.0 = more black
+    patch_wave_dither(
+        color,
+        src_tex4,
+        src_uv,
+        iResolution.xy,
+        -iTime*10.0, // time, multiplied to increase speed
+        true,
+        baseFrequency,
+        modulationIntensity,
+        warpStrength,
+        bias,
+        false);
 }
+
 
 void pass0(out vec4 color) {
     float t = BPM / 60.0 * 2.0;
@@ -113,4 +134,5 @@ void pass0(out vec4 color) {
         default:
             color = vec4(0.0);
     }
+    wave(color);
 }
