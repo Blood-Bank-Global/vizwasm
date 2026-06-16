@@ -38,59 +38,59 @@
 #define BLEND_MODE_COUNT 14
 #define BLEND_MODE_DEFAULT 0
 vec4 blend_by_mode(in vec4 below, in vec4 above, in uint kind) {
-    vec4 color = vec4(0.0);
+    vec4 color = vec4(0.0, 0.0, 0.0, 1.0);
     switch (kind) {
     case BLEND_ADDITION:
         //addition
-        color = clamp((below + above), 0.0, 1.0);
+        color.rgb = clamp((below.rgb + above.rgb), 0.0, 1.0);
         break;
     case BLEND_AND:
         // and
-        color = vec4((uvec4(below * 255.0) & uvec4(above * 255.0)) / 255.0);
+        color.rgb = vec3((uvec3(below.rgb * 255.0) & uvec3(above.rgb * 255.0)) / 255.0);
         break;
     case BLEND_AVERAGE:
         //average
-        color = (below + above) * 0.5;
+        color.rgb = (below.rgb + above.rgb) * 0.5;
         break;
     case BLEND_DARKEN:
         //darken          
-        color = min(below, above);
+        color.rgb = min(below.rgb, above.rgb);
         break;
     case BLEND_DIFFERENCE:
         //difference
-        color = clamp(below - above, 0.0, 1.0);
+        color.rgb = clamp(abs(above.rgb - below.rgb), 0.0, 1.0);
         break;
     case BLEND_DIVIDE:
         //divide
-        color = below / above;
+        color.rgb = below.rgb / above.rgb;
         break;
     case BLEND_LIGHTEN:
         //lighten
-        color = max(below, above);
+        color.rgb = max(below.rgb, above.rgb);
         break;
     case BLEND_OR:
         // or
-        color = vec4((uvec4(below * 255.0) | uvec4(above * 255.0)) / 255.0);
+        color.rgb = vec3((uvec3(below.rgb * 255.0) | uvec3(above.rgb * 255.0)) / 255.0);
         break;
     case BLEND_OVERLAY:
         //overlay
         if (below.r < 0.5) {
-            color = 2.0 * below * above;
+            color.rgb = 2.0 * below.rgb * above.rgb;
         } else {
-            color = 1.0 - 2.0 * (1.0 - below) * (1.0 - above);
+            color.rgb = 1.0 - 2.0 * (1.0 - below.rgb) * (1.0 - above.rgb);
         }
         break;
     case BLEND_SCREEN:
         //screen
-        color = 1 - ((1 - below) * (1 - above));
+        color.rgb = 1.0 - ((1.0 - below.rgb) * (1.0 - above.rgb));
         break;
     case BLEND_SUBTRACT:
         //subtract
-        color = clamp(below - above, 0.0, 1.0);
+        color.rgb = clamp(below.rgb - above.rgb, 0.0, 1.0);
         break;
     case BLEND_XOR:
         //xor
-        color = vec4((uvec4(below * 255.0) ^ uvec4(above * 255.0)) / 255.0);
+        color.rgb = vec3((uvec3(below.rgb * 255.0) ^ uvec3(above.rgb * 255.0)) / 255.0);
         break;
     case BLEND_ALPHA:
         //alpha

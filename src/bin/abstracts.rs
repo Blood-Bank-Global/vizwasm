@@ -42,7 +42,7 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
         );
     }
 
-    let tech_vids640x480: &[&str] = &["blank", "fluffy_clouds", "masque", "statue"];
+    let tech_vids640x480: &[&str] = &["blank", "fluffy_clouds", "masque", "statue", "flat_map"];
     for vid_name in tech_vids640x480.iter() {
         vids.push(
             Vid::builder()
@@ -323,6 +323,7 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
             .video("brush_dither2")
             .video("brush_maze2")
             .video("statue")
+            .video("flat_map")
             .no_display(true)
             .build(),
     });

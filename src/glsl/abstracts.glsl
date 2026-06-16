@@ -2,6 +2,7 @@
 #include "patch_blob_px.glsl"
 #include "font_8x16.glsl"
 #include "patch_halftone.glsl"
+#include "patch_pixelate.glsl"
 #define BPM 150.0
 
 void strobe_text_move_tex(out vec4 color, sampler2D t0, sampler2D t1, vec2 uv, vec2 res, float time) {
@@ -146,10 +147,28 @@ void wave(out vec4 color) {
     color *= modulatedColor;
 }
 
+void text_flash(out vec4 color, in vec2 uv, in vec2 resolution, in sampler2D tex, float time) {
+    // Simple flashing text effect
+    float t = BPM / 60.0 / 16.0; // 16th notes
+    float beat = time / t;
+    float p = randf(uint(beat) ^ 0x12341234);
 
-#define MAX 4.0
+    vec2 scaled = (uv - vec2(0.5)) * 0.55 - vec2(0.5);
+
+    if (p > 0.0) {
+        color = texture(tex, scaled);
+    } else {
+        color = patch_textelate(scaled * resolution + vec2(5), 0.5, tex, resolution);
+    }
+
+    vec3 hsv = rgb2hsv(color.rgb);
+    hsv[0] = mod(hsv[0] + fract(iTime), 1.0);
+    color.rgb = hsv2rgb(hsv);
+}
+
+#define MAX 5.0
 void pass0(out vec4 color) {
-    float t = BPM / 16.0 / 60.0;
+    float t = BPM / 8.0 / 60.0;
     float beat = iTime / t;
 
     uint n[] = uint[](0,0,0,0,0);
@@ -169,6 +188,7 @@ void pass0(out vec4 color) {
     
 
     switch (n[n.length()-1u]) {
+    // switch (4u) {
         case 0u:
             strobe_text_move_tex(color, src_tex0, src_tex1, src_uv, iResolution.xy, iTime);
             break;
@@ -180,6 +200,9 @@ void pass0(out vec4 color) {
             break;
         case 3u:
             wave(color);
+            break;
+        case 4u:
+            text_flash(color, src_uv, iResolution.xy, src_tex5, iTime);
             break;
         default:
             color = vec4(0.0);
