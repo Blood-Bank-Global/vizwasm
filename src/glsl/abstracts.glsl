@@ -91,36 +91,67 @@ void stars(out vec4 color, sampler2D t0, vec2 uv, vec2 res, float time) {
     }
 }
 
-//!VAR float user0 0.0
-//!VAR float user1 0.0
-//!VAR float user2 0.0
-//!VAR float user3 0.0
-//!VAR float user4 0.0
 void wave(out vec4 color) {
-    float baseFrequency = 400.0;
+    color = texture(src_tex4, src_uv);
+    vec3 hsv = rgb2hsv(color.rgb);
+
+
+    float baseFrequency = 600.0;
     float modulationIntensity = 0.5;
     float warpStrength = 0.5; // Controls how aggressively the lines bend
     float bias = 0.9; // -1.0 = more white, 0.0 = 50/50, 1.0 = more black
+    bool vertical = false;
+    vec4 modulatedColor = vec4(0.0);
+    float t;
+    if (hsv[2] > 0.7 && hsv[1] < 0.5) {
+        baseFrequency = 200.0;
+        modulationIntensity = 0.5;
+        warpStrength = 0.5; // Controls how aggressively the lines bend
+        bias = 0.0; // -1.0 = more white, 0.0 = 50/50, 1.0 = more black
+        modulatedColor = vec4(1.0, 1.0, 1.0, 1.0);
+        vertical = false;
+        t = iTime*16.0;
+    } else if (hsv[1] > 0.5) {
+        baseFrequency = 150.0;
+        modulationIntensity = 0.5;
+        warpStrength = 0.5; // Controls how aggressively the lines bend
+        bias = 0.8; // -1.0 = more white, 0.0 = 50/50, 1.0 = more black
+        modulatedColor = vec4(1.0, 0.0, 1.0, 1.0);
+        vertical = true;
+
+        t = iTime * 1.0;
+    } else {
+        baseFrequency = 50.0;
+        modulationIntensity = 0.8;
+        warpStrength = 0.8;
+        bias = 0.97;
+        modulatedColor = vec4(0.0, 0.0, 1.0, 1.0);
+        t = iTime * 50.0;
+    }
+
     patch_wave_dither(
         color,
         src_tex4,
         src_uv,
         iResolution.xy,
-        -iTime*10.0, // time, multiplied to increase speed
+        t,
         true,
-        baseFrequency,
+        baseFrequency, // Slightly different frequency for each channel
         modulationIntensity,
         warpStrength,
         bias,
-        false);
+        vertical,
+        0x7u // all channels enabled
+    );
+    color *= modulatedColor;
 }
 
-
 void pass0(out vec4 color) {
-    float t = BPM / 60.0 * 2.0;
+    float t = BPM / 60.0;
     float beat = iTime * t;
     uint b = uint(beat);
-    float s = abs(randf(b ^ 0xBABEBABE)) * 3.0;
+    float s = abs(randf(b ^ 0xBABEBABE)) * 4.0;
+    s = 3u;
     switch (uint(s)) {
         case 0u:
             strobe_text_move_tex(color, src_tex0, src_tex1, src_uv, iResolution.xy, iTime);
@@ -131,8 +162,10 @@ void pass0(out vec4 color) {
         case 2u:
             stars(color, src_tex2, src_uv, iResolution.xy, iTime);
             break;
+        case 3u:
+            wave(color);
+            break;
         default:
             color = vec4(0.0);
     }
-    wave(color);
 }

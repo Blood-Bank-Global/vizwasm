@@ -87,7 +87,8 @@ void patch_wave_dither(
     float modulationIntensity,
     float warpStrength,
     float bias,
-    bool vertical
+    bool vertical,
+    uint channel_mask
 ) {
     
     // 2. Sample local color to find the directional gradient
@@ -111,6 +112,9 @@ void patch_wave_dither(
     
     // 5. Re-sample the definitive luminance using the warped coordinate grid
     vec4 finalTexColor = texture(t0, warpedCoords);
+    if ((channel_mask & 0x1u) == 0u) finalTexColor.b = 0.0;
+    if ((channel_mask & 0x2u) == 0u) finalTexColor.g = 0.0;
+    if ((channel_mask & 0x4u) == 0u) finalTexColor.r = 0.0;
     float finalLuminance = dot(finalTexColor.rgb, vec3(0.299, 0.587, 0.114));
 
     if (clip_black && finalLuminance < 0.01) {
