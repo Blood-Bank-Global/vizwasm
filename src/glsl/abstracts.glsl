@@ -103,7 +103,7 @@ void wave(out vec4 color) {
     bool vertical = false;
     vec4 modulatedColor = vec4(0.0);
     float t;
-    if (hsv[2] > 0.7 && hsv[1] < 0.5) {
+    if (hsv[2] > 0.55 && hsv[1] < 0.5) {
         baseFrequency = 200.0;
         modulationIntensity = 0.5;
         warpStrength = 0.5; // Controls how aggressively the lines bend
@@ -146,13 +146,29 @@ void wave(out vec4 color) {
     color *= modulatedColor;
 }
 
+
+#define MAX 4.0
 void pass0(out vec4 color) {
-    float t = BPM / 60.0;
-    float beat = iTime * t;
-    uint b = uint(beat);
-    float s = abs(randf(b ^ 0xBABEBABE)) * 4.0;
-    s = 3u;
-    switch (uint(s)) {
+    float t = BPM / 16.0 / 60.0;
+    float beat = iTime / t;
+
+    uint n[] = uint[](0,0,0,0,0);
+    for (uint i = 0; i < n.length(); i++) {
+        float beat = (iTime - (t * float(i)))/t;
+        if (beat < 0.0) {
+            break;
+        }
+        n[i] = uint(abs(randf(uint(beat) ^ 0xBABEBABE)) * MAX);
+    }
+
+    for (uint i = 1; i < n.length(); i++) {
+        if (n[i - 1u] == n[i]) {
+            n[i] = (n[i] + 1u) % uint(MAX);
+        }
+    }
+    
+
+    switch (n[n.length()-1u]) {
         case 0u:
             strobe_text_move_tex(color, src_tex0, src_tex1, src_uv, iResolution.xy, iTime);
             break;
@@ -168,4 +184,5 @@ void pass0(out vec4 color) {
         default:
             color = vec4(0.0);
     }
+    
 }
