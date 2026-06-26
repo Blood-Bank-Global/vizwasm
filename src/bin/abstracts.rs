@@ -26,7 +26,7 @@ static ASSET_PATH: &'static str = "/Users/ttie/Desktop/common_data";
 static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
     let mut vids = vec![];
 
-    let vid640x480: &[&str] = &[];
+    let vid640x480: &[&str] = &["frog", "stone"];
     for vid_name in vid640x480.iter() {
         vids.push(
             Vid::builder()
@@ -58,7 +58,7 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
         );
     }
 
-    let pngs640x480: &[&str] = &[];
+    let pngs640x480: &[&str] = &["hexeframe", "hexeframe2", "frogmask", "circ"];
     for png_name in pngs640x480.iter() {
         vids.push(
             Vid::builder()
@@ -256,10 +256,18 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
 });
 
 static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
-    let names = ["blank", "demo_fonts", "cp437", "fluffy_clouds", "abstracts"]
-        .iter()
-        .map(|s| s.to_string())
-        .collect::<Vec<_>>();
+    let names = [
+        "blank",
+        "demo_fonts",
+        "cp437",
+        "fluffy_clouds",
+        "abstracts",
+        "stone",
+        "hexe",
+    ]
+    .iter()
+    .map(|s| s.to_string())
+    .collect::<Vec<_>>();
     names
 });
 
@@ -324,6 +332,25 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
             .video("brush_maze2")
             .video("statue")
             .video("flat_map")
+            .no_display(true)
+            .build(),
+    });
+
+    configs.push(MixConfig {
+        def: VidMixer::builder()
+            .name("hexe_mix")
+            .width(640)
+            .height(480)
+            .shader(include_files(include_str!("../glsl/hexe.glsl")))
+            .build(),
+        mix: Mix::builder()
+            .name("hexe_mix")
+            .video("hexeframe2")
+            .video("frog")
+            .mixed("stone_overlay")
+            .video("frogmask")
+            .video("circ")
+            .video("brush_text2")
             .no_display(true)
             .build(),
     });
