@@ -1,5 +1,6 @@
 #include "utils.glsl"
 #include "patch_warp_px.glsl"
+#include "patch_halftone.glsl"
 //!VAR vec2 iResolution1 1.0 1.0
 //!VAR vec2 iResolution2 1.0 1.0
 
@@ -12,6 +13,10 @@
 
 #define BPM 150
 void pass0(out vec4 color) {
+
+    float beat = BPM / 60.0 * 4.0;
+    float b = floor(iTime * beat);
+    float t = mod(iTime, beat)/beat;
 
     color = texture(src_tex0, src_uv);
 
@@ -36,9 +41,6 @@ void pass0(out vec4 color) {
         vec2 frog_bump = vec2(0.0, 30.0/iResolution1.y);
 
 
-        float beat = BPM / 60.0 * 4.0;
-        float b = floor(iTime * beat);
-        float t = mod(iTime, beat)/beat;
 
         for (int i = 0; i < frogs.length(); i++) {
             mat4x2 frog = frogs[i];
@@ -47,7 +49,8 @@ void pass0(out vec4 color) {
 
             if (pointInRhombus(warped_uv * iResolution.xy, frog)) {
                 
-                uint bucket = uint(3.0 * abs(randf(uint(b) ^ 0x4205 ^ (1337 * i))));
+                uint bucket = uint(4.0 * abs(randf(uint(b) ^ 0x4205 ^ (1337 * i))));
+                
                 if (bucket == 0) {
                     warped_uv = patch_warp_px(
                         warped_uv * iResolution.xy,
@@ -56,21 +59,43 @@ void pass0(out vec4 color) {
                         iResolution1.xy /vec2(scale),
                         iTime * 10.0
                     ) / iResolution.xy;
-
                 }
+                
 
                 vec2 center_uv = vec2((frogs[i][1].x - frogs[i][0].x) / 2.0 + frogs[i][0].x,
                                     (frogs[i][3].y - frogs[i][0].y) / 2.0 + frogs[i][0].y)
                                 / iResolution.xy;
                 vec2 delta = vec2(0.5) - center_uv;
                 vec2 uv = ((warped_uv.xy + delta) / vec2(scale));
-                color = texture(src_tex1, uv - frog_bump);
 
-                if (bucket == 1) {
-                    vec4 c = texture(src_tex5, src_uv*.8);
+
+                color = texture(src_tex1, uv - frog_bump);
+                 if (bucket == 1) {
+                    if (distance(color.rgb, vec3(0.6, 0.35, 0.6)) > 0.35) {
+                        color.rgb = vec3(0.0);
+                    } else {
+                        patch_wave_dither(
+                                color,
+                                src_tex1,
+                                uv - frog_bump,
+                                iResolution.xy,
+                                iTime * 10.0,
+                                true,
+                                500.0,
+                                0.1,
+                                0.0,
+                                0.5,
+                                false,
+                                0x7u
+                        );
+                    }
+                    return;
+                } 
+                
+                if (bucket == 2) {
+                    vec4 c = texture(src_tex5, src_uv*.8 + vec2(0.0, abs(randf(uint(iTime*10.0)))));
                     color.rgb = mix(color.rgb, c.rgb, 0.5);
                 }
-
                 return;
             }
 
@@ -79,7 +104,11 @@ void pass0(out vec4 color) {
 
     mask = texture(src_tex4, src_uv);
     if (distance(mask.rgb, vec3(1.0, 0.0, 1.0)) < 0.20) {
-        color = texture(src_tex2, src_uv);
+        if (randf(uint(b) ^ 0x4205) < 0.0) {
+            patch_ink(color, src_tex2, src_uv, iResolution.xy, vec2(8.0), 0.4, 0xCAFE);
+        } else {
+            color = texture(src_tex2, src_uv);
+        }
         return;
     }
 

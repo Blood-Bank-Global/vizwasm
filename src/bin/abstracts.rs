@@ -252,6 +252,35 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
                 .into(),
         );
     }
+
+    if true {
+        // Cameras
+        vids.push(
+            Vid::builder()
+                .name("tv")
+                .path("AV TO USB2.0")
+                .format("avfoundation")
+                .opts(&vec![
+                    ("pixel_format", "bgr0"),
+                    ("framerate", "25.0"),
+                    ("video_size", "640x480"),
+                    ("fflags", "+nobuffer+flush_packets"),
+                    ("probesize", "32"),
+                    ("flags", "low_delay"),
+                    ("analyzeduration", "0"),
+                    ("rtbufsize", "5000000"),
+                ])
+                .resolution((640, 480))
+                .tbq((1, 1000000))
+                .pix_fmt("bgr0")
+                .repeat(false)
+                .realtime(true)
+                .hardware_decode(false)
+                .build()
+                .into(),
+        );
+    }
+
     vids
 });
 
@@ -264,6 +293,8 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "abstracts",
         "stone",
         "hexe",
+        "tv",
+        "tv_render",
     ]
     .iter()
     .map(|s| s.to_string())
@@ -351,9 +382,29 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
             .video("frogmask")
             .video("circ")
             .video("brush_text2")
+            .video("statue")
             .no_display(true)
             .build(),
     });
+
+    if true {
+        configs.push(MixConfig {
+            def: VidMixer::builder()
+                .name("tv_render_mix")
+                .width(640)
+                .height(480)
+                .shader(include_files(include_str!("../glsl/tv.glsl")))
+                .build(),
+            mix: Mix::builder()
+                .name("tv_render_mix")
+                .video("tv")
+                .video("brush_pattern79")
+                .video("brush_dither2")
+                .video("brush_maze2")
+                .no_display(true)
+                .build(),
+        });
+    }
 
     configs
 });

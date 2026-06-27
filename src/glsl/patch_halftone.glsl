@@ -134,3 +134,24 @@ void patch_wave_dither(
     
     color = vec4(vec3(finalBinaryColor), 1.0);
 }
+
+void patch_ink(out vec4 color, sampler2D tex, vec2 uv, vec2 res, vec2 sz, float threshold, uint seed) {
+    float lum = 0.0;
+    vec2 coord = uv * res;
+    vec2 region = floor(coord / sz);
+    vec2 pos = region * sz; 
+    for (int i = 0; i < sz.y; i++) {
+        for (int j = 0; j < sz.x; j++) {
+            vec4 c = texture(tex, (pos + vec2(float(j), float(i))) / res);
+            lum += rgb2hsv(c.rgb).z / (sz.x * sz.y);
+        }
+    }
+
+    float noise = randf(seed ^ uint(coord.x * 7) ^ uint(coord.y * 13))
+        * smoothstep(1.0, 0.0, pow(distance(coord, pos + sz * 0.5), 3) / pow(length(sz) * 0.5, 3));
+    if (step(threshold, lum * noise) > 0.5) {
+        color = vec4(1.0, 1.0, 1.0, 1.0);
+    } else {
+        color = vec4(0.0, 0.0, 0.0, 1.0);
+    }
+}
