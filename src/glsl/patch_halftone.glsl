@@ -135,23 +135,71 @@ void patch_wave_dither(
     color = vec4(vec3(finalBinaryColor), 1.0);
 }
 
-void patch_ink(out vec4 color, sampler2D tex, vec2 uv, vec2 res, vec2 sz, float threshold, uint seed) {
-    float lum = 0.0;
+
+
+vec2 rotate_about(vec2 point, vec2 pivot, mat2 rot) {
+    return pivot + rot * (point - pivot);
+}
+
+vec4 check_pos_value(sampler2D tex, vec2 pos, vec2 res, vec2 sz, float threshold, vec2 pivot, mat2 inv_rot) {
+    vec4 value = vec4(0.0);
+    for (int i = -int(sz.y/2); i < int(sz.y/2); i++) {
+        for (int j = -int(sz.x/2); j < int(sz.x/2); j++) {
+            vec2 sample_rot = pos + vec2(float(j), float(i));
+            vec2 sample_pos = rotate_about(sample_rot, pivot, inv_rot);
+            vec4 c = texture(tex, sample_pos / res);
+            value += step(vec4(threshold), c) / vec4(sz.x * sz.y);
+        }
+    }
+    return value;
+}
+
+void patch_ink(out vec4 color, sampler2D tex, vec2 uv, vec2 res, vec2 sz, float threshold, float angle_deg, uint seed) {
+    //make sure the size is even so we can dived by 2
+    sz = floor(sz / 2.0) * 2.0;
+
+    float angle = radians(angle_deg);
+    mat2 rot = mat2(cos(angle), -sin(angle), sin(angle), cos(angle));
+    mat2 inv_rot = mat2(cos(-angle), -sin(-angle), sin(-angle), cos(-angle));
+    vec2 pivot = res * 0.5;
+
     vec2 coord = uv * res;
-    vec2 region = floor(coord / sz);
-    vec2 pos = region * sz; 
-    for (int i = 0; i < sz.y; i++) {
-        for (int j = 0; j < sz.x; j++) {
-            vec4 c = texture(tex, (pos + vec2(float(j), float(i))) / res);
-            lum += rgb2hsv(c.rgb).z / (sz.x * sz.y);
+    vec2 coord_rot = rotate_about(coord, pivot, rot);
+    
+    vec2 region = floor((coord_rot + sz * 0.5) / sz);
+    vec2 pos = region * sz;
+    vec4 value = check_pos_value(tex, pos, res, sz, threshold, pivot, inv_rot);
+    vec4 darkness = vec4(1.0) - value;
+    
+    // check lum of the 9 neighboring regions to create a more organic ink blot effect
+    // to calculate a gravity effect, we can use the distance from the center of the region to the center of the neighboring regions
+    mat4x2 grav = mat4x2(0.0);
+    for (int i = -1; i <= 1; i++) {
+        for (int j = -1; j <= 1; j++) {
+            vec2 neighborPos = pos + vec2(float(j), float(i)) * sz;
+            vec4 neighborDarkness = vec4(1.0) - check_pos_value(tex, neighborPos, res, sz, threshold, pivot, inv_rot).r;
+            grav += outerProduct(vec2(float(j), float(i)), step(vec4(threshold), neighborDarkness));
         }
     }
 
-    float noise = randf(seed ^ uint(coord.x * 7) ^ uint(coord.y * 13))
-        * smoothstep(1.0, 0.0, pow(distance(coord, pos + sz * 0.5), 3) / pow(length(sz) * 0.5, 3));
-    if (step(threshold, lum * noise) > 0.5) {
-        color = vec4(1.0, 1.0, 1.0, 1.0);
-    } else {
-        color = vec4(0.0, 0.0, 0.0, 1.0);
-    }
+    // move the pos based on the grav vector to create a more organic ink blot effect
+    mat4x2 grav_pos = mat4x2(pos, pos, pos, pos) + grav * 0.5;
+    
+    // float noise = 0.05 * randf(uint(coord.x * 73856093u) ^ uint(coord.y * 19349663u) ^ seed);
+    // if (darkness > 0.1 && darkness < 0.95) {
+    //     darkness = clamp(darkness + noise, 0.0, 1.0);
+    // }
+    vec4 ranges = vec4(
+        distance(coord_rot, grav_pos[0]),
+        distance(coord_rot, grav_pos[1]),
+        distance(coord_rot, grav_pos[2]),
+        distance(coord_rot, grav_pos[3])
+    ) / (length(sz) / 2.0);
+
+    color = step(darkness, ranges);
+    // if ( > 0.5) {
+    //     color = vec4(0.0, 0.0, 0.0, 1.0);
+    // } else {
+    //     color = vec4(1.0, 1.0, 1.0, 1.0);
+    // }
 }

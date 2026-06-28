@@ -16,7 +16,6 @@ use vizwasm::{
     shaderlookup::include_files,
     vizconfig::{AllSettings, MixConfig},
 };
-
 fn main() {}
 
 static STREAM_PATH: &'static str = "/Users/ttie/Desktop/abstracts/streams";
@@ -24,6 +23,8 @@ static TECH_PATH: &'static str = "/Users/ttie/Desktop/tech_streams";
 static ASSET_PATH: &'static str = "/Users/ttie/Desktop/common_data";
 
 static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
+    let args = std::env::args().collect::<Vec<_>>();
+
     let mut vids = vec![];
 
     let vid640x480: &[&str] = &["frog", "stone"];
@@ -218,7 +219,7 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
         );
     }
 
-    if false {
+    if args.contains(&"--extra=camera".to_string()) {
         // Cameras
         vids.push(
             Vid::builder()
@@ -253,8 +254,7 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
         );
     }
 
-    if true {
-        // Cameras
+    if args.contains(&"--extra=tv".to_string()) {
         vids.push(
             Vid::builder()
                 .name("tv")
@@ -285,7 +285,7 @@ static STREAM_DEFS: LazyLock<Vec<Vid>> = LazyLock::new(|| {
 });
 
 static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
-    let names = [
+    let mut names = [
         "blank",
         "demo_fonts",
         "cp437",
@@ -293,16 +293,22 @@ static PLAYBACK_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
         "abstracts",
         "stone",
         "hexe",
-        "tv",
-        "tv_render",
     ]
     .iter()
     .map(|s| s.to_string())
     .collect::<Vec<_>>();
+
+    let args = std::env::args().collect::<Vec<_>>();
+    if args.contains(&"--extra=tv".to_string()) {
+        names.push("tv".to_string());
+        names.push("tv_render".to_string());
+    }
     names
 });
 
 static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
+    let args = std::env::args().collect::<Vec<_>>();
+
     let mut configs = vec![];
 
     for vid in STREAM_DEFS.iter() {
@@ -387,7 +393,7 @@ static MIX_CONFIGS: LazyLock<Vec<MixConfig>> = LazyLock::new(|| {
             .build(),
     });
 
-    if true {
+    if args.contains(&"--extra=tv".to_string()) {
         configs.push(MixConfig {
             def: VidMixer::builder()
                 .name("tv_render_mix")
